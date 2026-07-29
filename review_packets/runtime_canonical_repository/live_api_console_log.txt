@@ -1,0 +1,14 @@
+wrote 01_post_register_placeholder_document.json [200]
+wrote 02_get_latest_shows_placeholder.json [200]
+2026-07-23 04:47:50,466 WARNING masterdb: HTTPException 409 at /canonical-repository/documents: A canonical document for category 'bcaes_vol_4' already exists (id=doc-5af84e21673a); update it instead of registering a duplicate.
+wrote 03_post_duplicate_category_409.json [409]
+2026-07-23 04:47:50,470 WARNING masterdb: HTTPException 404 at /canonical-repository/by-category/not_a_volume: Unknown document category 'not_a_volume'.
+wrote 04_get_unknown_category_404.json [404]
+wrote 05_post_publish_real_version.json [200]
+wrote 06_get_version_history.json [200]
+wrote 07_get_verify_chain_intact.json [200]
+wrote 08_get_document_status_now_published.json [200]
+wrote 09_get_list_all_documents.json [200]
+wrote 10_openapi_paths.json (7 paths)
+
+All responses above came from a live TestClient hitting main.app.

@@ -1,0 +1,9 @@
+[
+  "/canonical-repository/by-category/{category}",
+  "/canonical-repository/documents",
+  "/canonical-repository/documents/{document_id}",
+  "/canonical-repository/documents/{document_id}/latest",
+  "/canonical-repository/documents/{document_id}/verify",
+  "/canonical-repository/documents/{document_id}/versions",
+  "/canonical-repository/documents/{document_id}/versions/{version_number}"
+]

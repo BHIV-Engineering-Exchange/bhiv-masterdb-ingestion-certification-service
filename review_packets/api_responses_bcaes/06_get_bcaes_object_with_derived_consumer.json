@@ -1,7 +1,7 @@
 {
   "status_code": 200,
   "body": {
-    "id": "cap-df7f531fd985",
+    "id": "cap-035429711807",
     "registry_type": "capability",
     "classification": "capability",
     "name": "Schema Compatibility Validation",
@@ -11,18 +11,18 @@
     "version": "1.0",
     "dependencies": [
       {
-        "id": "dom-8b2a7adbbfdb",
+        "id": "dom-41a904f11b7f",
         "required_version": null
       }
     ],
     "consumers": [
-      "prd-b6ed8fe4dd10"
+      "prd-85bc2a9c60fb"
     ],
     "authority_boundaries": [
       "Kavy"
     ],
     "links": [],
-    "created_at": "2026-07-22T08:49:38.373917+00:00",
-    "updated_at": "2026-07-22T08:49:38.373928+00:00"
+    "created_at": "2026-07-29T07:21:11.878693+00:00",
+    "updated_at": "2026-07-29T07:21:11.878703+00:00"
   }
 }

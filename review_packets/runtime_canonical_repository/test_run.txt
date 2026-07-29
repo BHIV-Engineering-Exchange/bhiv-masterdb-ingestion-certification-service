@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python
+cachedir: .pytest_cache
+rootdir: /home/claude/repo/bhiv-masterdb-ingestion-certification-service-main
+configfile: pytest.ini
+plugins: anyio-4.14.2, cov-7.1.0
+collecting ... collected 15 items
+
+tests/test_canonical_repository_api.py::test_register_creates_placeholder_by_default PASSED [  6%]
+tests/test_canonical_repository_api.py::test_registered_placeholder_content_is_labeled PASSED [ 13%]
+tests/test_canonical_repository_api.py::test_register_with_explicit_content_is_not_placeholder PASSED [ 20%]
+tests/test_canonical_repository_api.py::test_duplicate_category_rejected PASSED [ 26%]
+tests/test_canonical_repository_api.py::test_unknown_category_404 PASSED [ 33%]
+tests/test_canonical_repository_api.py::test_get_by_category PASSED      [ 40%]
+tests/test_canonical_repository_api.py::test_publish_version_increments_and_updates_status PASSED [ 46%]
+tests/test_canonical_repository_api.py::test_publish_version_missing_document_404 PASSED [ 53%]
+tests/test_canonical_repository_api.py::test_version_history_is_append_only PASSED [ 60%]
+tests/test_canonical_repository_api.py::test_get_specific_version PASSED [ 66%]
+tests/test_canonical_repository_api.py::test_get_missing_version_404 PASSED [ 73%]
+tests/test_canonical_repository_api.py::test_verify_chain_intact PASSED  [ 80%]
+tests/test_canonical_repository_api.py::test_list_documents PASSED       [ 86%]
+tests/test_canonical_repository_api.py::test_access_policy_defaults_present_but_not_enforced PASSED [ 93%]
+tests/test_canonical_repository_api.py::test_custom_access_policy_is_stored PASSED [100%]
+
+============================== 15 passed in 0.94s ==============================

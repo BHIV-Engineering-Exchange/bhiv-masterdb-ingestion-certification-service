@@ -1,0 +1,26 @@
+{
+  "status_code": 200,
+  "body": {
+    "count": 1,
+    "documents": [
+      {
+        "id": "doc-4b03dc8aac36",
+        "category": "bcaes_vol_4",
+        "title": "BCAES Volume 4 - Master Product & Capability Registry",
+        "owner": "Kavy",
+        "status": "published",
+        "access_policy": {
+          "read_roles": [
+            "ecosystem-reader"
+          ],
+          "write_roles": [
+            "bcaes-editor"
+          ]
+        },
+        "current_version": 2,
+        "created_at": "2026-07-29T07:21:36.598655+00:00",
+        "updated_at": "2026-07-29T07:21:36.608919+00:00"
+      }
+    ]
+  }
+}

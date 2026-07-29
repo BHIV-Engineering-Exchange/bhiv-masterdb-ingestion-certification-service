@@ -34,6 +34,12 @@ thing.
 
 ## 3. Access control — schema now, enforcement later (confirmed 2026-07-22)
 
+> **Update, 28 July 2026:** enforcement is now real — see
+> `PRODUCTION_HARDENING.md`. `auth/` added real signed-token
+> infrastructure and every route now checks `read_roles`/`write_roles`
+> for real. The decision record below is kept as-is for history; treat
+> "enforced later" in it as now done.
+
 This repo has no real identity/auth layer anywhere yet — no login, no API
 keys, nothing to check a role claim against. Two options were on the
 table: fake enforcement against a self-declared identity, or build the

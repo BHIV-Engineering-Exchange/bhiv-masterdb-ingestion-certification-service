@@ -1,0 +1,22 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python
+cachedir: .pytest_cache
+rootdir: /home/claude/repo/bhiv-masterdb-ingestion-certification-service-main
+configfile: pytest.ini
+plugins: anyio-4.14.2, cov-7.1.0
+collecting ... collected 12 items
+
+tests/test_auth_service.py::test_issue_and_decode_round_trip PASSED      [  8%]
+tests/test_auth_service.py::test_decode_rejects_tampered_token PASSED    [ 16%]
+tests/test_auth_service.py::test_decode_rejects_token_signed_with_different_secret PASSED [ 25%]
+tests/test_auth_service.py::test_decode_rejects_expired_token PASSED     [ 33%]
+tests/test_auth_service.py::test_no_secret_and_no_env_var_generates_a_working_random_secret PASSED [ 41%]
+tests/test_auth_service.py::test_env_var_secret_is_used_when_no_explicit_key PASSED [ 50%]
+tests/test_persistence.py::test_bcaes_registry_default_is_pure_in_memory_no_disk_touched PASSED [ 58%]
+tests/test_persistence.py::test_bcaes_registry_persists_across_a_fresh_instance PASSED [ 66%]
+tests/test_persistence.py::test_bcaes_registry_update_persists PASSED    [ 75%]
+tests/test_persistence.py::test_bcaes_registry_delete_persists PASSED    [ 83%]
+tests/test_persistence.py::test_canonical_repository_persists_document_and_versions_across_fresh_instance PASSED [ 91%]
+tests/test_persistence.py::test_canonical_repository_default_is_pure_in_memory_no_disk_touched PASSED [100%]
+
+============================== 12 passed in 1.32s ==============================

@@ -4,9 +4,24 @@ BCAES Canonical Registry Service — orchestration layer consumed by main.py.
 Wraps CanonicalRegistryStore + graph.py + validators.py behind a single
 object so the FastAPI layer stays thin, matching the pattern already used
 by PackageRegistryService / SharedDataRegistryService elsewhere in this repo.
+
+RBAC (added in the production-hardening pass): `register`/`update`/`delete`
+accept optional `actor`/`actor_roles`. When omitted (the default), no
+check runs — this keeps every existing direct/service-level caller (and
+`tests/test_bcaes_registry_service.py`) working unchanged, on the
+principle that the service object itself doesn't mandate an identity
+layer; `main.py`'s HTTP routes are what always supply one, sourced from a
+verified JWT (see `auth/`). When `actor` is provided, the check is: does
+`actor` appear in the relevant `authority_boundaries` list, or does any
+role in `actor_roles` appear there, or does `actor_roles` contain
+`auth.constants.ADMIN_ROLE`? For `register`, "relevant" means the
+authority_boundaries being requested for the new object (you can't grant
+authority you don't hold). For `update`/`delete`, it means the existing
+object's current authority_boundaries.
 """
 from typing import Dict, List, Optional
 
+from auth.constants import ADMIN_ROLE
 from bcaes_registry import graph, snapshot, validators
 from bcaes_registry.convergence_models import ConvergenceRecord, ConvergenceUpdateRequest
 from bcaes_registry.convergence_store import ConvergenceStore
@@ -16,27 +31,84 @@ from bcaes_registry.models import (
     RegistryType,
     UpdateObjectRequest,
 )
-from bcaes_registry.store import CanonicalRegistryStore, DependencyNotFoundError, ObjectNotFoundError
+from bcaes_registry.store import (
+    CanonicalRegistryStore,
+    DependencyNotFoundError,
+    ObjectNotFoundError,
+    PermissionDeniedError,
+)
 
-__all__ = ["BCAESRegistryService", "ObjectNotFoundError", "DependencyNotFoundError"]
+__all__ = [
+    "BCAESRegistryService",
+    "ObjectNotFoundError",
+    "DependencyNotFoundError",
+    "PermissionDeniedError",
+]
+
+
+def _has_authority(actor: Optional[str], actor_roles: Optional[List[str]], boundaries: List[str]) -> bool:
+    if actor is None:
+        return True  # no identity supplied -> enforcement not requested by the caller
+    roles = actor_roles or []
+    if ADMIN_ROLE in roles:
+        return True
+    if actor in boundaries:
+        return True
+    return bool(set(roles) & set(boundaries))
 
 
 class BCAESRegistryService:
-    def __init__(self) -> None:
-        self._store = CanonicalRegistryStore()
+    def __init__(self, persist_dir: Optional[str] = None) -> None:
+        self._store = CanonicalRegistryStore(persist_dir=persist_dir)
         self._convergence_store = ConvergenceStore(self._store)
 
     # -- registry CRUD ---------------------------------------------------
 
-    def register(self, registry_type: RegistryType, request: RegisterObjectRequest) -> RegistryObject:
+    def register(
+        self,
+        registry_type: RegistryType,
+        request: RegisterObjectRequest,
+        actor: Optional[str] = None,
+        actor_roles: Optional[List[str]] = None,
+    ) -> RegistryObject:
+        if not _has_authority(actor, actor_roles, request.authority_boundaries):
+            raise PermissionDeniedError(
+                f"'{actor}' is not in the requested authority_boundaries "
+                f"{request.authority_boundaries} and holds no matching role."
+            )
         obj = self._store.register(registry_type, request)
         return self._store.with_derived_consumers(obj)
 
-    def update(self, registry_type: RegistryType, object_id: str, request: UpdateObjectRequest) -> RegistryObject:
+    def update(
+        self,
+        registry_type: RegistryType,
+        object_id: str,
+        request: UpdateObjectRequest,
+        actor: Optional[str] = None,
+        actor_roles: Optional[List[str]] = None,
+    ) -> RegistryObject:
+        existing = self._store.get(registry_type, object_id)
+        if not _has_authority(actor, actor_roles, existing.authority_boundaries):
+            raise PermissionDeniedError(
+                f"'{actor}' is not in '{object_id}'s authority_boundaries "
+                f"{existing.authority_boundaries} and holds no matching role."
+            )
         obj = self._store.update(registry_type, object_id, request)
         return self._store.with_derived_consumers(obj)
 
-    def delete(self, registry_type: RegistryType, object_id: str) -> None:
+    def delete(
+        self,
+        registry_type: RegistryType,
+        object_id: str,
+        actor: Optional[str] = None,
+        actor_roles: Optional[List[str]] = None,
+    ) -> None:
+        existing = self._store.get(registry_type, object_id)
+        if not _has_authority(actor, actor_roles, existing.authority_boundaries):
+            raise PermissionDeniedError(
+                f"'{actor}' is not in '{object_id}'s authority_boundaries "
+                f"{existing.authority_boundaries} and holds no matching role."
+            )
         self._store.delete(registry_type, object_id)
 
     def get(self, registry_type: RegistryType, object_id: str) -> RegistryObject:

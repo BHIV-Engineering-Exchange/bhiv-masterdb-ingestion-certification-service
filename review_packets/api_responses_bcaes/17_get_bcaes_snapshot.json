@@ -1,7 +1,7 @@
 {
   "status_code": 200,
   "body": {
-    "generated_at": "2026-07-22T08:49:38.406776+00:00",
+    "generated_at": "2026-07-29T07:21:11.921161+00:00",
     "registries": {
       "domain": 1,
       "capability": 1,
@@ -26,8 +26,8 @@
       "objects_with_convergence_data": 1,
       "objects_without_convergence_data": 2,
       "untracked_object_ids": [
-        "cap-df7f531fd985",
-        "dom-8b2a7adbbfdb"
+        "cap-035429711807",
+        "dom-41a904f11b7f"
       ],
       "average_maturity_score": 0.1429,
       "production_ready_count": 0

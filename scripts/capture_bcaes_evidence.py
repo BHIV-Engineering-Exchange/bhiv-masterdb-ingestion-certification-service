@@ -22,6 +22,9 @@ OUT.mkdir(parents=True, exist_ok=True)
 main.bcaes_registry_service = main.BCAESRegistryService()
 client = TestClient(main.app)
 
+_token, _ = main.auth_service.issue_token("Kavy", ["bhiv-admin"])
+_AUTH = {"Authorization": f"Bearer {_token}"}
+
 
 def dump(name: str, resp) -> None:
     path = OUT / f"{name}.json"
@@ -39,6 +42,7 @@ domain = client.post(
         "authority_boundaries": ["Kavy"],
         "links": ["https://internal/bhiv/masterdb"],
     },
+    headers=_AUTH,
 )
 dump("01_post_bcaes_register_domain", domain)
 
@@ -51,6 +55,7 @@ capability = client.post(
         "authority_boundaries": ["Kavy"],
         "dependencies": [{"id": domain.json()["id"]}],
     },
+    headers=_AUTH,
 )
 dump("02_post_bcaes_register_capability_with_dependency", capability)
 
@@ -63,6 +68,7 @@ product = client.post(
         "authority_boundaries": ["Kavy", "Nupur"],
         "dependencies": [{"id": capability.json()["id"]}],
     },
+    headers=_AUTH,
 )
 dump("03_post_bcaes_register_product", product)
 
@@ -88,9 +94,25 @@ dump(
         "/bcaes/registries/platform_service/objects",
         json={"name": "Ghost Dependent", "purpose": "p", "owner": "Kavy",
               "authority_boundaries": ["Kavy"], "dependencies": [{"id": "cap-ghost"}]},
+        headers=_AUTH,
     ),
 )
 dump("10_get_bcaes_unknown_registry_404", client.get("/bcaes/registries/not_a_registry/objects"))
+dump(
+    "10b_post_bcaes_no_token_401",
+    client.post(
+        "/bcaes/registries/domain/objects",
+        json={"name": "X", "purpose": "p", "owner": "Kavy", "authority_boundaries": ["Kavy"]},
+    ),
+)
+dump(
+    "10c_post_bcaes_wrong_actor_403",
+    client.post(
+        "/bcaes/registries/domain/objects",
+        json={"name": "X", "purpose": "p", "owner": "Kavy", "authority_boundaries": ["Kavy"]},
+        headers={"Authorization": f"Bearer {main.auth_service.issue_token('SomeoneElse', [])[0]}"},
+    ),
+)
 
 # 5. Validation suite.
 dump("11_get_bcaes_validate_architecture_pass", client.get("/bcaes/validate/architecture"))

@@ -1,0 +1,13 @@
+{
+  "status_code": 200,
+  "body": {
+    "document_id": "doc-4b03dc8aac36",
+    "version_number": 2,
+    "content": "Real BCAES Vol 4 content would go here.",
+    "content_hash": "99ba4d6871035f3e6bb0f3f20e7b6ad84533e7f55af56b6d85e9609c0250b20a",
+    "change_note": "centrally populated",
+    "published_by": "TaskLead",
+    "published_at": "2026-07-29T07:21:36.608919+00:00",
+    "is_placeholder": false
+  }
+}

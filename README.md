@@ -24,6 +24,10 @@ It also hosts the BCAB/BCAES Canonical Document Repository
 the actual BCAB/BCAES documents (currently placeholder content, pending
 central population) — see `CANONICAL_REPOSITORY_ARCHITECTURE.md`.
 
+Production hardening (real JWT auth, RBAC enforcement, opt-in disk
+persistence, audit logging, health/readiness endpoints) is tracked in
+`PRODUCTION_HARDENING.md`, including what's still not done and why.
+
 
 ## Scope
 

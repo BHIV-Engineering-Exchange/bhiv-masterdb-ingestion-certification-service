@@ -1,0 +1,10 @@
+{
+  "status_code": 401,
+  "body": {
+    "error": {
+      "type": "http_error",
+      "message": "Missing bearer token. Obtain one from POST /auth/token.",
+      "path": "/bcaes/registries/domain/objects"
+    }
+  }
+}

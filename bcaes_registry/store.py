@@ -1,10 +1,21 @@
 """
-In-memory canonical store for the eleven BCAES registries.
+In-memory (optionally disk-persisted) canonical store for the eleven
+BCAES registries.
 
-Kept intentionally simple: one dict per registry_type, keyed by object id.
-Consumers are derived (see models.RegistryObject docstring) rather than
-stored redundantly, so there is exactly one place edges are written
-(`dependencies`) and zero places they can silently drift.
+One dict per registry_type, keyed by object id. Consumers are derived
+(see models.RegistryObject docstring) rather than stored redundantly, so
+there is exactly one place edges are written (`dependencies`) and zero
+places they can silently drift.
+
+PERSISTENCE: opt-in via `persist_dir`. Left `None` (the default), the
+store behaves exactly as before — pure in-memory, reset on every process
+restart, which is what every existing test relies on for isolation (see
+`tests/test_bcaes_api.py`'s `_fresh_registry` fixture). Passed a
+directory, every register/update/delete is mirrored to a JSON file there
+via the same `ArtifactStore` pattern used elsewhere in this repo
+(`services/artifact_store.py`), and existing objects are loaded back on
+`__init__`. See `PRODUCTION_HARDENING.md` for the caveat about Render's
+default filesystem being ephemeral without an attached persistent Disk.
 """
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -17,6 +28,7 @@ from bcaes_registry.models import (
     UpdateObjectRequest,
     new_object_id,
 )
+from services.artifact_store import ArtifactStore
 
 
 class ObjectNotFoundError(Exception):
@@ -28,11 +40,37 @@ class DependencyNotFoundError(Exception):
     not exist anywhere in the registry."""
 
 
+class PermissionDeniedError(Exception):
+    """Raised when an authenticated actor lacks authority over an object
+    (see BCAESRegistryService's RBAC checks — this store itself has no
+    concept of identity; the service layer decides, this just carries the
+    error)."""
+
+
 class CanonicalRegistryStore:
-    def __init__(self) -> None:
+    def __init__(self, persist_dir: Optional[str] = None) -> None:
         self._objects: Dict[RegistryType, Dict[str, RegistryObject]] = {
             rt: {} for rt in RegistryType
         }
+        self._artifact_store: Optional[ArtifactStore] = None
+        if persist_dir is not None:
+            self._artifact_store = ArtifactStore(reports_dir=persist_dir)
+            self._load_from_disk()
+
+    def _load_from_disk(self) -> None:
+        for record in self._artifact_store.list_all():
+            obj = RegistryObject(**record)
+            self._objects[obj.registry_type][obj.id] = obj
+
+    def _persist(self, obj: RegistryObject) -> None:
+        if self._artifact_store is not None:
+            self._artifact_store.save(obj.id, obj.model_dump(mode="json"))
+
+    def _unpersist(self, object_id: str) -> None:
+        if self._artifact_store is not None:
+            path = self._artifact_store.report_path(object_id)
+            if path.exists():
+                path.unlink()
 
     # -- lookup ----------------------------------------------------------
 
@@ -111,6 +149,7 @@ class CanonicalRegistryStore:
             links=request.links,
         )
         self._objects[registry_type][object_id] = obj
+        self._persist(obj)
         return obj
 
     def update(
@@ -139,11 +178,13 @@ class CanonicalRegistryStore:
         data["updated_at"] = datetime.now(timezone.utc).isoformat()
         updated = RegistryObject(**data)
         self._objects[registry_type][object_id] = updated
+        self._persist(updated)
         return updated
 
     def delete(self, registry_type: RegistryType, object_id: str) -> None:
         self.get(registry_type, object_id)  # raises if missing
         del self._objects[registry_type][object_id]
+        self._unpersist(object_id)
 
     def _exists(self, object_id: str) -> bool:
         try:

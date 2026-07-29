@@ -1,0 +1,28 @@
+{
+  "status_code": 200,
+  "body": {
+    "document_id": "doc-4b03dc8aac36",
+    "versions": [
+      {
+        "document_id": "doc-4b03dc8aac36",
+        "version_number": 1,
+        "content": "[PLACEHOLDER \u2014 not the real bcaes_vol_4 text]\n\nThis is demo scaffolding for the BCAES Canonical Repository API. The actual bcaes_vol_4 content will be populated centrally by the BCAES task owner once this repository is confirmed ready \u2014 see CANONICAL_REPOSITORY_ARCHITECTURE.md. Do not treat this content as authoritative for any architectural decision.",
+        "content_hash": "6e31118de3828d0cd643c3f036b22d0b6a61603036fb6f613832f374d2bb264e",
+        "change_note": "Initial registration.",
+        "published_by": "Kavy",
+        "published_at": "2026-07-29T07:21:36.598691+00:00",
+        "is_placeholder": true
+      },
+      {
+        "document_id": "doc-4b03dc8aac36",
+        "version_number": 2,
+        "content": "Real BCAES Vol 4 content would go here.",
+        "content_hash": "99ba4d6871035f3e6bb0f3f20e7b6ad84533e7f55af56b6d85e9609c0250b20a",
+        "change_note": "centrally populated",
+        "published_by": "TaskLead",
+        "published_at": "2026-07-29T07:21:36.608919+00:00",
+        "is_placeholder": false
+      }
+    ]
+  }
+}

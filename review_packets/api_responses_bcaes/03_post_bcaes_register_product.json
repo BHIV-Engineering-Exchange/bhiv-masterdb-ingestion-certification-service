@@ -1,7 +1,7 @@
 {
   "status_code": 200,
   "body": {
-    "id": "prd-b6ed8fe4dd10",
+    "id": "prd-85bc2a9c60fb",
     "registry_type": "product",
     "classification": "product",
     "name": "MASTERDB Ingestion Certification Service",
@@ -11,7 +11,7 @@
     "version": "1.0",
     "dependencies": [
       {
-        "id": "cap-df7f531fd985",
+        "id": "cap-035429711807",
         "required_version": null
       }
     ],
@@ -21,7 +21,7 @@
       "Nupur"
     ],
     "links": [],
-    "created_at": "2026-07-22T08:49:38.376107+00:00",
-    "updated_at": "2026-07-22T08:49:38.376116+00:00"
+    "created_at": "2026-07-29T07:21:11.881675+00:00",
+    "updated_at": "2026-07-29T07:21:11.881684+00:00"
   }
 }

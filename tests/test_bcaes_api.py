@@ -17,6 +17,11 @@ def client() -> TestClient:
     return TestClient(main.app)
 
 
+def _auth_headers(actor="Kavy", roles=None):
+    token, _ = main.auth_service.issue_token(actor, roles or [])
+    return {"Authorization": f"Bearer {token}"}
+
+
 def _register(client, registry_type, name, owner="Kavy", dependencies=None):
     body = {
         "name": name,
@@ -25,7 +30,9 @@ def _register(client, registry_type, name, owner="Kavy", dependencies=None):
         "authority_boundaries": [owner],
         "dependencies": dependencies or [],
     }
-    resp = client.post(f"/bcaes/registries/{registry_type}/objects", json=body)
+    resp = client.post(
+        f"/bcaes/registries/{registry_type}/objects", json=body, headers=_auth_headers(actor=owner)
+    )
     assert resp.status_code == 200, resp.text
     return resp.json()
 
@@ -35,6 +42,32 @@ def test_register_and_get_object(client):
     resp = client.get(f"/bcaes/registries/capability/objects/{created['id']}")
     assert resp.status_code == 200
     assert resp.json()["name"] == "Schema Validation"
+
+
+def test_register_without_token_returns_401(client):
+    resp = client.post(
+        "/bcaes/registries/capability/objects",
+        json={"name": "X", "purpose": "p", "owner": "Kavy", "authority_boundaries": ["Kavy"]},
+    )
+    assert resp.status_code == 401
+
+
+def test_register_with_actor_not_in_authority_boundaries_returns_403(client):
+    resp = client.post(
+        "/bcaes/registries/capability/objects",
+        json={"name": "X", "purpose": "p", "owner": "Kavy", "authority_boundaries": ["Kavy"]},
+        headers=_auth_headers(actor="SomeoneElse"),
+    )
+    assert resp.status_code == 403
+
+
+def test_register_with_admin_role_bypasses_authority_check(client):
+    resp = client.post(
+        "/bcaes/registries/capability/objects",
+        json={"name": "X", "purpose": "p", "owner": "Kavy", "authority_boundaries": ["Kavy"]},
+        headers=_auth_headers(actor="SomeoneElse", roles=["bhiv-admin"]),
+    )
+    assert resp.status_code == 200
 
 
 def test_unknown_registry_type_returns_404(client):
@@ -57,6 +90,7 @@ def test_register_with_missing_dependency_returns_400(client):
             "authority_boundaries": ["Kavy"],
             "dependencies": [{"id": "cap-ghost"}],
         },
+        headers=_auth_headers(actor="Kavy"),
     )
     assert resp.status_code == 400
 
@@ -126,6 +160,7 @@ def test_update_object(client):
     resp = client.patch(
         f"/bcaes/registries/engine/objects/{created['id']}",
         json={"status": "active", "version": "2.0"},
+        headers=_auth_headers(actor="Kavy"),
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -133,9 +168,27 @@ def test_update_object(client):
     assert body["version"] == "2.0"
 
 
+def test_update_object_without_authority_returns_403(client):
+    created = _register(client, "engine", "Scoring Engine")
+    resp = client.patch(
+        f"/bcaes/registries/engine/objects/{created['id']}",
+        json={"status": "active"},
+        headers=_auth_headers(actor="SomeoneElse"),
+    )
+    assert resp.status_code == 403
+
+
 def test_delete_object(client):
     created = _register(client, "framework", "Retry Framework")
-    resp = client.delete(f"/bcaes/registries/framework/objects/{created['id']}")
+    resp = client.delete(
+        f"/bcaes/registries/framework/objects/{created['id']}", headers=_auth_headers(actor="Kavy")
+    )
     assert resp.status_code == 200
     followup = client.get(f"/bcaes/registries/framework/objects/{created['id']}")
     assert followup.status_code == 404
+
+
+def test_delete_object_without_token_returns_401(client):
+    created = _register(client, "framework", "Retry Framework")
+    resp = client.delete(f"/bcaes/registries/framework/objects/{created['id']}")
+    assert resp.status_code == 401

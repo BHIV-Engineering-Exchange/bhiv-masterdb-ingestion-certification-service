@@ -1,2 +1,6 @@
 .env
 venv
+storage/
+__pycache__/
+*.pyc
+.coverage

@@ -16,6 +16,7 @@ def client() -> TestClient:
 
 
 def _register_product(client, name="MASTERDB"):
+    token, _ = main.auth_service.issue_token("Kavy", [])
     resp = client.post(
         "/bcaes/registries/product/objects",
         json={
@@ -24,6 +25,7 @@ def _register_product(client, name="MASTERDB"):
             "owner": "Kavy",
             "authority_boundaries": ["Kavy"],
         },
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 200, resp.text
     return resp.json()

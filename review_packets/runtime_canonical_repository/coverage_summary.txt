@@ -1,0 +1,13 @@
+...............                                                          [100%]
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.3-final-0 ________________
+
+Name                               Stmts   Miss  Cover   Missing
+----------------------------------------------------------------
+canonical_repository/__init__.py       0      0   100%
+canonical_repository/models.py        53      0   100%
+canonical_repository/service.py       29      0   100%
+canonical_repository/store.py         68      2    97%   122, 156
+----------------------------------------------------------------
+TOTAL                                150      2    99%
+15 passed in 3.22s

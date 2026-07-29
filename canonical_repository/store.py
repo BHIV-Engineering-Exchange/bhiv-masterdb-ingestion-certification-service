@@ -1,15 +1,15 @@
 """
 BCAES/BCAB Canonical Document Repository — store.
 
-In-memory, mirroring bcaes_registry/store.py's explicit scope decision
-(see BCAES_REGISTRY_ARCHITECTURE.md §5): this is a data structure + API
-contract, not a persistence commitment. Swapping in real storage later
-(e.g. Postgres or the same JSON-per-key ArtifactStore pattern used
-elsewhere in this repo) does not change the service or API layer above it.
+PERSISTENCE: opt-in via `persist_dir`, same pattern and same default
+(`None` = pure in-memory, matching every existing test's isolation
+assumption) as `bcaes_registry/store.py`. Passed a directory, each
+document (metadata + full version history, as one JSON blob per document
+id) is mirrored via `ArtifactStore` and reloaded on `__init__`.
 """
 import hashlib
 import uuid
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from canonical_repository.models import (
     AccessPolicy,
@@ -18,6 +18,7 @@ from canonical_repository.models import (
     DocumentStatus,
     DocumentVersion,
 )
+from services.artifact_store import ArtifactStore
 
 
 class DocumentNotFoundError(Exception):
@@ -30,15 +31,42 @@ class DuplicateCategoryError(Exception):
     exists to prevent."""
 
 
+class PermissionDeniedError(Exception):
+    """Raised when an authenticated actor lacks the required read/write
+    role for a document (see CanonicalRepositoryService)."""
+
+
 def _content_hash(content: str, previous_hash: str = "") -> str:
     return hashlib.sha256((previous_hash + content).encode("utf-8")).hexdigest()
 
 
 class CanonicalRepositoryStore:
-    def __init__(self) -> None:
+    def __init__(self, persist_dir: Optional[str] = None) -> None:
         self._documents: Dict[str, CanonicalDocument] = {}
         self._versions: Dict[str, List[DocumentVersion]] = {}
         self._category_index: Dict[DocumentCategory, str] = {}
+        self._artifact_store: Optional[ArtifactStore] = None
+        if persist_dir is not None:
+            self._artifact_store = ArtifactStore(reports_dir=persist_dir)
+            self._load_from_disk()
+
+    def _load_from_disk(self) -> None:
+        for record in self._artifact_store.list_all():
+            document = CanonicalDocument(**record["document"])
+            versions = [DocumentVersion(**v) for v in record["versions"]]
+            self._documents[document.id] = document
+            self._versions[document.id] = versions
+            self._category_index[document.category] = document.id
+
+    def _persist(self, document_id: str) -> None:
+        if self._artifact_store is not None:
+            self._artifact_store.save(
+                document_id,
+                {
+                    "document": self._documents[document_id].model_dump(mode="json"),
+                    "versions": [v.model_dump(mode="json") for v in self._versions[document_id]],
+                },
+            )
 
     def register(
         self,
@@ -79,6 +107,7 @@ class CanonicalRepositoryStore:
         self._documents[doc_id] = document
         self._versions[doc_id] = [version]
         self._category_index[category] = doc_id
+        self._persist(doc_id)
         return document
 
     def publish_version(
@@ -108,6 +137,7 @@ class CanonicalRepositoryStore:
             }
         )
         self._documents[document_id] = updated
+        self._persist(document_id)
         return version
 
     def get(self, document_id: str) -> CanonicalDocument:

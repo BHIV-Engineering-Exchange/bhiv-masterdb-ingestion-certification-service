@@ -1,10 +1,11 @@
 import logging
+import os
 from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
 
 load_dotenv()
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from models import (
     CertificationRequest,
@@ -62,6 +63,11 @@ from bcaes_registry.models import UpdateObjectRequest as BCAESUpdateObjectReques
 from bcaes_registry.service import BCAESRegistryService
 from bcaes_registry.store import DependencyNotFoundError as BCAESDependencyNotFoundError
 from bcaes_registry.store import ObjectNotFoundError as BCAESObjectNotFoundError
+from bcaes_registry.store import PermissionDeniedError as BCAESPermissionDeniedError
+
+from auth.dependencies import build_identity_dependency
+from auth.models import AuthIdentity, TokenRequest, TokenResponse
+from auth.service import AuthService
 
 from canonical_repository.models import DocumentCategory as CanonicalDocumentCategory
 from canonical_repository.models import PublishVersionRequest as CanonicalPublishVersionRequest
@@ -69,6 +75,7 @@ from canonical_repository.models import RegisterDocumentRequest as CanonicalRegi
 from canonical_repository.service import CanonicalRepositoryService
 from canonical_repository.store import DocumentNotFoundError as CanonicalDocumentNotFoundError
 from canonical_repository.store import DuplicateCategoryError as CanonicalDuplicateCategoryError
+from canonical_repository.store import PermissionDeniedError as CanonicalPermissionDeniedError
 
 
 
@@ -85,6 +92,18 @@ if not logger.handlers:
     )
     logger.addHandler(_handler)
     logger.setLevel(logging.INFO)
+
+# Separate logger/stream for audit events (every mutating bcaes_registry and
+# canonical_repository call) so these can be filtered/shipped independently
+# of general application logs. Same stdout-only approach as `logger` above —
+# a real production setup would ship this to a dedicated log sink; that's
+# infra this sandbox can't stand up (see PRODUCTION_HARDENING.md).
+audit_logger = logging.getLogger("masterdb.audit")
+if not audit_logger.handlers:
+    _audit_handler = logging.StreamHandler()
+    _audit_handler.setFormatter(logging.Formatter("%(asctime)s AUDIT masterdb: %(message)s"))
+    audit_logger.addHandler(_audit_handler)
+    audit_logger.setLevel(logging.INFO)
 
 
 # ---------------------------------------------------------------------------
@@ -154,11 +173,27 @@ tantra_interface_service = TantraInterfaceService(
 shared_data_registry_service = SharedDataRegistryService()
 shared_service_registry = build_shared_service_registry()
 
+# --- Storage root for opt-in disk persistence -------------------------------
+# Unset (the default): both services below stay pure in-memory, exactly as
+# before this pass — this matters for test isolation (every test module's
+# fixtures recreate these services fresh) and for local dev where nobody
+# asked for persistence. Set MASTERDB_STORAGE_DIR to opt in for real.
+# NOTE: on Render's default (non-Disk) plans the filesystem is ephemeral and
+# is wiped on every deploy/restart — this directory needs a persistent Disk
+# attached in Render's dashboard to actually survive across restarts in
+# production. See PRODUCTION_HARDENING.md.
+_STORAGE_ROOT = os.environ.get("MASTERDB_STORAGE_DIR")
+
+
+def _persist_path(subdir: str) -> Optional[str]:
+    return os.path.join(_STORAGE_ROOT, subdir) if _STORAGE_ROOT else None
+
+
 # --- BCAES Canonical Registry (ecosystem bootstrap) ------------------------
 # Catalogs architectural objects (domains, capabilities, platform services,
 # products, programs, frameworks, engines, runtimes, integrations, knowledge
 # assets, interfaces). See BCAES_REGISTRY_ARCHITECTURE.md.
-bcaes_registry_service = BCAESRegistryService()
+bcaes_registry_service = BCAESRegistryService(persist_dir=_persist_path("bcaes_registry"))
 
 # --- BCAB/BCAES Canonical Document Repository -------------------------------
 # Single source of truth for the BCAB and BCAES Volume 1-7 *documents*
@@ -166,7 +201,14 @@ bcaes_registry_service = BCAESRegistryService()
 # ecosystem's products/capabilities/services). See
 # CANONICAL_REPOSITORY_ARCHITECTURE.md. Content is placeholder until the
 # task owner populates it centrally.
-canonical_repository_service = CanonicalRepositoryService()
+canonical_repository_service = CanonicalRepositoryService(persist_dir=_persist_path("canonical_repository"))
+
+# --- Auth (JWT issuance + verification) --------------------------------------
+# See auth/service.py module docstring for exactly what this does and does
+# not prove. get_identity is a FastAPI dependency bound to this specific
+# auth_service instance/secret.
+auth_service = AuthService()
+get_identity = build_identity_dependency(auth_service)
 shared_dependency_resolver = SharedDependencyResolver(shared_service_registry)
 
 
@@ -649,13 +691,20 @@ def _bcaes_registry_type(registry_type: str) -> BCAESRegistryType:
 
 
 @app.post("/bcaes/registries/{registry_type}/objects")
-def register_bcaes_object(registry_type: str, request: BCAESRegisterObjectRequest) -> dict:
+def register_bcaes_object(
+    registry_type: str, request: BCAESRegisterObjectRequest, identity: AuthIdentity = Depends(get_identity)
+) -> dict:
     rt = _bcaes_registry_type(registry_type)
     try:
-        obj = bcaes_registry_service.register(rt, request)
+        obj = bcaes_registry_service.register(rt, request, actor=identity.actor, actor_roles=identity.roles)
+        audit_logger.info(
+            "bcaes.register actor=%s registry_type=%s object_id=%s", identity.actor, registry_type, obj.id
+        )
         return obj.model_dump(mode="json")
     except BCAESDependencyNotFoundError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except BCAESPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @app.get("/bcaes/registries")
@@ -680,25 +729,40 @@ def get_bcaes_object(registry_type: str, object_id: str) -> dict:
 
 
 @app.patch("/bcaes/registries/{registry_type}/objects/{object_id}")
-def update_bcaes_object(registry_type: str, object_id: str, request: BCAESUpdateObjectRequest) -> dict:
+def update_bcaes_object(
+    registry_type: str,
+    object_id: str,
+    request: BCAESUpdateObjectRequest,
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
     rt = _bcaes_registry_type(registry_type)
     try:
-        obj = bcaes_registry_service.update(rt, object_id, request)
+        obj = bcaes_registry_service.update(
+            rt, object_id, request, actor=identity.actor, actor_roles=identity.roles
+        )
+        audit_logger.info("bcaes.update actor=%s object_id=%s", identity.actor, object_id)
         return obj.model_dump(mode="json")
     except BCAESObjectNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except BCAESDependencyNotFoundError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except BCAESPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @app.delete("/bcaes/registries/{registry_type}/objects/{object_id}")
-def delete_bcaes_object(registry_type: str, object_id: str) -> dict:
+def delete_bcaes_object(
+    registry_type: str, object_id: str, identity: AuthIdentity = Depends(get_identity)
+) -> dict:
     rt = _bcaes_registry_type(registry_type)
     try:
-        bcaes_registry_service.delete(rt, object_id)
+        bcaes_registry_service.delete(rt, object_id, actor=identity.actor, actor_roles=identity.roles)
+        audit_logger.info("bcaes.delete actor=%s object_id=%s", identity.actor, object_id)
         return {"deleted": object_id}
     except BCAESObjectNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except BCAESPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @app.get("/bcaes/search")
@@ -811,129 +875,191 @@ def get_bcaes_snapshot() -> dict:
 # ---------------------------------------------------------------------------
 # BCAB/BCAES Canonical Document Repository
 # ---------------------------------------------------------------------------
-# `actor` and `roles` are self-reported by the caller (query params below)
-# rather than pulled from a real identity layer, because none exists
-# anywhere in this repo yet. Every document already declares read_roles /
-# write_roles (see canonical_repository/models.py::AccessPolicy) — nothing
-# here checks actor_roles against them yet. See
-# canonical_repository/service.py module docstring for exactly where that
-# enforcement plugs in once real auth exists.
-
-
-def _parse_roles(roles: Optional[str]) -> List[str]:
-    if not roles:
-        return []
-    return [r.strip() for r in roles.split(",") if r.strip()]
+# Every route requires a verified JWT (Authorization: Bearer <token>, issued
+# by POST /auth/token) — reads included, not just writes. This replaced a
+# schema-only pass (self-reported `actor`/`roles` query params, nothing
+# checked) once real signed-token infrastructure existed to enforce against.
+# See canonical_repository/service.py module docstring for exactly what's
+# checked, and auth/service.py for what "verified" does and doesn't mean.
 
 
 @app.post("/canonical-repository/documents")
 def register_canonical_document(
-    request: CanonicalRegisterDocumentRequest,
-    actor: str = Query(...),
-    roles: Optional[str] = Query(default=None),
+    request: CanonicalRegisterDocumentRequest, identity: AuthIdentity = Depends(get_identity)
 ) -> dict:
     try:
-        doc = canonical_repository_service.register(request, actor, _parse_roles(roles))
+        doc = canonical_repository_service.register(request, identity.actor, identity.roles)
+        audit_logger.info(
+            "canonical_repository.register actor=%s category=%s document_id=%s",
+            identity.actor, request.category.value, doc.id,
+        )
         return doc.model_dump(mode="json")
     except CanonicalDuplicateCategoryError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except CanonicalPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @app.get("/canonical-repository/documents")
-def list_canonical_documents(
-    actor: str = Query(...), roles: Optional[str] = Query(default=None)
-) -> dict:
-    docs = canonical_repository_service.list_all(actor, _parse_roles(roles))
+def list_canonical_documents(identity: AuthIdentity = Depends(get_identity)) -> dict:
+    docs = canonical_repository_service.list_all(identity.actor, identity.roles)
     return {"count": len(docs), "documents": [d.model_dump(mode="json") for d in docs]}
 
 
 @app.get("/canonical-repository/documents/{document_id}")
-def get_canonical_document(
-    document_id: str, actor: str = Query(...), roles: Optional[str] = Query(default=None)
-) -> dict:
+def get_canonical_document(document_id: str, identity: AuthIdentity = Depends(get_identity)) -> dict:
     try:
-        return canonical_repository_service.get(document_id, actor, _parse_roles(roles)).model_dump(
+        return canonical_repository_service.get(document_id, identity.actor, identity.roles).model_dump(
             mode="json"
         )
     except CanonicalDocumentNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CanonicalPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @app.get("/canonical-repository/by-category/{category}")
 def get_canonical_document_by_category(
-    category: str, actor: str = Query(...), roles: Optional[str] = Query(default=None)
+    category: str, identity: AuthIdentity = Depends(get_identity)
 ) -> dict:
     try:
         cat = CanonicalDocumentCategory(category)
     except ValueError:
         raise HTTPException(status_code=404, detail=f"Unknown document category '{category}'.")
     try:
-        return canonical_repository_service.get_by_category(cat, actor, _parse_roles(roles)).model_dump(
-            mode="json"
-        )
+        return canonical_repository_service.get_by_category(
+            cat, identity.actor, identity.roles
+        ).model_dump(mode="json")
     except CanonicalDocumentNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CanonicalPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @app.post("/canonical-repository/documents/{document_id}/versions")
 def publish_canonical_document_version(
     document_id: str,
     request: CanonicalPublishVersionRequest,
-    actor: str = Query(...),
-    roles: Optional[str] = Query(default=None),
+    identity: AuthIdentity = Depends(get_identity),
 ) -> dict:
     try:
         version = canonical_repository_service.publish_version(
-            document_id, request, actor, _parse_roles(roles)
+            document_id, request, identity.actor, identity.roles
+        )
+        audit_logger.info(
+            "canonical_repository.publish_version actor=%s document_id=%s version=%s",
+            identity.actor, document_id, version.version_number,
         )
         return version.model_dump(mode="json")
     except CanonicalDocumentNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CanonicalPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @app.get("/canonical-repository/documents/{document_id}/versions")
 def list_canonical_document_versions(
-    document_id: str, actor: str = Query(...), roles: Optional[str] = Query(default=None)
+    document_id: str, identity: AuthIdentity = Depends(get_identity)
 ) -> dict:
     try:
-        versions = canonical_repository_service.version_history(document_id, actor, _parse_roles(roles))
+        versions = canonical_repository_service.version_history(document_id, identity.actor, identity.roles)
         return {"document_id": document_id, "versions": [v.model_dump(mode="json") for v in versions]}
     except CanonicalDocumentNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CanonicalPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @app.get("/canonical-repository/documents/{document_id}/versions/{version_number}")
 def get_canonical_document_version(
-    document_id: str,
-    version_number: int,
-    actor: str = Query(...),
-    roles: Optional[str] = Query(default=None),
+    document_id: str, version_number: int, identity: AuthIdentity = Depends(get_identity)
 ) -> dict:
     try:
         version = canonical_repository_service.get_version(
-            document_id, version_number, actor, _parse_roles(roles)
+            document_id, version_number, identity.actor, identity.roles
         )
         return version.model_dump(mode="json")
     except CanonicalDocumentNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CanonicalPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @app.get("/canonical-repository/documents/{document_id}/latest")
 def get_canonical_document_latest(
-    document_id: str, actor: str = Query(...), roles: Optional[str] = Query(default=None)
+    document_id: str, identity: AuthIdentity = Depends(get_identity)
 ) -> dict:
     try:
-        version = canonical_repository_service.latest_version(document_id, actor, _parse_roles(roles))
+        version = canonical_repository_service.latest_version(document_id, identity.actor, identity.roles)
         return version.model_dump(mode="json")
     except CanonicalDocumentNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CanonicalPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @app.get("/canonical-repository/documents/{document_id}/verify")
 def verify_canonical_document_chain(
-    document_id: str, actor: str = Query(...), roles: Optional[str] = Query(default=None)
+    document_id: str, identity: AuthIdentity = Depends(get_identity)
 ) -> dict:
     try:
-        return canonical_repository_service.verify_chain(document_id, actor, _parse_roles(roles))
+        return canonical_repository_service.verify_chain(document_id, identity.actor, identity.roles)
     except CanonicalDocumentNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CanonicalPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# Auth — token issuance
+# ---------------------------------------------------------------------------
+
+
+@app.post("/auth/token", response_model=None)
+def issue_token(request: TokenRequest) -> dict:
+    """Issues a signed, expiring JWT for the given actor/roles. See
+    auth/service.py and auth/models.py module docstrings: this does not
+    verify the caller's real-world identity (no login step exists), but
+    the token itself is real — signed, tamper-evident, and time-limited —
+    and every write (and, for the canonical repository, every read) checks
+    the roles inside it for real."""
+    token, expires_at = auth_service.issue_token(request.actor, request.roles)
+    return TokenResponse(
+        access_token=token, actor=request.actor, roles=request.roles, expires_at=expires_at
+    ).model_dump(mode="json")
+
+
+# ---------------------------------------------------------------------------
+# Health / readiness
+# ---------------------------------------------------------------------------
+
+
+@app.get("/health")
+def health() -> dict:
+    """Liveness: the process is up and able to respond. Does not touch any
+    store or dependency."""
+    return {"status": "ok"}
+
+
+@app.get("/ready")
+def ready() -> dict:
+    """Readiness: the process is up AND its core stores are reachable and
+    responding. Deliberately does not check TANTRA/MDU/Bucket/InsightFlow —
+    this service has no live connection to any of them to check (see
+    PRODUCTION_HARDENING.md)."""
+    checks = {}
+    ok = True
+    try:
+        bcaes_registry_service.registry_summary()
+        checks["bcaes_registry"] = "ok"
+    except Exception as exc:  # noqa: BLE001 - readiness probe, report any failure
+        checks["bcaes_registry"] = f"error: {exc}"
+        ok = False
+    try:
+        canonical_repository_service.list_all(actor="_readiness_probe", actor_roles=[])
+        checks["canonical_repository"] = "ok"
+    except Exception as exc:  # noqa: BLE001
+        checks["canonical_repository"] = f"error: {exc}"
+        ok = False
+    status_code = 200 if ok else 503
+    return JSONResponse(status_code=status_code, content={"status": "ok" if ok else "degraded", "checks": checks})

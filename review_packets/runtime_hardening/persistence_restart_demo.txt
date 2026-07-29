@@ -1,0 +1,10 @@
+Using temp storage dir: /tmp/tmpxi3uwdwq
+
+=== Process 'A' (first run) ===
+Registered: prd-d273b648519e - MASTERDB
+Process 'A' exits (object thrown away, simulating a restart)
+
+=== Process 'B' (fresh instance, same directory) ===
+Reloaded from disk: prd-d273b648519e - MASTERDB (owner: Kavy)
+
+Persistence confirmed: data survived a full service-instance replacement.

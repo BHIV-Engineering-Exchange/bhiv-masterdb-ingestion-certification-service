@@ -1,0 +1,9 @@
+{
+  "status_code": 200,
+  "body": {
+    "document_id": "doc-4b03dc8aac36",
+    "versions_checked": 2,
+    "chain_intact": true,
+    "mismatched_versions": []
+  }
+}

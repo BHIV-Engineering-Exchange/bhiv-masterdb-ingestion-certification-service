@@ -1,0 +1,10 @@
+{
+  "status_code": 409,
+  "body": {
+    "error": {
+      "type": "http_error",
+      "message": "A canonical document for category 'bcaes_vol_4' already exists (id=doc-4b03dc8aac36); update it instead of registering a duplicate.",
+      "path": "/canonical-repository/documents"
+    }
+  }
+}

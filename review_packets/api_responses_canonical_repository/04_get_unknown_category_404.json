@@ -1,0 +1,10 @@
+{
+  "status_code": 404,
+  "body": {
+    "error": {
+      "type": "http_error",
+      "message": "Unknown document category 'not_a_volume'.",
+      "path": "/canonical-repository/by-category/not_a_volume"
+    }
+  }
+}

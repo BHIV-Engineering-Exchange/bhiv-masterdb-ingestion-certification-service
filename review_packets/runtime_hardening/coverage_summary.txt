@@ -1,0 +1,29 @@
+........................................................................ [ 40%]
+........................................................................ [ 80%]
+....................................                                     [100%]
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.3-final-0 ________________
+
+Name                                   Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------
+auth/__init__.py                           0      0   100%
+auth/constants.py                          1      0   100%
+auth/dependencies.py                      14      2    86%   29-30
+auth/models.py                            14      0   100%
+auth/service.py                           37      1    97%   84
+bcaes_registry/__init__.py                 0      0   100%
+bcaes_registry/convergence_models.py      31      1    97%   23
+bcaes_registry/convergence_store.py       26      0   100%
+bcaes_registry/graph.py                   33      3    91%   45, 49-50
+bcaes_registry/models.py                  70      0   100%
+bcaes_registry/service.py                 75      2    97%   108, 119
+bcaes_registry/snapshot.py                15      0   100%
+bcaes_registry/store.py                   94      2    98%   122, 167
+bcaes_registry/validators.py              82      6    93%   67, 84-85, 103, 106-107
+canonical_repository/__init__.py           0      0   100%
+canonical_repository/models.py            53      0   100%
+canonical_repository/service.py           54      0   100%
+canonical_repository/store.py             86      2    98%   152, 186
+--------------------------------------------------------------------
+TOTAL                                    685     19    97%
+180 passed in 5.80s

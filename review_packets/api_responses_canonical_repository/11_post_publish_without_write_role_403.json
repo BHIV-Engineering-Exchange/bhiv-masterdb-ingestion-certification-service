@@ -1,0 +1,10 @@
+{
+  "status_code": 403,
+  "body": {
+    "error": {
+      "type": "http_error",
+      "message": "'Outsider' holds none of 'doc-4b03dc8aac36's write_roles ['bcaes-editor'].",
+      "path": "/canonical-repository/documents/doc-4b03dc8aac36/versions"
+    }
+  }
+}
