@@ -58,8 +58,8 @@ def _has_authority(actor: Optional[str], actor_roles: Optional[List[str]], bound
 
 
 class BCAESRegistryService:
-    def __init__(self, persist_dir: Optional[str] = None) -> None:
-        self._store = CanonicalRegistryStore(persist_dir=persist_dir)
+    def __init__(self, persist_dir: Optional[str] = None, artifact_store=None) -> None:
+        self._store = CanonicalRegistryStore(persist_dir=persist_dir, artifact_store=artifact_store)
         self._convergence_store = ConvergenceStore(self._store)
 
     # -- registry CRUD ---------------------------------------------------

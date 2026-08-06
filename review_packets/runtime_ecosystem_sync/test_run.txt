@@ -1,0 +1,26 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python
+cachedir: .pytest_cache
+rootdir: /home/claude/repo/bhiv-masterdb-ingestion-certification-service-main
+configfile: pytest.ini
+plugins: anyio-4.14.2, cov-7.1.0
+collecting ... collected 16 items
+
+tests/test_operational_sync.py::test_upsert_review_reference_requires_sync_role PASSED [  6%]
+tests/test_operational_sync.py::test_upsert_review_reference_requires_token_at_all PASSED [ 12%]
+tests/test_operational_sync.py::test_upsert_review_reference_succeeds_with_sync_role PASSED [ 18%]
+tests/test_operational_sync.py::test_upsert_review_reference_succeeds_with_admin_role PASSED [ 25%]
+tests/test_operational_sync.py::test_upsert_is_idempotent_by_external_id PASSED [ 31%]
+tests/test_operational_sync.py::test_get_missing_review_reference_404 PASSED [ 37%]
+tests/test_operational_sync.py::test_list_review_references_is_public_read PASSED [ 43%]
+tests/test_operational_sync.py::test_summary_field_is_length_capped PASSED [ 50%]
+tests/test_operational_sync.py::test_upsert_task_state_requires_sync_role PASSED [ 56%]
+tests/test_operational_sync.py::test_upsert_task_state_succeeds_with_sync_role PASSED [ 62%]
+tests/test_operational_sync.py::test_task_state_progress_is_bounded_0_to_100 PASSED [ 68%]
+tests/test_operational_sync.py::test_task_state_upsert_is_idempotent_by_external_id PASSED [ 75%]
+tests/test_operational_sync.py::test_get_missing_task_state_404 PASSED   [ 81%]
+tests/test_operational_sync.py::test_niyantran_store_has_no_execution_side_effects PASSED [ 87%]
+tests/test_replay_registry_manifest.py::test_replay_registry_manifest_is_public_and_honest PASSED [ 93%]
+tests/test_replay_registry_manifest.py::test_replay_registry_manifest_hash_matches_live_validation PASSED [100%]
+
+============================== 16 passed in 1.09s ==============================

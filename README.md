@@ -28,6 +28,16 @@ Production hardening (real JWT auth, RBAC enforcement, opt-in disk
 persistence, audit logging, health/readiness endpoints) is tracked in
 `PRODUCTION_HARDENING.md`, including what's still not done and why.
 
+MASTERDB's constitutional identity, authority boundaries, runtime
+position, adjacent-service contract status, and current evidence/replay/
+observability state are documented in
+`CONSTITUTIONAL_RUNTIME_DEFINITION.md`.
+
+MASTERDB's real database backend (SQLAlchemy, SQLite for dev / Postgres
+for production, opt-in via `MASTERDB_DATABASE_URL`) is documented in
+`DATABASE.md`, including why external services reach this data through
+the authenticated API rather than raw database credentials.
+
 
 ## Scope
 

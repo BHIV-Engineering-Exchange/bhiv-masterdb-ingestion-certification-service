@@ -60,8 +60,8 @@ def _has_role(actor_roles: List[str], allowed_roles: List[str]) -> bool:
 
 
 class CanonicalRepositoryService:
-    def __init__(self, persist_dir: Optional[str] = None) -> None:
-        self._store = CanonicalRepositoryStore(persist_dir=persist_dir)
+    def __init__(self, persist_dir: Optional[str] = None, artifact_store=None) -> None:
+        self._store = CanonicalRepositoryStore(persist_dir=persist_dir, artifact_store=artifact_store)
 
     def register(
         self, request: RegisterDocumentRequest, actor: str, actor_roles: List[str]

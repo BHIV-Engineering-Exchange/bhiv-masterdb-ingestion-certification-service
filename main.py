@@ -65,6 +65,14 @@ from bcaes_registry.store import DependencyNotFoundError as BCAESDependencyNotFo
 from bcaes_registry.store import ObjectNotFoundError as BCAESObjectNotFoundError
 from bcaes_registry.store import PermissionDeniedError as BCAESPermissionDeniedError
 
+from operational_sync.models import (
+    UpsertOperationalTaskStateRequest,
+    UpsertReviewReferenceRequest,
+)
+from operational_sync.service import NiyantranSyncService, ParikshakSyncService, SyncPermissionDeniedError
+
+from services.sql_artifact_store import SqlArtifactStore
+from auth.constants import ADMIN_ROLE
 from auth.dependencies import build_identity_dependency
 from auth.models import AuthIdentity, TokenRequest, TokenResponse
 from auth.service import AuthService
@@ -184,16 +192,36 @@ shared_service_registry = build_shared_service_registry()
 # production. See PRODUCTION_HARDENING.md.
 _STORAGE_ROOT = os.environ.get("MASTERDB_STORAGE_DIR")
 
+# --- Real database backend --------------------------------------------------
+# Set MASTERDB_DATABASE_URL to back both services with a real SQL database
+# (services/sql_artifact_store.py) instead of JSON files — this is what
+# "MASTERDB will have a real central database" (task lead, 3 Aug 2026)
+# means concretely. Takes priority over MASTERDB_STORAGE_DIR when both are
+# set. Any SQLAlchemy-supported URL works (sqlite:///path.db for local/dev
+# with zero external dependencies, postgresql://... for real production).
+# See DATABASE.md for the schema/design rationale and why this doesn't
+# change the fact that external services reach this data through the
+# authenticated API, not raw database credentials.
+_DATABASE_URL = os.environ.get("MASTERDB_DATABASE_URL")
+
 
 def _persist_path(subdir: str) -> Optional[str]:
     return os.path.join(_STORAGE_ROOT, subdir) if _STORAGE_ROOT else None
+
+
+def _sql_store(subdir: str):
+    if not _DATABASE_URL:
+        return None
+    return SqlArtifactStore(_DATABASE_URL, store_name=subdir)
 
 
 # --- BCAES Canonical Registry (ecosystem bootstrap) ------------------------
 # Catalogs architectural objects (domains, capabilities, platform services,
 # products, programs, frameworks, engines, runtimes, integrations, knowledge
 # assets, interfaces). See BCAES_REGISTRY_ARCHITECTURE.md.
-bcaes_registry_service = BCAESRegistryService(persist_dir=_persist_path("bcaes_registry"))
+bcaes_registry_service = BCAESRegistryService(
+    persist_dir=_persist_path("bcaes_registry"), artifact_store=_sql_store("bcaes_registry")
+)
 
 # --- BCAB/BCAES Canonical Document Repository -------------------------------
 # Single source of truth for the BCAB and BCAES Volume 1-7 *documents*
@@ -201,7 +229,9 @@ bcaes_registry_service = BCAESRegistryService(persist_dir=_persist_path("bcaes_r
 # ecosystem's products/capabilities/services). See
 # CANONICAL_REPOSITORY_ARCHITECTURE.md. Content is placeholder until the
 # task owner populates it centrally.
-canonical_repository_service = CanonicalRepositoryService(persist_dir=_persist_path("canonical_repository"))
+canonical_repository_service = CanonicalRepositoryService(
+    persist_dir=_persist_path("canonical_repository"), artifact_store=_sql_store("canonical_repository")
+)
 
 # --- Auth (JWT issuance + verification) --------------------------------------
 # See auth/service.py module docstring for exactly what this does and does
@@ -209,6 +239,13 @@ canonical_repository_service = CanonicalRepositoryService(persist_dir=_persist_p
 # auth_service instance/secret.
 auth_service = AuthService()
 get_identity = build_identity_dependency(auth_service)
+
+# --- Operational sync (PARIKSHAK review references, NIYANTRAN task state) ---
+# See operational_sync/models.py for the direction assumption (MASTERDB
+# ingests pushed records; no live PARIKSHAK/NIYANTRAN endpoint has been
+# confirmed reachable to poll instead).
+parikshak_sync_service = ParikshakSyncService()
+niyantran_sync_service = NiyantranSyncService()
 shared_dependency_resolver = SharedDependencyResolver(shared_service_registry)
 
 
@@ -1063,3 +1100,213 @@ def ready() -> dict:
         ok = False
     status_code = 200 if ok else 503
     return JSONResponse(status_code=status_code, content={"status": "ok" if ok else "degraded", "checks": checks})
+
+
+# ---------------------------------------------------------------------------
+# Runtime Identity — self-description manifest for TANTRA Runtime Registry
+# registration (Rajaryan Verma's integration point per the Constitutional
+# Runtime Convergence brief). MASTERDB exposes this; it does not call out to
+# a TANTRA registry endpoint, since no such endpoint/contract has been
+# confirmed as reachable from this environment. This is the shape a real
+# registration call would need to read FROM MASTERDB.
+# ---------------------------------------------------------------------------
+
+
+@app.get("/runtime/identity")
+def runtime_identity() -> dict:
+    return {
+        "service_name": "MASTERDB",
+        "version": app.version,
+        "constitutional_role": "Knowledge Layer participant",
+        "capabilities": [
+            "dataset-validation-certification",
+            "knowledge-package-lifecycle",
+            "knowledge-object-provenance-consumption",
+            "retrieval-readiness-evidence",
+            "bcaes-canonical-registry",
+            "bcaes-canonical-document-repository",
+            "shared-data-services",
+        ],
+        "api_groups": {
+            "certification": "/validate, /certify",
+            "knowledge_packages": "/packages/*",
+            "knowledge_objects": "/knowledge-objects/*",
+            "shared_data": "/shared/*",
+            "bcaes_registry": "/bcaes/*",
+            "canonical_repository": "/canonical-repository/*",
+            "auth": "/auth/token",
+            "runtime": "/runtime/identity, /health, /ready, /metrics",
+        },
+        "auth": {
+            "method": "bearer_jwt",
+            "token_endpoint": "/auth/token",
+            "note": "Signed/expiring tokens; issuance does not itself verify "
+            "caller identity — see auth/service.py for the exact boundary.",
+        },
+        "health_check_url": "/health",
+        "readiness_check_url": "/ready",
+        "openapi_url": "/openapi.json",
+        "replay_endpoints": {
+            "bcaes_registry_architecture": "/bcaes/validate/architecture",
+            "canonical_repository_document": "/canonical-repository/documents/{document_id}/verify",
+        },
+        "status": "not_yet_registered",
+        "note": "Self-description manifest only. No live TANTRA Runtime "
+        "Registry endpoint has been confirmed reachable from this "
+        "environment, so no registration call has actually been made — "
+        "this is what such a call would read from MASTERDB, not proof "
+        "one has succeeded.",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Metrics — for InsightFlow/InsightBridge/InsightCore (Vijay Dhawan) runtime
+# telemetry/observability. Prometheus text exposition format, since that's
+# the closest thing to an industry default for a not-yet-confirmed scrape
+# contract (also named in the original brief's Learning Kit). Format is an
+# assumption pending Vijay Dhawan confirming InsightFlow's actual expected
+# shape — flagged as such in CONSTITUTIONAL_RUNTIME_DEFINITION.md.
+# ---------------------------------------------------------------------------
+
+
+@app.get("/metrics")
+def metrics() -> Any:
+    from fastapi import Response
+
+    lines = [
+        "# HELP masterdb_bcaes_registry_objects_total Objects registered per BCAES registry type.",
+        "# TYPE masterdb_bcaes_registry_objects_total gauge",
+    ]
+    for registry_type, count in bcaes_registry_service.registry_summary().items():
+        lines.append(f'masterdb_bcaes_registry_objects_total{{registry_type="{registry_type}"}} {count}')
+
+    lines.append("# HELP masterdb_canonical_documents_total Documents in the canonical repository.")
+    lines.append("# TYPE masterdb_canonical_documents_total gauge")
+    # An aggregate count needs to see every document regardless of its
+    # read_roles — this is an internal ops metric, not a content leak, so
+    # the probe uses ADMIN_ROLE rather than an empty/anonymous identity
+    # (which would silently undercount to whatever a reader-less caller
+    # can see, i.e. usually nothing).
+    doc_count = len(canonical_repository_service.list_all(actor="_metrics_probe", actor_roles=[ADMIN_ROLE]))
+    lines.append(f"masterdb_canonical_documents_total {doc_count}")
+
+    lines.append("# HELP masterdb_up Process liveness (always 1 if this endpoint responds).")
+    lines.append("# TYPE masterdb_up gauge")
+    lines.append("masterdb_up 1")
+
+    return Response(content="\n".join(lines) + "\n", media_type="text/plain; version=0.0.4")
+
+
+# ---------------------------------------------------------------------------
+# PARIKSHAK — engineering review reference sync
+# ---------------------------------------------------------------------------
+# See operational_sync/models.py for the ingestion-direction assumption.
+# Requires a token with the "parikshak-sync" role (or bhiv-admin) to write;
+# reads are open, since these are references/summaries/status only — not
+# engineering intelligence — and multiple ecosystem consumers plausibly
+# need to read readiness status without needing sync rights.
+
+
+@app.post("/parikshak/review-references")
+def upsert_review_reference(
+    request: UpsertReviewReferenceRequest, identity: AuthIdentity = Depends(get_identity)
+) -> dict:
+    try:
+        record = parikshak_sync_service.upsert(request, actor=identity.actor, actor_roles=identity.roles)
+        audit_logger.info(
+            "parikshak.upsert actor=%s external_review_id=%s", identity.actor, request.external_review_id
+        )
+        return record.model_dump(mode="json")
+    except SyncPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@app.get("/parikshak/review-references")
+def list_review_references() -> dict:
+    records = parikshak_sync_service.list_all()
+    return {"count": len(records), "records": [r.model_dump(mode="json") for r in records]}
+
+
+@app.get("/parikshak/review-references/{external_review_id}")
+def get_review_reference(external_review_id: str) -> dict:
+    try:
+        return parikshak_sync_service.get(external_review_id).model_dump(mode="json")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"No review reference '{external_review_id}'.") from exc
+
+
+# ---------------------------------------------------------------------------
+# NIYANTRAN — operational task lifecycle sync
+# ---------------------------------------------------------------------------
+# Requires a token with the "niyantran-sync" role (or bhiv-admin) to write.
+# MASTERDB records this state; nothing here triggers or executes workflow.
+
+
+@app.post("/niyantran/task-state")
+def upsert_operational_task_state(
+    request: UpsertOperationalTaskStateRequest, identity: AuthIdentity = Depends(get_identity)
+) -> dict:
+    try:
+        record = niyantran_sync_service.upsert(request, actor=identity.actor, actor_roles=identity.roles)
+        audit_logger.info(
+            "niyantran.upsert actor=%s external_task_id=%s", identity.actor, request.external_task_id
+        )
+        return record.model_dump(mode="json")
+    except SyncPermissionDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@app.get("/niyantran/task-state")
+def list_operational_task_state() -> dict:
+    records = niyantran_sync_service.list_all()
+    return {"count": len(records), "records": [r.model_dump(mode="json") for r in records]}
+
+
+@app.get("/niyantran/task-state/{external_task_id}")
+def get_operational_task_state(external_task_id: str) -> dict:
+    try:
+        return niyantran_sync_service.get(external_task_id).model_dump(mode="json")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"No task state '{external_task_id}'.") from exc
+
+
+# ---------------------------------------------------------------------------
+# Replay Registry — unified manifest of everything replay-capable in
+# MASTERDB, for an eventual external Replay Registry Owner to consume. No
+# such owner/endpoint has been confirmed reachable — this is what MASTERDB
+# exposes, not proof of registration.
+# ---------------------------------------------------------------------------
+
+
+@app.get("/replay-registry/manifest")
+def replay_registry_manifest() -> dict:
+    architecture = bcaes_registry_service.validate_architecture()
+    return {
+        "service_name": "MASTERDB",
+        "replay_capabilities": [
+            {
+                "name": "bcaes_registry_architecture",
+                "endpoint": "/bcaes/validate/architecture",
+                "mechanism": "replay_hash over full registry state; identical across repeated calls "
+                "against unchanged state",
+                "current_replay_hash": architecture["replay_hash"],
+                "currently_passes": architecture["passed"],
+            },
+            {
+                "name": "canonical_repository_document_chain",
+                "endpoint": "/canonical-repository/documents/{document_id}/verify",
+                "mechanism": "sha256 hash chain over a document's full version history; "
+                "recomputed and compared on every call",
+            },
+            {
+                "name": "knowledge_package_lifecycle",
+                "endpoint": "/packages/{package_id}/replay",
+                "mechanism": "rebuilds a package's status from its full recorded transition history",
+            },
+        ],
+        "status": "not_yet_registered",
+        "note": "No Replay Registry Owner or endpoint has been named/confirmed reachable "
+        "as of this manifest — see CONSTITUTIONAL_RUNTIME_DEFINITION.md §4.",
+    }
+
+

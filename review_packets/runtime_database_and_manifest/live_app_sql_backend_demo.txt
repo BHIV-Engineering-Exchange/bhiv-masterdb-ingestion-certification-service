@@ -1,0 +1,22 @@
+MASTERDB_DATABASE_URL=sqlite:////tmp/tmpen8se5bs/masterdb_demo.db
+
+2026-08-04 09:43:03,411 WARNING masterdb: AUTH_JWT_SECRET not set — generated a random per-process secret. Tokens issued by this process instance will not validate after a restart or against any other process/worker. Set AUTH_JWT_SECRET in the environment before treating this as production-hardened.
+=== Process 'A' (first boot, real app, real SQLite DB) ===
+2026-08-04 09:43:03,483 AUDIT masterdb: bcaes.register actor=Kavy registry_type=product object_id=prd-6ceec1c32e35
+2026-08-04 09:43:03,483 INFO masterdb: bcaes.register actor=Kavy registry_type=product object_id=prd-6ceec1c32e35
+POST /bcaes/registries/product/objects -> 200, id=prd-6ceec1c32e35
+GET /ready -> 200 {'status': 'ok', 'checks': {'bcaes_registry': 'ok', 'canonical_repository': 'ok'}}
+GET /runtime/identity -> 200, service_name=MASTERDB, status=not_yet_registered
+GET /metrics -> 200
+  masterdb_bcaes_registry_objects_total{registry_type="product"} 1
+  # HELP masterdb_up Process liveness (always 1 if this endpoint responds).
+  # TYPE masterdb_up gauge
+  masterdb_up 1
+
+Process 'A' exits (simulating an app restart)
+
+=== Process 'B' (fresh boot, same MASTERDB_DATABASE_URL) ===
+2026-08-04 09:43:03,497 WARNING masterdb: AUTH_JWT_SECRET not set — generated a random per-process secret. Tokens issued by this process instance will not validate after a restart or against any other process/worker. Set AUTH_JWT_SECRET in the environment before treating this as production-hardened.
+GET /bcaes/registries/product/objects/prd-6ceec1c32e35 -> 200, name=MASTERDB
+
+Confirmed: data survived a full app restart via the real SQL database backend.

@@ -1,0 +1,188 @@
+[
+  {
+    "step": "1_service_discovery",
+    "description": "GET /runtime/identity \u2014 self-description manifest a discoverer would read",
+    "status_code": 200,
+    "response": {
+      "service_name": "MASTERDB",
+      "version": "1.3.0",
+      "constitutional_role": "Knowledge Layer participant",
+      "capabilities": [
+        "dataset-validation-certification",
+        "knowledge-package-lifecycle",
+        "knowledge-object-provenance-consumption",
+        "retrieval-readiness-evidence",
+        "bcaes-canonical-registry",
+        "bcaes-canonical-document-repository",
+        "shared-data-services"
+      ],
+      "api_groups": {
+        "certification": "/validate, /certify",
+        "knowledge_packages": "/packages/*",
+        "knowledge_objects": "/knowledge-objects/*",
+        "shared_data": "/shared/*",
+        "bcaes_registry": "/bcaes/*",
+        "canonical_repository": "/canonical-repository/*",
+        "auth": "/auth/token",
+        "runtime": "/runtime/identity, /health, /ready, /metrics"
+      },
+      "auth": {
+        "method": "bearer_jwt",
+        "token_endpoint": "/auth/token",
+        "note": "Signed/expiring tokens; issuance does not itself verify caller identity \u2014 see auth/service.py for the exact boundary."
+      },
+      "health_check_url": "/health",
+      "readiness_check_url": "/ready",
+      "openapi_url": "/openapi.json",
+      "replay_endpoints": {
+        "bcaes_registry_architecture": "/bcaes/validate/architecture",
+        "canonical_repository_document": "/canonical-repository/documents/{document_id}/verify"
+      },
+      "status": "not_yet_registered",
+      "note": "Self-description manifest only. No live TANTRA Runtime Registry endpoint has been confirmed reachable from this environment, so no registration call has actually been made \u2014 this is what such a call would read from MASTERDB, not proof one has succeeded."
+    }
+  },
+  {
+    "step": "2_runtime_request",
+    "description": "POST /bcaes/registries/product/objects \u2014 a real, authenticated write request handled end-to-end",
+    "status_code": 200,
+    "response": {
+      "id": "prd-aa023c156600",
+      "registry_type": "product",
+      "classification": "product",
+      "name": "MASTERDB",
+      "purpose": "Canonical knowledge platform runtime.",
+      "owner": "Kavy",
+      "status": "draft",
+      "version": "1.0",
+      "dependencies": [],
+      "consumers": [],
+      "authority_boundaries": [
+        "Kavy"
+      ],
+      "links": [],
+      "created_at": "2026-08-06T05:28:12.090132+00:00",
+      "updated_at": "2026-08-06T05:28:12.090145+00:00"
+    }
+  },
+  {
+    "step": "3_adjacent_services",
+    "description": "POST /parikshak/review-references \u2014 demonstrates MASTERDB ingesting adjacent-service-shaped data (this call is real; the caller is this script standing in for PARIKSHAK, not PARIKSHAK itself \u2014 no live PARIKSHAK endpoint has been confirmed reachable, so an actual outbound call to a real adjacent service is NOT demonstrated here)",
+    "status_code": 200,
+    "response": {
+      "external_review_id": "demo-rev-1",
+      "subject": "prd-aa023c156600",
+      "summary": "Demonstration review reference for Phase 4 validation.",
+      "readiness_status": "ready",
+      "source_url": null,
+      "synced_at": "2026-08-06T05:28:12.093398+00:00"
+    },
+    "note": "INCOMPLETE BY NECESSITY: see CONSTITUTIONAL_RUNTIME_DEFINITION.md SS4 for why."
+  },
+  {
+    "step": "4_evidence",
+    "description": "Every mutating call above (steps 2, 3) wrote a structured audit_logger entry (actor, action, resource id) \u2014 see runtime_log.txt captured alongside this file."
+  },
+  {
+    "step": "5a_replay_bcaes",
+    "description": "GET /bcaes/validate/architecture \u2014 replay_hash proof over current registry state",
+    "status_code": 200,
+    "response": {
+      "passed": true,
+      "checks": [
+        {
+          "check": "classification",
+          "passed": true,
+          "violations": []
+        },
+        {
+          "check": "duplicates",
+          "passed": true,
+          "violations": []
+        },
+        {
+          "check": "ownership",
+          "passed": true,
+          "violations": []
+        },
+        {
+          "check": "authority_boundaries",
+          "passed": true,
+          "violations": []
+        },
+        {
+          "check": "version_compatibility",
+          "passed": true,
+          "violations": []
+        },
+        {
+          "check": "dependency_integrity",
+          "passed": true,
+          "violations": []
+        }
+      ],
+      "object_count": 1,
+      "replay_hash": "c318e157db4f4c56cc11cffb38003a7e12731d12a003b23f8efaeca3a0065279"
+    }
+  },
+  {
+    "step": "5c_replay_manifest",
+    "description": "GET /replay-registry/manifest \u2014 full self-description of replay-capable surfaces",
+    "status_code": 200,
+    "response": {
+      "service_name": "MASTERDB",
+      "replay_capabilities": [
+        {
+          "name": "bcaes_registry_architecture",
+          "endpoint": "/bcaes/validate/architecture",
+          "mechanism": "replay_hash over full registry state; identical across repeated calls against unchanged state",
+          "current_replay_hash": "c318e157db4f4c56cc11cffb38003a7e12731d12a003b23f8efaeca3a0065279",
+          "currently_passes": true
+        },
+        {
+          "name": "canonical_repository_document_chain",
+          "endpoint": "/canonical-repository/documents/{document_id}/verify",
+          "mechanism": "sha256 hash chain over a document's full version history; recomputed and compared on every call"
+        },
+        {
+          "name": "knowledge_package_lifecycle",
+          "endpoint": "/packages/{package_id}/replay",
+          "mechanism": "rebuilds a package's status from its full recorded transition history"
+        }
+      ],
+      "status": "not_yet_registered",
+      "note": "No Replay Registry Owner or endpoint has been named/confirmed reachable as of this manifest \u2014 see CONSTITUTIONAL_RUNTIME_DEFINITION.md \u00a74."
+    }
+  },
+  {
+    "step": "6a_health",
+    "description": "GET /health \u2014 liveness",
+    "status_code": 200,
+    "response": {
+      "status": "ok"
+    }
+  },
+  {
+    "step": "6b_ready",
+    "description": "GET /ready \u2014 readiness, checks both stores reachable",
+    "status_code": 200,
+    "response": {
+      "status": "ok",
+      "checks": {
+        "bcaes_registry": "ok",
+        "canonical_repository": "ok"
+      }
+    }
+  },
+  {
+    "step": "6c_metrics",
+    "description": "GET /metrics \u2014 Prometheus gauges reflecting the write from step 2",
+    "status_code": 200,
+    "relevant_lines": [
+      "masterdb_bcaes_registry_objects_total{registry_type=\"product\"} 1",
+      "# HELP masterdb_up Process liveness (always 1 if this endpoint responds).",
+      "# TYPE masterdb_up gauge",
+      "masterdb_up 1"
+    ]
+  }
+]

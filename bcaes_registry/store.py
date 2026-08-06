@@ -48,14 +48,22 @@ class PermissionDeniedError(Exception):
 
 
 class CanonicalRegistryStore:
-    def __init__(self, persist_dir: Optional[str] = None) -> None:
+    def __init__(self, persist_dir: Optional[str] = None, artifact_store=None) -> None:
         self._objects: Dict[RegistryType, Dict[str, RegistryObject]] = {
             rt: {} for rt in RegistryType
         }
-        self._artifact_store: Optional[ArtifactStore] = None
-        if persist_dir is not None:
+        # `artifact_store`, if given, is used as-is (e.g. a SqlArtifactStore
+        # pointed at a real database) — this takes priority over persist_dir.
+        # Falling back to persist_dir keeps every existing caller (including
+        # every test that passes a temp directory string) working unchanged.
+        if artifact_store is not None:
+            self._artifact_store: Optional[object] = artifact_store
+            self._load_from_disk()
+        elif persist_dir is not None:
             self._artifact_store = ArtifactStore(reports_dir=persist_dir)
             self._load_from_disk()
+        else:
+            self._artifact_store = None
 
     def _load_from_disk(self) -> None:
         for record in self._artifact_store.list_all():
@@ -68,9 +76,7 @@ class CanonicalRegistryStore:
 
     def _unpersist(self, object_id: str) -> None:
         if self._artifact_store is not None:
-            path = self._artifact_store.report_path(object_id)
-            if path.exists():
-                path.unlink()
+            self._artifact_store.delete(object_id)
 
     # -- lookup ----------------------------------------------------------
 

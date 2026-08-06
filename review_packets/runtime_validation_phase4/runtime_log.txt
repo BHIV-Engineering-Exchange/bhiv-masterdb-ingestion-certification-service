@@ -1,0 +1,20 @@
+2026-08-06 05:28:12,038 WARNING masterdb: AUTH_JWT_SECRET not set — generated a random per-process secret. Tokens issued by this process instance will not validate after a restart or against any other process/worker. Set AUTH_JWT_SECRET in the environment before treating this as production-hardened.
+[1_service_discovery] GET /runtime/identity — self-description manifest a discoverer would read -> 200
+2026-08-06 05:28:12,090 AUDIT masterdb: bcaes.register actor=Kavy registry_type=product object_id=prd-aa023c156600
+2026-08-06 05:28:12,090 INFO masterdb: bcaes.register actor=Kavy registry_type=product object_id=prd-aa023c156600
+[2_runtime_request] POST /bcaes/registries/product/objects — a real, authenticated write request handled end-to-end -> 200
+2026-08-06 05:28:12,093 AUDIT masterdb: parikshak.upsert actor=Kavy external_review_id=demo-rev-1
+2026-08-06 05:28:12,093 INFO masterdb: parikshak.upsert actor=Kavy external_review_id=demo-rev-1
+[3_adjacent_services] POST /parikshak/review-references — demonstrates MASTERDB ingesting adjacent-service-shaped data (this call is real; the caller is this script standing in for PARIKSHAK, not PARIKSHAK itself — no live PARIKSHAK endpoint has been confirmed reachable, so an actual outbound call to a real adjacent service is NOT demonstrated here) -> 200
+[4_evidence] audit_logger entries captured in runtime_log.txt
+[5a_replay_bcaes] GET /bcaes/validate/architecture — replay_hash proof over current registry state -> 200
+[5b_replay_determinism] confirmed: c318e157db4f4c56cc11cffb38003a7e12731d12a003b23f8efaeca3a0065279 == c318e157db4f4c56cc11cffb38003a7e12731d12a003b23f8efaeca3a0065279
+[5c_replay_manifest] GET /replay-registry/manifest — full self-description of replay-capable surfaces -> 200
+[6a_health] GET /health — liveness -> 200
+[6b_ready] GET /ready — readiness, checks both stores reachable -> 200
+[6c_metrics] 200, relevant lines: ['masterdb_bcaes_registry_objects_total{registry_type="product"} 1', '# HELP masterdb_up Process liveness (always 1 if this endpoint responds).', '# TYPE masterdb_up gauge', 'masterdb_up 1']
+
+Wrote /home/claude/repo/bhiv-masterdb-ingestion-certification-service-main/review_packets/runtime_validation_phase4/execution_flow.json
+
+SUMMARY: Steps 1, 2, 4, 5, 6 are fully live and complete.
+Step 3 (Adjacent Services) is honestly partial — see the note on that step.

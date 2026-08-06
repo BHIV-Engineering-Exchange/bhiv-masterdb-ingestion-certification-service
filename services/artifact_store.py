@@ -24,6 +24,18 @@ class ArtifactStore:
         with path.open("r", encoding="utf-8") as handle:
             return json.load(handle)
 
+    def delete(self, dataset_id: str) -> bool:
+        """Returns True if a record existed and was removed, False if there
+        was nothing to delete. Added so callers (bcaes_registry/store.py)
+        don't reach into Path.unlink() directly — that coupled them to this
+        being file-backed, which stopped being true once SqlArtifactStore
+        (services/sql_artifact_store.py) existed as an alternative backend."""
+        path = self.report_path(dataset_id)
+        if path.exists():
+            path.unlink()
+            return True
+        return False
+
     def list_all(self, exclude_prefixes: Optional[List[str]] = None) -> List[Dict[str, Any]]:
         """
         Load every record in this store. Used by discovery/query surfaces

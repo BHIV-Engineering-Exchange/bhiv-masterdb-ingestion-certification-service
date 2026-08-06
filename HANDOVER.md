@@ -212,3 +212,43 @@ Full design, current status, and a corrected account of an earlier wiring
 gap are in `BCAES_REGISTRY_ARCHITECTURE.md` — read that before touching
 `bcaes_registry/`.
 
+## Canonical Document Repository, Auth/RBAC, Persistence, Constitutional Definition
+
+Three more additive passes since the BCAES Canonical Registry section
+above:
+
+- **BCAB/BCAES Canonical Document Repository** (`canonical_repository/`,
+  `/canonical-repository/*`) — versioned document store for BCAB/BCAES
+  content, currently placeholder text pending central population. Full
+  design: `CANONICAL_REPOSITORY_ARCHITECTURE.md`.
+- **Production hardening** (`auth/` module) — real JWT auth via
+  `POST /auth/token`, RBAC now enforced (not just declared) on
+  `canonical_repository` (all routes) and `bcaes_registry` (write
+  routes, via `authority_boundaries`), opt-in disk persistence
+  (`MASTERDB_STORAGE_DIR`), audit logging, `/health` + `/ready`. Full
+  status including what's explicitly NOT done (real identity provider,
+  monitoring, backup/DR, security/load testing):
+  `PRODUCTION_HARDENING.md`.
+- **Constitutional Runtime Definition** — a from-the-evidence writeup of
+  what MASTERDB actually is, what it doesn't own, its runtime position,
+  and a contract-status table for every adjacent service named across
+  every task brief to date (most say "no integration code exists," and
+  say so honestly): `CONSTITUTIONAL_RUNTIME_DEFINITION.md`.
+
+**Open items for whoever picks this up next:**
+
+- `AUTH_JWT_SECRET` is not set on the Render deployment — tokens issued
+  there won't survive a restart until it is. See `.env.example`.
+- `MASTERDB_STORAGE_DIR` is not set anywhere — the deployed instance is
+  still pure in-memory. Turning persistence on also needs a Render
+  persistent Disk attached (the default filesystem is ephemeral) — see
+  `PRODUCTION_HARDENING.md`.
+- No live contract exists yet for Bucket, InsightFlow/Pravah, PARIKSHAK,
+  NIYANTRAN, RAJYA, KESHAV, SARATHI, PRANA, KARMA, or BHEX. PRANA's owner
+  separately asked for raw database connection details that don't apply
+  (MASTERDB has no standalone database) — that's pending the task lead's
+  call on integration shape.
+- Coordination with Shivam Pal (named owner of production
+  infra/auth/persistence/observability going forward) has not happened
+  yet as of this handover — a message was drafted but the sync itself is
+  still open.

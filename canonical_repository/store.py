@@ -41,14 +41,18 @@ def _content_hash(content: str, previous_hash: str = "") -> str:
 
 
 class CanonicalRepositoryStore:
-    def __init__(self, persist_dir: Optional[str] = None) -> None:
+    def __init__(self, persist_dir: Optional[str] = None, artifact_store=None) -> None:
         self._documents: Dict[str, CanonicalDocument] = {}
         self._versions: Dict[str, List[DocumentVersion]] = {}
         self._category_index: Dict[DocumentCategory, str] = {}
-        self._artifact_store: Optional[ArtifactStore] = None
-        if persist_dir is not None:
+        if artifact_store is not None:
+            self._artifact_store: Optional[object] = artifact_store
+            self._load_from_disk()
+        elif persist_dir is not None:
             self._artifact_store = ArtifactStore(reports_dir=persist_dir)
             self._load_from_disk()
+        else:
+            self._artifact_store = None
 
     def _load_from_disk(self) -> None:
         for record in self._artifact_store.list_all():

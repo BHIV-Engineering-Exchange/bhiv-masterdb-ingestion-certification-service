@@ -1,0 +1,26 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python
+cachedir: .pytest_cache
+rootdir: /home/claude/repo/bhiv-masterdb-ingestion-certification-service-main
+configfile: pytest.ini
+plugins: anyio-4.14.2, cov-7.1.0
+collecting ... collected 16 items
+
+tests/test_sql_database.py::test_sql_artifact_store_save_load_round_trip PASSED [  6%]
+tests/test_sql_database.py::test_sql_artifact_store_load_missing_returns_none PASSED [ 12%]
+tests/test_sql_database.py::test_sql_artifact_store_save_overwrites PASSED [ 18%]
+tests/test_sql_database.py::test_sql_artifact_store_list_all_is_sorted_and_filters_prefix PASSED [ 25%]
+tests/test_sql_database.py::test_sql_artifact_store_delete PASSED        [ 31%]
+tests/test_sql_database.py::test_sql_artifact_store_partitions_by_store_name PASSED [ 37%]
+tests/test_sql_database.py::test_bcaes_registry_persists_via_real_sql_database_across_fresh_instance PASSED [ 43%]
+tests/test_sql_database.py::test_bcaes_registry_update_and_delete_persist_via_sql PASSED [ 50%]
+tests/test_sql_database.py::test_canonical_repository_persists_via_real_sql_database PASSED [ 56%]
+tests/test_sql_database.py::test_bcaes_registry_and_canonical_repository_can_share_one_database_url PASSED [ 62%]
+tests/test_runtime_identity_and_metrics.py::test_runtime_identity_is_public_no_auth_required PASSED [ 68%]
+tests/test_runtime_identity_and_metrics.py::test_runtime_identity_lists_all_current_api_groups PASSED [ 75%]
+tests/test_runtime_identity_and_metrics.py::test_runtime_identity_is_honest_about_not_being_registered PASSED [ 81%]
+tests/test_runtime_identity_and_metrics.py::test_metrics_is_public_and_prometheus_formatted PASSED [ 87%]
+tests/test_runtime_identity_and_metrics.py::test_metrics_reflects_actual_registered_object_counts PASSED [ 93%]
+tests/test_runtime_identity_and_metrics.py::test_metrics_reflects_actual_document_count PASSED [100%]
+
+============================== 16 passed in 1.38s ==============================
