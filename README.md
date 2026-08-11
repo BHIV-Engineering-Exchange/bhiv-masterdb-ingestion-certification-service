@@ -38,6 +38,10 @@ for production, opt-in via `MASTERDB_DATABASE_URL`) is documented in
 `DATABASE.md`, including why external services reach this data through
 the authenticated API rather than raw database credentials.
 
+The full set of ecosystem endpoint URLs shared 6 Aug 2026 — which are
+confirmed live, which are ambiguous, which are internal-only, which are
+unresolved placeholders — is recorded in `ECOSYSTEM_ENDPOINTS.md`.
+
 
 ## Scope
 

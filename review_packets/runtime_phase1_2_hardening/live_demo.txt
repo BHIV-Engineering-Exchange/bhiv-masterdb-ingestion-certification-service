@@ -1,0 +1,32 @@
+2026-08-11 09:39:23,838 INFO masterdb: Configuration at startup:
+  AUTH_JWT_SECRET: unset (unset -> a random per-process secret is generated at startup; tokens won't validate across restarts or multiple workers)
+  MASTERDB_STORAGE_DIR: unset
+  MASTERDB_DATABASE_URL: unset
+  persistence: in_memory — no persistence configured — all data is lost on restart
+  MDU_BASE_URL: unset
+  MDU_API_KEY: unset
+  PRAVAH_BHIV_INSIGHT_FLOW_BRIDGE: unset
+  RATE_LIMIT_MAX_REQUESTS: unset
+  RATE_LIMIT_WINDOW_SECONDS: unset
+2026-08-11 09:39:23,839 WARNING masterdb: AUTH_JWT_SECRET not set — generated a random per-process secret. Tokens issued by this process instance will not validate after a restart or against any other process/worker. Set AUTH_JWT_SECRET in the environment before treating this as production-hardened.
+=== Configuration report (admin-gated, no secrets leaked) ===
+GET /admin/configuration -> 200
+
+=== Rate limiting demo (limit set to 3 for this demo) ===
+request 1: 200
+request 2: 200
+request 3: 200
+request 4: 429 retry_after=60.0
+request 5: 429 retry_after=60.0
+
+=== Backup and restore demo (real SQL database, fixed cache-refresh bug) ===
+2026-08-11 09:39:23,958 AUDIT masterdb: bcaes.register actor=Kavy registry_type=product object_id=prd-89d3adc140ce
+2026-08-11 09:39:23,958 INFO masterdb: bcaes.register actor=Kavy registry_type=product object_id=prd-89d3adc140ce
+Registered object: prd-89d3adc140ce
+2026-08-11 09:39:23,963 AUDIT masterdb: admin.backup.create actor=Kavy bcaes_records=1 canonical_records=0
+2026-08-11 09:39:23,963 INFO masterdb: admin.backup.create actor=Kavy bcaes_records=1 canonical_records=0
+GET /admin/backup -> 200, bcaes records: 1
+2026-08-11 09:39:23,975 AUDIT masterdb: admin.backup.restore actor=Kavy counts={'bcaes_registry': 1, 'canonical_repository': 0}
+2026-08-11 09:39:23,975 INFO masterdb: admin.backup.restore actor=Kavy counts={'bcaes_registry': 1, 'canonical_repository': 0}
+POST /admin/restore -> 200, {'restored': {'bcaes_registry': 1, 'canonical_repository': 0}}
+Verify restored object (same running service, no reconstruction): 200, name=MASTERDB

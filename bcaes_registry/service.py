@@ -62,6 +62,13 @@ class BCAESRegistryService:
         self._store = CanonicalRegistryStore(persist_dir=persist_dir, artifact_store=artifact_store)
         self._convergence_store = ConvergenceStore(self._store)
 
+    @property
+    def artifact_store(self):
+        return self._store.artifact_store
+
+    def reload_from_persistent_store(self) -> None:
+        self._store.reload_from_persistent_store()
+
     # -- registry CRUD ---------------------------------------------------
 
     def register(

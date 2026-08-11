@@ -58,14 +58,23 @@ class CanonicalRegistryStore:
         # every test that passes a temp directory string) working unchanged.
         if artifact_store is not None:
             self._artifact_store: Optional[object] = artifact_store
-            self._load_from_disk()
+            self.reload_from_persistent_store()
         elif persist_dir is not None:
             self._artifact_store = ArtifactStore(reports_dir=persist_dir)
-            self._load_from_disk()
+            self.reload_from_persistent_store()
         else:
             self._artifact_store = None
 
-    def _load_from_disk(self) -> None:
+    def reload_from_persistent_store(self) -> None:
+        """Re-syncs the in-memory cache from the underlying persistent
+        store (if any) — clears and fully repopulates, so this is also
+        correct after an external write (e.g. POST /admin/restore) that
+        wrote directly to the artifact_store without going through this
+        object's register()/update()/delete() methods. A no-op if running
+        pure in-memory (no artifact_store configured)."""
+        if self._artifact_store is None:
+            return
+        self._objects = {rt: {} for rt in RegistryType}
         for record in self._artifact_store.list_all():
             obj = RegistryObject(**record)
             self._objects[obj.registry_type][obj.id] = obj
@@ -129,6 +138,15 @@ class CanonicalRegistryStore:
         return results
 
     # -- mutation ----------------------------------------------------------
+
+    @property
+    def artifact_store(self):
+        """Read-only access to the underlying persistence backend (an
+        ArtifactStore or SqlArtifactStore), or None if running pure
+        in-memory. Used by services/backup_service.py — backup/restore
+        operates through this same list_all()/save() interface, so it
+        works identically whether the backend is JSON files or SQL."""
+        return self._artifact_store
 
     def register(
         self, registry_type: RegistryType, request: RegisterObjectRequest

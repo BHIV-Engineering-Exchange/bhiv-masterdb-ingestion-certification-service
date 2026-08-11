@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
+
+from middleware.rate_limit_middleware import RateLimitMiddleware
+from middleware.rate_limiter import SlidingWindowRateLimiter
 from models import (
     CertificationRequest,
     KnowledgeObjectRegisterRequest,
@@ -72,6 +75,8 @@ from operational_sync.models import (
 from operational_sync.service import NiyantranSyncService, ParikshakSyncService, SyncPermissionDeniedError
 
 from services.sql_artifact_store import SqlArtifactStore
+from services import backup_service
+from services import startup_config
 from auth.constants import ADMIN_ROLE
 from auth.dependencies import build_identity_dependency
 from auth.models import AuthIdentity, TokenRequest, TokenResponse
@@ -91,6 +96,19 @@ app = FastAPI(
     title="MASTERDB Core Knowledge Platform",
     version="1.3.0",
 )
+
+# Rate limiting — see middleware/rate_limit_middleware.py for the exempt
+# paths and middleware/rate_limiter.py for the "not distributed-safe"
+# scope caveat. Configurable via RATE_LIMIT_MAX_REQUESTS /
+# RATE_LIMIT_WINDOW_SECONDS env vars. Instantiated explicitly (rather than
+# letting the middleware build its own) so tests can reset it between runs
+# the same way every other stateful service in this file gets a fresh
+# instance per test — see tests/conftest.py.
+rate_limiter = SlidingWindowRateLimiter(
+    max_requests=int(os.environ.get("RATE_LIMIT_MAX_REQUESTS", "120")),
+    window_seconds=float(os.environ.get("RATE_LIMIT_WINDOW_SECONDS", "60")),
+)
+app.add_middleware(RateLimitMiddleware, limiter=rate_limiter)
 
 logger = logging.getLogger("masterdb")
 if not logger.handlers:
@@ -112,6 +130,13 @@ if not audit_logger.handlers:
     _audit_handler.setFormatter(logging.Formatter("%(asctime)s AUDIT masterdb: %(message)s"))
     audit_logger.addHandler(_audit_handler)
     audit_logger.setLevel(logging.INFO)
+
+# Configuration validation — logs a one-time report at process startup
+# (import time) covering every env var this service reads. Never logs
+# actual secret values, only set/unset/malformed — see
+# services/startup_config.py module docstring.
+_startup_config_report = startup_config.validate_configuration()
+logger.info(startup_config.summarize_for_startup_log(_startup_config_report))
 
 
 # ---------------------------------------------------------------------------
@@ -1103,6 +1128,62 @@ def ready() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Backup and recovery — admin-only. See services/backup_service.py module
+# docstring for exactly what this does and does not cover (application-level
+# record export/import through the existing ArtifactStore interface, not a
+# database-engine-level backup like pg_dump).
+# ---------------------------------------------------------------------------
+
+
+@app.get("/admin/backup")
+def create_backup(identity: AuthIdentity = Depends(get_identity)) -> dict:
+    if ADMIN_ROLE not in identity.roles:
+        raise HTTPException(status_code=403, detail=f"Requires the '{ADMIN_ROLE}' role.")
+    snapshot = backup_service.export_snapshot({
+        "bcaes_registry": bcaes_registry_service.artifact_store,
+        "canonical_repository": canonical_repository_service.artifact_store,
+    })
+    audit_logger.info(
+        "admin.backup.create actor=%s bcaes_records=%s canonical_records=%s",
+        identity.actor,
+        len(snapshot["stores"]["bcaes_registry"]["records"]),
+        len(snapshot["stores"]["canonical_repository"]["records"]),
+    )
+    return snapshot
+
+
+@app.post("/admin/restore")
+def restore_backup(snapshot: dict, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    if ADMIN_ROLE not in identity.roles:
+        raise HTTPException(status_code=403, detail=f"Requires the '{ADMIN_ROLE}' role.")
+    try:
+        counts = backup_service.restore_snapshot(snapshot, {
+            "bcaes_registry": bcaes_registry_service.artifact_store,
+            "canonical_repository": canonical_repository_service.artifact_store,
+        })
+    except backup_service.BackupError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    # restore_snapshot wrote directly to the persistent store — the running
+    # service's in-memory cache needs an explicit refresh to actually see
+    # it (a real bug caught here: without this, the process serves stale
+    # reads immediately after a "successful" restore).
+    bcaes_registry_service.reload_from_persistent_store()
+    canonical_repository_service.reload_from_persistent_store()
+    audit_logger.info("admin.backup.restore actor=%s counts=%s", identity.actor, counts)
+    return {"restored": counts}
+
+
+@app.get("/admin/configuration")
+def get_configuration_report(identity: AuthIdentity = Depends(get_identity)) -> dict:
+    """Live configuration validation report — same checks as the startup
+    log line, callable on demand rather than only visible in process logs.
+    Never returns actual secret values (see services/startup_config.py)."""
+    if ADMIN_ROLE not in identity.roles:
+        raise HTTPException(status_code=403, detail=f"Requires the '{ADMIN_ROLE}' role.")
+    return startup_config.validate_configuration()
+
+
+# ---------------------------------------------------------------------------
 # Runtime Identity — self-description manifest for TANTRA Runtime Registry
 # registration (Rajaryan Verma's integration point per the Constitutional
 # Runtime Convergence brief). MASTERDB exposes this; it does not call out to
@@ -1195,6 +1276,40 @@ def metrics() -> Any:
     lines.append("masterdb_up 1")
 
     return Response(content="\n".join(lines) + "\n", media_type="text/plain; version=0.0.4")
+
+
+# ---------------------------------------------------------------------------
+# InsightBridge push — confirmed-live (6 Aug 2026, see
+# CONSTITUTIONAL_RUNTIME_DEFINITION.md SS4) integration for Vijay Dhawan's
+# InsightFlow/InsightBridge/InsightCore territory. Unlike /metrics (pull,
+# for whoever scrapes it), this actively pushes to InsightBridge — real
+# outbound call, real degrade-gracefully-if-unreachable behavior, same
+# pattern as MDUClient. Payload shape is an assumption — see
+# services/insightbridge_client.py module docstring.
+# ---------------------------------------------------------------------------
+
+
+@app.post("/observability/push-to-insightbridge")
+def push_to_insightbridge(identity: AuthIdentity = Depends(get_identity)) -> dict:
+    from services.insightbridge_client import InsightBridgeClient, InsightBridgeUnavailableError
+
+    client = InsightBridgeClient()
+    if not client.is_configured():
+        return {
+            "pushed": False,
+            "reason": "PRAVAH_BHIV_INSIGHT_FLOW_BRIDGE is not set in this environment.",
+        }
+    try:
+        result = client.ingest(
+            source="masterdb",
+            metric_type="registry_summary",
+            data=bcaes_registry_service.registry_summary(),
+        )
+        audit_logger.info("insightbridge.push actor=%s status=ok", identity.actor)
+        return {"pushed": True, "insightbridge_response": result}
+    except InsightBridgeUnavailableError as exc:
+        audit_logger.info("insightbridge.push actor=%s status=failed error=%s", identity.actor, exc)
+        return {"pushed": False, "reason": str(exc)}
 
 
 # ---------------------------------------------------------------------------

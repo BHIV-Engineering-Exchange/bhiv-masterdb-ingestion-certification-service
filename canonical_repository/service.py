@@ -63,6 +63,13 @@ class CanonicalRepositoryService:
     def __init__(self, persist_dir: Optional[str] = None, artifact_store=None) -> None:
         self._store = CanonicalRepositoryStore(persist_dir=persist_dir, artifact_store=artifact_store)
 
+    @property
+    def artifact_store(self):
+        return self._store.artifact_store
+
+    def reload_from_persistent_store(self) -> None:
+        self._store.reload_from_persistent_store()
+
     def register(
         self, request: RegisterDocumentRequest, actor: str, actor_roles: List[str]
     ) -> CanonicalDocument:

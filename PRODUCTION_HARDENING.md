@@ -120,3 +120,44 @@ suite: **180/180 passing**, 97% statement coverage across `auth/`,
 4. Everything under Phase 6/7 of the task brief — live integration with
    the ecosystem and Central Depot/BHEX deposit — still needs real access
    this environment doesn't have.
+
+## Update — Phase 1/2 items delivered against Shivam Pal's brief (11 Aug 2026)
+
+Built solo per Kavy's decision (see repo history / task lead correspondence
+for the ownership ambiguity this resolves). Genuinely new since the
+"What's real now" section above:
+
+### Rate limiting
+`middleware/rate_limiter.py` (sliding window, framework-agnostic, 100%
+tested) + `middleware/rate_limit_middleware.py` (ASGI wiring). Keyed by
+actor (best-effort JWT extraction, not re-verified — that's still
+`auth/dependencies.py`'s job) or client IP. Health/ready/metrics/docs
+exempt. **Explicitly not distributed-safe** — in-memory per process; a
+real multi-worker or multi-instance deployment needs a shared store
+(Redis, etc.) this environment doesn't have. Configurable via
+`RATE_LIMIT_MAX_REQUESTS` / `RATE_LIMIT_WINDOW_SECONDS`.
+
+### Backup and recovery
+`services/backup_service.py` — application-level export/import through
+the same `ArtifactStore`/`SqlArtifactStore` interface already used for
+persistence, so it works identically on JSON-file or real-database
+backends. `GET /admin/backup` / `POST /admin/restore`, admin-role-gated,
+audit-logged. Proven with a genuine three-instance round trip (not just
+"the code runs"). **Not** a database-engine-level backup (no `pg_dump`,
+no WAL archiving) — that needs real production infrastructure. Doesn't
+cover `operational_sync`, which has no persistence layer yet.
+
+### Configuration validation
+`services/startup_config.py` — reports every env var this service reads
+(set/unset/malformed), logged once at startup and available live via
+`GET /admin/configuration` (admin-gated). Never returns actual secret
+values, only whether they're set — verified by test.
+
+### Still not done
+Distributed tracing (OpenTelemetry), an operational security review
+document, real load/performance testing, and everything in the original
+"What's NOT done" list above that needed real infrastructure or access
+this environment doesn't have.
+
+Full suite as of this update: **263/263 passing**, 96% coverage across
+`middleware/`, `services/backup_service.py`, `services/startup_config.py`.

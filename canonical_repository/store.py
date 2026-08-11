@@ -47,14 +47,24 @@ class CanonicalRepositoryStore:
         self._category_index: Dict[DocumentCategory, str] = {}
         if artifact_store is not None:
             self._artifact_store: Optional[object] = artifact_store
-            self._load_from_disk()
+            self.reload_from_persistent_store()
         elif persist_dir is not None:
             self._artifact_store = ArtifactStore(reports_dir=persist_dir)
-            self._load_from_disk()
+            self.reload_from_persistent_store()
         else:
             self._artifact_store = None
 
-    def _load_from_disk(self) -> None:
+    def reload_from_persistent_store(self) -> None:
+        """Re-syncs the in-memory cache from the underlying persistent
+        store — see bcaes_registry/store.py's identical method for why
+        this exists (POST /admin/restore writes directly to the artifact
+        store; the running service's in-memory cache needs an explicit
+        refresh to see it). No-op if running pure in-memory."""
+        if self._artifact_store is None:
+            return
+        self._documents = {}
+        self._versions = {}
+        self._category_index = {}
         for record in self._artifact_store.list_all():
             document = CanonicalDocument(**record["document"])
             versions = [DocumentVersion(**v) for v in record["versions"]]
@@ -71,6 +81,12 @@ class CanonicalRepositoryStore:
                     "versions": [v.model_dump(mode="json") for v in self._versions[document_id]],
                 },
             )
+
+    @property
+    def artifact_store(self):
+        """Read-only access to the underlying persistence backend — see
+        bcaes_registry/store.py's identical property for the rationale."""
+        return self._artifact_store
 
     def register(
         self,
