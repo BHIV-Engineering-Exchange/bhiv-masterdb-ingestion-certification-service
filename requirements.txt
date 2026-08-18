@@ -10,3 +10,4 @@ httpx
 python-dotenv
 PyJWT
 SQLAlchemy
+psycopg2-binary
