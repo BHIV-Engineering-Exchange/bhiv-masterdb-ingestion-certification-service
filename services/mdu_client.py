@@ -41,6 +41,14 @@ class MDUClient:
         self.api_key = api_key or os.environ.get("MDU_API_KEY")
         self.timeout_seconds = timeout_seconds
 
+        # Circuit breaker to prevent cascading failures if MDU is down.
+        from middleware.circuit_breaker import CircuitBreaker
+
+        self._circuit_breaker = CircuitBreaker(
+            failure_threshold=int(os.environ.get("MDU_CIRCUIT_BREAKER_FAILURE_THRESHOLD", "5")),
+            timeout_seconds=float(os.environ.get("MDU_CIRCUIT_BREAKER_TIMEOUT_SECONDS", "60")),
+        )
+
     def is_configured(self) -> bool:
         return bool(self.base_url and self.api_key)
 
@@ -71,7 +79,8 @@ class MDUClient:
             )
         url = f"{self.base_url}{path}"
         try:
-            response = httpx.get(
+            response = self._circuit_breaker.call(
+                httpx.get,
                 url,
                 headers={"X-API-Key": self.api_key},
                 timeout=self.timeout_seconds,
@@ -79,13 +88,8 @@ class MDUClient:
             response.raise_for_status()
             logger.info("MDU request ok path=%s status=%s", path, response.status_code)
             return response.json()
-        except httpx.HTTPStatusError as exc:
-            logger.warning(
-                "MDU request failed path=%s status=%s", path, exc.response.status_code
-            )
-            raise MDUUnavailableError(
-                f"MDU returned {exc.response.status_code} for {path}: {exc.response.text}"
-            ) from exc
-        except httpx.HTTPError as exc:
-            logger.warning("MDU request error path=%s error=%s", path, exc)
+        except Exception as exc:
+            logger.warning("MDU request failed path=%s error=%s", path, exc)
+            if isinstance(exc, MDUUnavailableError):
+                raise
             raise MDUUnavailableError(f"MDU request failed for {path}: {exc}") from exc

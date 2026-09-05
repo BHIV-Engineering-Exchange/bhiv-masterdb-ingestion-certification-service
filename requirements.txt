@@ -8,6 +8,6 @@ pydantic
 pytest
 httpx
 python-dotenv
-PyJWT
+PyJWT   
 SQLAlchemy
 psycopg2-binary

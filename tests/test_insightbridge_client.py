@@ -17,6 +17,7 @@ import httpx
 import pytest
 
 from services.insightbridge_client import InsightBridgeClient, InsightBridgeUnavailableError
+from middleware.circuit_breaker import CircuitBreakerState
 
 
 def test_unconfigured_raises_on_health_check(monkeypatch):
@@ -92,6 +93,29 @@ def test_ingest_connection_error_wrapped(monkeypatch):
     monkeypatch.setattr("services.insightbridge_client.httpx.post", fake_post)
     with pytest.raises(InsightBridgeUnavailableError):
         client.ingest(source="masterdb", metric_type="x", data={})
+
+
+def test_circuit_breaker_opens_after_failures(monkeypatch):
+    client = InsightBridgeClient(base_url="https://example-insightbridge.test")
+
+    # Force the circuit breaker into a quick-open state.
+    # We rely on defaults unless overridden by env; safest is to monkeypatch the
+    # circuit breaker instance attributes.
+    client._circuit_breaker.failure_threshold = 2
+    client._circuit_breaker.timeout_seconds = 60
+
+    def fake_post(url, json, timeout):
+        raise httpx.ConnectError("connection refused", request=httpx.Request("POST", url))
+
+    monkeypatch.setattr("services.insightbridge_client.httpx.post", fake_post)
+
+    with pytest.raises(InsightBridgeUnavailableError):
+        client.ingest(source="masterdb", metric_type="x", data={})
+
+    with pytest.raises(InsightBridgeUnavailableError):
+        client.ingest(source="masterdb", metric_type="x", data={})
+
+    assert client._circuit_breaker.state == CircuitBreakerState.OPEN
 
 
 def test_env_var_matches_ecosystem_naming(monkeypatch):

@@ -50,6 +50,14 @@ class InsightBridgeClient:
         self.base_url = (base_url or os.environ.get("PRAVAH_BHIV_INSIGHT_FLOW_BRIDGE") or "").rstrip("/")
         self.timeout_seconds = timeout_seconds
 
+        # Circuit breaker to prevent cascading failures if InsightBridge is down.
+        from middleware.circuit_breaker import CircuitBreaker
+
+        self._circuit_breaker = CircuitBreaker(
+            failure_threshold=int(os.environ.get("INSIGHTBRIDGE_CIRCUIT_BREAKER_FAILURE_THRESHOLD", "5")),
+            timeout_seconds=float(os.environ.get("INSIGHTBRIDGE_CIRCUIT_BREAKER_TIMEOUT_SECONDS", "60")),
+        )
+
     def is_configured(self) -> bool:
         return bool(self.base_url)
 
@@ -79,17 +87,15 @@ class InsightBridgeClient:
             )
         url = f"{self.base_url}{path}"
         try:
-            response = httpx.get(url, timeout=self.timeout_seconds)
+            response = self._circuit_breaker.call(httpx.get, url, timeout=self.timeout_seconds)
             response.raise_for_status()
             logger.info("InsightBridge request ok path=%s status=%s", path, response.status_code)
             return response.json()
-        except httpx.HTTPStatusError as exc:
-            logger.warning("InsightBridge request failed path=%s status=%s", path, exc.response.status_code)
-            raise InsightBridgeUnavailableError(
-                f"InsightBridge returned {exc.response.status_code} for {path}: {exc.response.text}"
-            ) from exc
-        except httpx.HTTPError as exc:
-            logger.warning("InsightBridge request error path=%s error=%s", path, exc)
+        except Exception as exc:
+            # Map all errors to InsightBridgeUnavailableError so callers can degrade gracefully.
+            logger.warning("InsightBridge request failed path=%s error=%s", path, exc)
+            if isinstance(exc, InsightBridgeUnavailableError):
+                raise
             raise InsightBridgeUnavailableError(f"InsightBridge request failed for {path}: {exc}") from exc
 
     def _post(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -100,15 +106,12 @@ class InsightBridgeClient:
             )
         url = f"{self.base_url}{path}"
         try:
-            response = httpx.post(url, json=payload, timeout=self.timeout_seconds)
+            response = self._circuit_breaker.call(httpx.post, url, json=payload, timeout=self.timeout_seconds)
             response.raise_for_status()
             logger.info("InsightBridge request ok path=%s status=%s", path, response.status_code)
             return response.json()
-        except httpx.HTTPStatusError as exc:
-            logger.warning("InsightBridge request failed path=%s status=%s", path, exc.response.status_code)
-            raise InsightBridgeUnavailableError(
-                f"InsightBridge returned {exc.response.status_code} for {path}: {exc.response.text}"
-            ) from exc
-        except httpx.HTTPError as exc:
-            logger.warning("InsightBridge request error path=%s error=%s", path, exc)
+        except Exception as exc:
+            logger.warning("InsightBridge request failed path=%s error=%s", path, exc)
+            if isinstance(exc, InsightBridgeUnavailableError):
+                raise
             raise InsightBridgeUnavailableError(f"InsightBridge request failed for {path}: {exc}") from exc
