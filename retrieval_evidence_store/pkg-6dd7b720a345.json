@@ -1,0 +1,30 @@
+{
+    "package_id": "pkg-6dd7b720a345",
+    "status": "NOT_RETRIEVABLE",
+    "rules": [
+        {
+            "rule": "PACKAGE_CERTIFIED",
+            "passed": false,
+            "detail": "Package status is INGESTED; CERTIFIED or RETRIEVAL_READY is required."
+        },
+        {
+            "rule": "NOT_DEPRECATED_OR_ARCHIVED",
+            "passed": true,
+            "detail": "Package is active."
+        },
+        {
+            "rule": "METADATA_COMPLETE",
+            "passed": true,
+            "detail": "All required package metadata fields are present."
+        },
+        {
+            "rule": "LINEAGE_REGISTERED",
+            "passed": true,
+            "detail": "Knowledge object with source_reference is registered."
+        }
+    ],
+    "corrective_actions": [
+        "Promote the package through VERIFIED -> CERTIFIED before requesting retrieval readiness."
+    ],
+    "generated_at": "2026-09-05T12:38:15.237957+00:00"
+}

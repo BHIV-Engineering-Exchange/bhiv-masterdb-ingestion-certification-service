@@ -1,0 +1,39 @@
+{
+    "package_id": "pkg-f6c51cc500bd",
+    "dataset_id": "sample-certified",
+    "dataset_version": "1.0.0",
+    "schema_version": "2",
+    "board": "AI",
+    "medium": "text",
+    "language": "en",
+    "owner": "kavy",
+    "created_at": "2026-09-05T06:11:17.353069+00:00",
+    "updated_at": "2026-09-05T06:12:33.934186+00:00",
+    "status": "DEPRECATED",
+    "history": [
+        {
+            "transition_id": "txn-c88062480ffe",
+            "from_status": null,
+            "to_status": "REGISTERED",
+            "reason": "Initial package registration.",
+            "actor": "pipeline",
+            "timestamp": "2026-09-05T06:11:17.353140+00:00"
+        },
+        {
+            "transition_id": "txn-9402fed01eee",
+            "from_status": "REGISTERED",
+            "to_status": "INGESTED",
+            "reason": "Ingestion pipeline completed.",
+            "actor": "pipeline",
+            "timestamp": "2026-09-05T06:11:54.144843+00:00"
+        },
+        {
+            "transition_id": "txn-88b3cdc76cbb",
+            "from_status": "INGESTED",
+            "to_status": "DEPRECATED",
+            "reason": "Superseded by a newer dataset version.",
+            "actor": "owner",
+            "timestamp": "2026-09-05T06:12:33.934016+00:00"
+        }
+    ]
+}

@@ -59,6 +59,18 @@ from services.tantra_interface_service import (
 )
 from services.validation_service import ValidationService
 
+from database_targets.models import (
+    IngestRequest,
+    IngestionFormat,
+    IngestionJobStatus,
+    TargetDatabase,
+)
+from database_targets.service import (
+    DatabaseRouterService,
+    JobNotFoundError,
+    UnknownDatabaseError,
+)
+
 from bcaes_registry.convergence_models import ConvergenceUpdateRequest as BCAESConvergenceUpdateRequest
 from bcaes_registry.models import RegisterObjectRequest as BCAESRegisterObjectRequest
 from bcaes_registry.models import RegistryType as BCAESRegistryType
@@ -179,6 +191,16 @@ certification_service = CertificationService(
     artifact_store=artifact_store,
 )
 report_service = ReportService(artifact_store=artifact_store)
+
+# --- Database Targets: attach the ingestion/certification pipeline above to
+# the 8 MASTERDB target databases (VectorDB, GraphDB, MetadataDB,
+# DocumentDB, TimeSeriesDB, RelationalDB, ArchiveDB, AnalyticsDB) as a
+# limited, highly controlled ingestion facility. Reads certification
+# decisions from the *same* `artifact_store` populated by
+# validation_service/certification_service above — this is the attach,
+# not rebuild, boundary described in the task assignment. See
+# database_targets/service.py.
+database_router_service = DatabaseRouterService(certification_artifact_store=artifact_store)
 
 # --- MASTERDB knowledge platform runtime (Knowledge Package Lifecycle,
 # Provenance/Lineage, Retrieval Readiness) ---------------------------------
@@ -336,6 +358,77 @@ def get_report(dataset_id: str) -> dict:
         return report_service.get_report(dataset_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# Database Targets — MASTERDB database routing / controlled ingestion
+# attachment. Discovery is authenticated-read-only; POST /ingest enforces
+# per-database RBAC, format contract, and the CERTIFIED gate before
+# routing (see database_targets/service.py for the full control chain).
+# ---------------------------------------------------------------------------
+
+
+@app.get("/databases")
+def list_databases(identity: AuthIdentity = Depends(get_identity)) -> List[dict]:
+    return [db.model_dump(mode="json") for db in database_router_service.list_databases()]
+
+
+@app.get("/databases/{database_key}")
+def get_database(database_key: TargetDatabase, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    try:
+        return database_router_service.get_database(database_key).model_dump(mode="json")
+    except UnknownDatabaseError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/ingest", status_code=201)
+def ingest_dataset(request: IngestRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    job = database_router_service.ingest(
+        dataset_id=request.dataset_id,
+        target_database=request.target_database,
+        source_format=request.source_format,
+        actor=identity.actor,
+        roles=identity.roles,
+        package_id=request.package_id,
+        metadata=request.metadata,
+    )
+    audit_logger.info(
+        "ingest job_id=%s dataset_id=%s target=%s actor=%s status=%s",
+        job.job_id, job.dataset_id, job.target_database.value, identity.actor, job.status.value,
+    )
+    if job.status == IngestionJobStatus.PERSISTED:
+        return job.model_dump(mode="json")
+    # Precise status code from the failing step, without collapsing every
+    # rejection into a generic 400 — RBAC denial is a 403, format/
+    # certification rejection is a 422. Full reasoning trail (all steps,
+    # not just the failing one) stays retrievable via GET /ingest/jobs/{id}.
+    failed_step = next((step for step in job.steps if not step.passed), None)
+    status_code = 403 if failed_step and failed_step.step == "RBAC_CHECK" else 422
+    raise HTTPException(
+        status_code=status_code,
+        detail=f"{job.rejection_reason} (job_id={job.job_id})",
+    )
+
+
+@app.get("/ingest/jobs/{job_id}")
+def get_ingest_job(job_id: str, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    try:
+        return database_router_service.get_job(job_id).model_dump(mode="json")
+    except JobNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/ingest/jobs")
+def list_ingest_jobs(
+    dataset_id: Optional[str] = None,
+    target_database: Optional[TargetDatabase] = None,
+    status: Optional[IngestionJobStatus] = None,
+    identity: AuthIdentity = Depends(get_identity),
+) -> List[dict]:
+    jobs = database_router_service.list_jobs(
+        dataset_id=dataset_id, target_database=target_database, status=status,
+    )
+    return [job.model_dump(mode="json") for job in jobs]
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,31 @@
+{
+    "package_id": "pkg-f6c51cc500bd",
+    "status": "NOT_RETRIEVABLE",
+    "rules": [
+        {
+            "rule": "PACKAGE_CERTIFIED",
+            "passed": false,
+            "detail": "Package status is DEPRECATED; CERTIFIED or RETRIEVAL_READY is required."
+        },
+        {
+            "rule": "NOT_DEPRECATED_OR_ARCHIVED",
+            "passed": false,
+            "detail": "Package status is DEPRECATED."
+        },
+        {
+            "rule": "METADATA_COMPLETE",
+            "passed": true,
+            "detail": "All required package metadata fields are present."
+        },
+        {
+            "rule": "LINEAGE_REGISTERED",
+            "passed": true,
+            "detail": "Knowledge object with source_reference is registered."
+        }
+    ],
+    "corrective_actions": [
+        "Promote the package through VERIFIED -> CERTIFIED before requesting retrieval readiness.",
+        "This package has been withdrawn; register a new package version instead of retrieving this one."
+    ],
+    "generated_at": "2026-09-05T06:15:48.391108+00:00"
+}

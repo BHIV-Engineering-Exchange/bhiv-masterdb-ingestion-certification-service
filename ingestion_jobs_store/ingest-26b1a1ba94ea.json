@@ -1,0 +1,45 @@
+{
+    "job_id": "ingest-26b1a1ba94ea",
+    "trace_id": "trace-abfd0041ac2b",
+    "dataset_id": "sample-certified",
+    "target_database": "RelationalDB",
+    "source_format": "csv",
+    "package_id": null,
+    "actor": "kavy",
+    "roles": [
+        "ingest:relationaldb"
+    ],
+    "status": "PERSISTED",
+    "certification_state": "CERTIFIED",
+    "integrity_score": 100.0,
+    "steps": [
+        {
+            "step": "RBAC_CHECK",
+            "passed": true,
+            "detail": "actor holds required role 'ingest:relationaldb'",
+            "at": "2026-09-09T06:49:50.507103+00:00"
+        },
+        {
+            "step": "FORMAT_CHECK",
+            "passed": true,
+            "detail": "'csv' accepted by RelationalDB",
+            "at": "2026-09-09T06:49:50.507121+00:00"
+        },
+        {
+            "step": "CERTIFICATION_GATE",
+            "passed": true,
+            "detail": "dataset is CERTIFIED and eligible_for_masterdb=True",
+            "at": "2026-09-09T06:49:50.507285+00:00"
+        },
+        {
+            "step": "ROUTED",
+            "passed": true,
+            "detail": "Routed to RelationalDB.",
+            "at": "2026-09-09T06:49:50.507293+00:00"
+        }
+    ],
+    "rejection_reason": null,
+    "metadata": {},
+    "submitted_at": "2026-09-09T06:49:50.507346+00:00",
+    "completed_at": "2026-09-09T06:49:50.507299+00:00"
+}

@@ -14,6 +14,14 @@ All endpoints return structured JSON only.
 > §6, since they're a distinct, additive module rather than part of the
 > certification/lifecycle/lineage API below.
 
+> The Database Targets endpoints (`GET /databases`, `GET /databases/{key}`,
+> `POST /ingest`, `GET /ingest/jobs*`) — the controlled attachment of this
+> certification pipeline to the 8 MASTERDB target databases for the
+> Dashboard & Control Center — are documented in
+> `DATABASE_TARGETS_ARCHITECTURE.md`, including the RBAC role per database
+> and the full RBAC -> format -> certification-gate -> routed control
+> chain.
+
 ## POST /validate
 
 Runs deterministic validation checks and stores a validation report.
@@ -360,7 +368,7 @@ expose what MDU reports, plus MASTERDB's own version-negotiation decision
 on top of it. Configure `MDU_BASE_URL` / `MDU_API_KEY` as environment
 variables to enable live mode; without them every call below degrades to a
 flagged placeholder rather than failing.
-
+  
 ## GET /mdu/status
 
 ```json

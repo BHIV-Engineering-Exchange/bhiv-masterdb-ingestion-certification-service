@@ -97,6 +97,20 @@
             "rule": "MASTERDB_CERTIFICATION_GATE",
             "passed": true,
             "reason": "Dataset is trusted, clean, and eligible for MASTERDB ingestion."
+        },
+        {
+            "from_state": "CERTIFIED",
+            "to_state": "VERIFIED",
+            "rule": "VALIDATION_SCORE_AND_RISK_GATE",
+            "passed": true,
+            "reason": "Dataset meets minimum verification score and risk gates."
+        },
+        {
+            "from_state": "VERIFIED",
+            "to_state": "CERTIFIED",
+            "rule": "MASTERDB_CERTIFICATION_GATE",
+            "passed": true,
+            "reason": "Dataset is trusted, clean, and eligible for MASTERDB ingestion."
         }
     ],
     "ingestion_decision": {
@@ -116,6 +130,20 @@
             },
             {
                 "from_state": "VALIDATED",
+                "to_state": "VERIFIED",
+                "rule": "VALIDATION_SCORE_AND_RISK_GATE",
+                "passed": true,
+                "reason": "Dataset meets minimum verification score and risk gates."
+            },
+            {
+                "from_state": "VERIFIED",
+                "to_state": "CERTIFIED",
+                "rule": "MASTERDB_CERTIFICATION_GATE",
+                "passed": true,
+                "reason": "Dataset is trusted, clean, and eligible for MASTERDB ingestion."
+            },
+            {
+                "from_state": "CERTIFIED",
                 "to_state": "VERIFIED",
                 "rule": "VALIDATION_SCORE_AND_RISK_GATE",
                 "passed": true,

@@ -42,6 +42,14 @@ The full set of ecosystem endpoint URLs shared 6 Aug 2026 — which are
 confirmed live, which are ambiguous, which are internal-only, which are
 unresolved placeholders — is recorded in `ECOSYSTEM_ENDPOINTS.md`.
 
+This repo also attaches the certification pipeline above to the 8
+MASTERDB target databases (VectorDB, GraphDB, MetadataDB, DocumentDB,
+TimeSeriesDB, RelationalDB, ArchiveDB, AnalyticsDB) as a controlled
+ingestion facility for the MASTERDB Dashboard & Control Center
+(`GET /databases`, `POST /ingest`, `GET /ingest/jobs*`) — see
+`DATABASE_TARGETS_ARCHITECTURE.md` for the full contract, RBAC model, and
+control chain.
+
 
 ## Scope
 
@@ -292,6 +300,35 @@ Discover packages by board and lifecycle status:
 curl "http://127.0.0.1:8000/discovery/packages?board=maritime&status=CERTIFIED"
 ```
 
+## Database Targets — Controlled Ingestion Examples
+
+Discover the 8 MASTERDB target databases (auth required):
+
+```bash
+curl http://127.0.0.1:8000/databases \
+  -H "Authorization: Bearer <token>"
+```
+
+Ingest a CERTIFIED dataset into a specific target database:
+
+```bash
+curl -X POST http://127.0.0.1:8000/ingest \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d "{\"dataset_id\":\"sample-certified\",\"target_database\":\"RelationalDB\",\"source_format\":\"csv\"}"
+```
+
+Check an ingestion job:
+
+```bash
+curl http://127.0.0.1:8000/ingest/jobs/<job_id> \
+  -H "Authorization: Bearer <token>"
+```
+
+See `DATABASE_TARGETS_ARCHITECTURE.md` for the RBAC roles required per
+database and the full control chain (RBAC -> format -> certification gate
+-> routed).
+
 Check replay consistency and audit completeness:
 
 ```bash
@@ -326,6 +363,9 @@ before merging.
 
 ```text
 config/                 Validation schema and rule configuration
+database_targets/       MASTERDB database routing / controlled ingestion
+                        attachment (8 target databases, RBAC, contract) —
+                        see DATABASE_TARGETS_ARCHITECTURE.md
 datasets/               Sample valid and invalid dataset packages
 engines/                Scoring, risk, classification, recommendation engines
 profiling/              Dataset profiling
@@ -360,6 +400,7 @@ shared_store/           Shared dataset records (authentication, identity,
 - `HANDOVER.md`
 - `MDU_INTERFACE_CONTRACT.md`
 - `MASTERDB_SHARED_DATA_ARCHITECTURE.md`
+- `DATABASE_TARGETS_ARCHITECTURE.md`
 
 ## Task 4 — Shared Data Services & MASTERDB Convergence
 
