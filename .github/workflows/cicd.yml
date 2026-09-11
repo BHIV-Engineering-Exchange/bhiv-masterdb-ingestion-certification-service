@@ -1,4 +1,4 @@
-name: MASTERDB CI/CD
+name: MasterDB CI/CD
 
 on:
   push:
@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "Select action"
+        description: "Deployment action"
         required: true
-        default: deploy
+        default: "deploy"
         type: choice
         options:
           - deploy
@@ -20,22 +20,24 @@ env:
   IMAGE_NAME: masterdb-ingestion-certification-service
   DEPLOY_DIR: MASTERDB
   CONTAINER_NAME: masterdb-api
-  CONTAINER_PORT: 8000
-  START_PORT: 30308
+  CONTAINER_PORT: "8000"
+  START_PORT: "30308"
 
 jobs:
 
-  # ==========================================================
+  # ============================================================
   # 1. TEST
-  # ==========================================================
-
+  # ============================================================
   test:
-    name: Test MASTERDB
-    if: ${{ github.event_name == 'push' || inputs.action == 'deploy' }}
+    name: Test Application
     runs-on: ubuntu-latest
 
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy')
+
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -50,25 +52,23 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest -v
+          pytest -q
 
 
-  # ==========================================================
-  # 2. BUILD + TEST + PUSH DOCKER IMAGE
-  # ==========================================================
-
+  # ============================================================
+  # 2. BUILD AND PUSH DOCKER IMAGE
+  # ============================================================
   build:
-    name: Build and Push DockerHub
-    needs: test
-    if: ${{ github.event_name == 'push' || inputs.action == 'deploy' }}
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    needs: test
 
-    outputs:
-      image: ${{ steps.image.outputs.image }}
-      tag: ${{ steps.image.outputs.tag }}
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy')
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Setup Docker Buildx
@@ -80,149 +80,81 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set image information
+      - name: Set image tags
         id: image
         shell: bash
         run: |
-          IMAGE="${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}"
-          TAG="${GITHUB_SHA::7}"
+          SHORT_SHA="${GITHUB_SHA::7}"
 
-          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "tag=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "latest=latest" >> "$GITHUB_OUTPUT"
 
-          echo "DockerHub image:"
-          echo "${IMAGE}:${TAG}"
+          echo "Docker image:"
+          echo "${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}:${SHORT_SHA}"
 
       - name: Build Docker image
         run: |
           docker build \
-            -t "${{ steps.image.outputs.image }}:${{ steps.image.outputs.tag }}" \
+            -t "${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}:${{ steps.image.outputs.tag }}" \
+            -t "${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}:latest" \
             .
 
-      - name: Test Docker image
-        run: |
-          docker run -d \
-            --name masterdb-test \
-            -p 18000:8000 \
-            "${{ steps.image.outputs.image }}:${{ steps.image.outputs.tag }}"
-
-          echo "Waiting for MASTERDB..."
-
-          for i in {1..30}; do
-            if curl -fsS \
-              http://127.0.0.1:18000/health \
-              > /dev/null 2>&1; then
-
-              echo "Docker health check PASSED."
-
-              docker rm -f masterdb-test
-              exit 0
-            fi
-
-            echo "Health attempt ${i}/30"
-            sleep 2
-          done
-
-          echo "Docker health check FAILED."
-
-          docker logs masterdb-test || true
-          docker rm -f masterdb-test || true
-
-          exit 1
-
-      - name: Tag latest
-        run: |
-          docker tag \
-            "${{ steps.image.outputs.image }}:${{ steps.image.outputs.tag }}" \
-            "${{ steps.image.outputs.image }}:latest"
-
-      - name: Push versioned image
+      - name: Push SHA image
         run: |
           docker push \
-            "${{ steps.image.outputs.image }}:${{ steps.image.outputs.tag }}"
+            "${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}:${{ steps.image.outputs.tag }}"
 
       - name: Push latest image
         run: |
           docker push \
-            "${{ steps.image.outputs.image }}:latest"
-
-      - name: Build summary
-        run: |
-          echo "=========================================="
-          echo "DOCKERHUB PUSH SUCCESSFUL"
-          echo "=========================================="
-          echo "${{ steps.image.outputs.image }}:${{ steps.image.outputs.tag }}"
-          echo "${{ steps.image.outputs.image }}:latest"
-          echo "=========================================="
+            "${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}:latest"
 
 
-  # ==========================================================
+  # ============================================================
   # 3. DEPLOY
-  # ==========================================================
-
+  # ============================================================
   deploy:
-    name: Deploy MASTERDB
-    needs: build
-    if: ${{ github.event_name == 'push' || inputs.action == 'deploy' }}
+    name: Deploy to VM
     runs-on: ubuntu-latest
+    needs: build
+
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy')
 
     steps:
-      - name: Checkout repository
+
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install SSH tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y sshpass
-
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
-          ssh-keyscan \
-            -p "${{ secrets.VM_PORT }}" \
-            "${{ secrets.VM_IP }}" \
-            >> ~/.ssh/known_hosts
-
-      # ------------------------------------------------------
-      # CREATE MASTERDB DIRECTORY
-      # ------------------------------------------------------
-
-      - name: Create MASTERDB directory
+      # --------------------------------------------------------
+      # Create .env from GitHub Secret
+      # --------------------------------------------------------
+      - name: Create production .env
         env:
-          VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+          MASTERDB_ENV_FILE: ${{ secrets.MASTERDB_ENV_FILE }}
+        shell: bash
         run: |
-          sshpass -p "$VM_PASSWORD" ssh \
-            -o StrictHostKeyChecking=yes \
-            -p "${{ secrets.VM_PORT }}" \
-            "${{ secrets.VM_USERNAME }}@${{ secrets.VM_IP }}" \
-            "mkdir -p MASTERDB/history"
-
-      # ------------------------------------------------------
-      # VERIFY .env
-      # ------------------------------------------------------
-
-      - name: Verify .env
-        run: |
-          if [ ! -f .env ]; then
-            echo "ERROR: .env file not found."
+          if [ -z "$MASTERDB_ENV_FILE" ]; then
+            echo "ERROR: MASTERDB_ENV_FILE secret is empty or missing."
             exit 1
           fi
 
-      # ------------------------------------------------------
-      # CREATE PRODUCTION COMPOSE
-      # ------------------------------------------------------
+          printf '%s\n' "$MASTERDB_ENV_FILE" > .env
+          chmod 600 .env
 
-      - name: Create docker-compose.yml
+          echo ".env created successfully."
+
+      # --------------------------------------------------------
+      # Create production docker-compose.yml
+      # --------------------------------------------------------
+      - name: Create production docker-compose.yml
+        shell: bash
         run: |
           cat > docker-compose.yml <<'EOF'
-          version: "3.9"
-
           services:
             api:
               image: ${DOCKER_USERNAME}/masterdb-ingestion-certification-service:${IMAGE_TAG}
-
               container_name: masterdb-api
 
               ports:
@@ -237,12 +169,10 @@ jobs:
 
               healthcheck:
                 test:
-                  [
-                    "CMD",
-                    "curl",
-                    "-f",
-                    "http://localhost:8000/health"
-                  ]
+                  - CMD
+                  - curl
+                  - -f
+                  - http://localhost:8000/health
                 interval: 30s
                 timeout: 10s
                 retries: 3
@@ -265,395 +195,485 @@ jobs:
               driver: bridge
           EOF
 
-      # ------------------------------------------------------
-      # COPY ONLY:
-      #
-      # docker-compose.yml
-      # .env
-      #
-      # NO SOURCE CODE
-      # ------------------------------------------------------
+          echo "Production docker-compose.yml created."
 
-      - name: Copy only deployment files
-        env:
-          VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+      # --------------------------------------------------------
+      # Validate files
+      # --------------------------------------------------------
+      - name: Validate deployment files
+        shell: bash
         run: |
-          sshpass -p "$VM_PASSWORD" scp \
-            -o StrictHostKeyChecking=yes \
-            -P "${{ secrets.VM_PORT }}" \
-            docker-compose.yml \
-            .env \
-            "${{ secrets.VM_USERNAME }}@${{ secrets.VM_IP }}:MASTERDB/"
-
-      # ------------------------------------------------------
-      # DEPLOY
-      # ------------------------------------------------------
-
-      - name: Deploy MASTERDB from DockerHub
-        env:
-          VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: |
-
-          IMAGE="${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}"
-          TAG="${GITHUB_SHA::7}"
-
-          echo "=========================================="
-          echo "MASTERDB DEPLOYMENT"
-          echo "=========================================="
-          echo "Image: ${IMAGE}:${TAG}"
-          echo "Directory: MASTERDB"
-          echo "Starting port: ${START_PORT}"
-          echo "Container port: ${CONTAINER_PORT}"
-          echo "=========================================="
-
-          # --------------------------------------------------
-          # DockerHub login on VM
-          # --------------------------------------------------
-
-          printf '%s' "$DOCKER_PASSWORD" | \
-          sshpass -p "$VM_PASSWORD" ssh \
-            -o StrictHostKeyChecking=yes \
-            -p "${{ secrets.VM_PORT }}" \
-            "${{ secrets.VM_USERNAME }}@${{ secrets.VM_IP }}" \
-            "docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin"
-
-          # --------------------------------------------------
-          # Remote deployment
-          # --------------------------------------------------
-
-          sshpass -p "$VM_PASSWORD" ssh \
-            -o StrictHostKeyChecking=yes \
-            -p "${{ secrets.VM_PORT }}" \
-            "${{ secrets.VM_USERNAME }}@${{ secrets.VM_IP }}" \
-            "IMAGE='$IMAGE' TAG='$TAG' START_PORT='$START_PORT' DOCKER_USERNAME='${{ secrets.DOCKER_USERNAME }}' bash -s" <<'REMOTE_SCRIPT'
-
-          set -e
-
-          DEPLOY_DIR="MASTERDB"
-          HISTORY_DIR="MASTERDB/history"
-
-          cd "$DEPLOY_DIR"
-
-          echo "=========================================="
-          echo "CHECKING AVAILABLE PORT"
-          echo "=========================================="
-
-          HOST_PORT="${START_PORT}"
-
-          while ss -ltnH | awk '{print $4}' | grep -Eq "[:.]${HOST_PORT}$"; do
-            echo "Port ${HOST_PORT} is occupied."
-            HOST_PORT=$((HOST_PORT + 1))
-          done
-
-          echo "Selected port: ${HOST_PORT}"
-
-          # --------------------------------------------------
-          # Check .env
-          # --------------------------------------------------
-
-          if [ ! -f ".env" ]; then
-            echo "ERROR: MASTERDB/.env does not exist."
-            exit 1
-          fi
-
-          # --------------------------------------------------
-          # Save previous compose for rollback
-          # --------------------------------------------------
-
-          if [ -f "docker-compose.yml" ]; then
-
-            cp \
-              docker-compose.yml \
-              "${HISTORY_DIR}/previous-compose.yml"
-
-            docker inspect masterdb-api \
-              --format='{{.Config.Image}}' \
-              > "${HISTORY_DIR}/previous-image.txt" \
-              2>/dev/null || true
-
-            date -u +"%Y-%m-%dT%H:%M:%SZ" \
-              > "${HISTORY_DIR}/previous-timestamp.txt"
-
-          fi
-
-          # --------------------------------------------------
-          # Set Compose variables
-          # --------------------------------------------------
-
-          export DOCKER_USERNAME="$DOCKER_USERNAME"
-          export IMAGE_TAG="$TAG"
-          export MASTERDB_PORT="$HOST_PORT"
-
-          # --------------------------------------------------
-          # Validate Compose
-          # --------------------------------------------------
-
-          docker compose config > /dev/null
-
-          echo "Docker Compose configuration valid."
-
-          # --------------------------------------------------
-          # Pull DockerHub image
-          # --------------------------------------------------
-
-          echo "Pulling DockerHub image..."
-
-          docker pull "${IMAGE}:${TAG}"
-
-          # --------------------------------------------------
-          # Stop current deployment
-          # --------------------------------------------------
-
-          docker compose down || true
-
-          # --------------------------------------------------
-          # Start new deployment
-          # --------------------------------------------------
-
-          docker compose up -d --remove-orphans
-
-          # --------------------------------------------------
-          # Health check
-          # --------------------------------------------------
-
-          echo "Waiting for MASTERDB..."
-
-          HEALTH_OK=0
-
-          for i in {1..30}; do
-
-            if curl -fsS \
-              "http://127.0.0.1:${HOST_PORT}/health" \
-              > /dev/null 2>&1; then
-
-              HEALTH_OK=1
-
-              echo "MASTERDB health check PASSED."
-
-              break
-            fi
-
-            echo "Health attempt ${i}/30"
-
-            sleep 3
-
-          done
-
-          # --------------------------------------------------
-          # Automatic rollback
-          # --------------------------------------------------
-
-          if [ "$HEALTH_OK" -ne 1 ]; then
-
-            echo "=========================================="
-            echo "DEPLOYMENT FAILED"
-            echo "STARTING AUTOMATIC ROLLBACK"
-            echo "=========================================="
-
-            docker compose logs --tail=100 || true
-
-            if [ -f "${HISTORY_DIR}/previous-compose.yml" ]; then
-
-              cp \
-                "${HISTORY_DIR}/previous-compose.yml" \
-                docker-compose.yml
-
-              docker compose down || true
-
-              docker compose up -d
-
-              echo "Previous deployment restored."
-
-            else
-
-              echo "No previous deployment available."
-
-            fi
-
-            exit 1
-
-          fi
-
-          # --------------------------------------------------
-          # Save successful release
-          # --------------------------------------------------
-
-          RELEASE_DIR="${HISTORY_DIR}/${TAG}"
-
-          mkdir -p "$RELEASE_DIR"
-
-          cp \
-            docker-compose.yml \
-            "${RELEASE_DIR}/docker-compose.yml"
-
-          echo "${IMAGE}:${TAG}" \
-            > "${RELEASE_DIR}/image.txt"
-
-          echo "${HOST_PORT}" \
-            > "${RELEASE_DIR}/port.txt"
-
-          date -u +"%Y-%m-%dT%H:%M:%SZ" \
-            > "${RELEASE_DIR}/timestamp.txt"
-
-          echo "${TAG}" \
-            > "${HISTORY_DIR}/current-release.txt"
-
-          echo "${HOST_PORT}" \
-            > "${HISTORY_DIR}/current-port.txt"
-
-          echo "=========================================="
-          echo "MASTERDB DEPLOYMENT SUCCESSFUL"
-          echo "=========================================="
-          echo "Image: ${IMAGE}:${TAG}"
-          echo "Directory: MASTERDB"
-          echo "Port: ${HOST_PORT}"
-          echo "Container port: 8000"
-          echo "Container: masterdb-api"
-          echo "=========================================="
-
-          REMOTE_SCRIPT
-
-
-  # ==========================================================
-  # 4. MANUAL ROLLBACK
-  # ==========================================================
-
-  rollback:
-    name: Rollback MASTERDB
-
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'rollback' }}
-
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: Install SSH tools
+          test -f docker-compose.yml
+          test -f .env
+
+          echo "docker-compose.yml exists."
+          echo ".env exists."
+
+      # --------------------------------------------------------
+      # Install sshpass
+      # --------------------------------------------------------
+      - name: Install sshpass
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass
 
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
-          ssh-keyscan \
-            -p "${{ secrets.VM_PORT }}" \
-            "${{ secrets.VM_IP }}" \
-            >> ~/.ssh/known_hosts
-
-      - name: Rollback previous release
+      # --------------------------------------------------------
+      # Prepare MASTERDB directory
+      # --------------------------------------------------------
+      - name: Prepare VM
         env:
           VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+          VM_USERNAME: ${{ secrets.VM_USERNAME }}
+          VM_IP: ${{ secrets.VM_IP }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+        shell: bash
+        run: |
+          sshpass -p "$VM_PASSWORD" ssh \
+            -o StrictHostKeyChecking=no \
+            -p "$VM_PORT" \
+            "$VM_USERNAME@$VM_IP" \
+            "mkdir -p $DEPLOY_DIR/history"
+
+      # --------------------------------------------------------
+      # Copy ONLY compose and .env
+      # --------------------------------------------------------
+      - name: Copy deployment files
+        env:
+          VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+          VM_USERNAME: ${{ secrets.VM_USERNAME }}
+          VM_IP: ${{ secrets.VM_IP }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+        shell: bash
+        run: |
+          sshpass -p "$VM_PASSWORD" scp \
+            -o StrictHostKeyChecking=no \
+            -P "$VM_PORT" \
+            docker-compose.yml \
+            .env \
+            "$VM_USERNAME@$VM_IP:$DEPLOY_DIR/"
+
+      # --------------------------------------------------------
+      # Deploy
+      # --------------------------------------------------------
+      - name: Deploy application
+        env:
+          VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+          VM_USERNAME: ${{ secrets.VM_USERNAME }}
+          VM_IP: ${{ secrets.VM_IP }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          IMAGE_TAG: ${{ github.sha }}
+        shell: bash
         run: |
 
+          SHORT_SHA="${GITHUB_SHA::7}"
+
           sshpass -p "$VM_PASSWORD" ssh \
-            -o StrictHostKeyChecking=yes \
-            -p "${{ secrets.VM_PORT }}" \
-            "${{ secrets.VM_USERNAME }}@${{ secrets.VM_IP }}" \
-            "bash -s" <<'REMOTE_SCRIPT'
+            -o StrictHostKeyChecking=no \
+            -p "$VM_PORT" \
+            "$VM_USERNAME@$VM_IP" \
+            "DOCKER_USERNAME='$DOCKER_USERNAME' \
+             DOCKER_PASSWORD='$DOCKER_PASSWORD' \
+             IMAGE_TAG='$SHORT_SHA' \
+             START_PORT='$START_PORT' \
+             DEPLOY_DIR='$DEPLOY_DIR' \
+             CONTAINER_NAME='$CONTAINER_NAME' \
+             bash -s" <<'REMOTE_SCRIPT'
 
           set -e
 
-          DEPLOY_DIR="MASTERDB"
-          HISTORY_DIR="MASTERDB/history"
-
           cd "$DEPLOY_DIR"
 
-          echo "=========================================="
-          echo "MASTERDB ROLLBACK"
-          echo "=========================================="
+          echo "========================================"
+          echo "MASTERDB DEPLOYMENT"
+          echo "========================================"
 
-          if [ ! -f "${HISTORY_DIR}/previous-compose.yml" ]; then
-            echo "ERROR: No previous release found."
-            exit 1
+          echo "Deployment directory:"
+          pwd
+
+          echo ""
+          echo "Files:"
+          ls -la
+
+          # ------------------------------------------------------
+          # DockerHub login
+          # ------------------------------------------------------
+          echo ""
+          echo "Logging into DockerHub..."
+
+          echo "$DOCKER_PASSWORD" | docker login \
+            -u "$DOCKER_USERNAME" \
+            --password-stdin
+
+          # ------------------------------------------------------
+          # Save current deployment for rollback
+          # ------------------------------------------------------
+          if docker inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
+
+            echo ""
+            echo "Existing deployment detected."
+
+            mkdir -p history
+
+            TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+
+            cp docker-compose.yml \
+              "history/compose_${TIMESTAMP}.yml"
+
+            docker inspect "$CONTAINER_NAME" \
+              > "history/container_${TIMESTAMP}.json"
+
+            echo "Previous deployment saved."
+
+          else
+
+            echo ""
+            echo "No previous deployment found."
+
           fi
 
-          # Restore previous compose
-          cp \
-            "${HISTORY_DIR}/previous-compose.yml" \
-            docker-compose.yml
+          # ------------------------------------------------------
+          # Determine port
+          # ------------------------------------------------------
 
-          echo "Previous compose restored."
+          HOST_PORT="$START_PORT"
 
-          # Pull previous image
-          if [ -f "${HISTORY_DIR}/previous-image.txt" ]; then
+          # If an existing container is running, try to reuse
+          # its current host port.
+          EXISTING_PORT="$(docker inspect \
+            -f '{{range $p, $conf := .NetworkSettings.Ports}}{{if $conf}}{{(index $conf 0).HostPort}}{{end}}{{end}}' \
+            "$CONTAINER_NAME" 2>/dev/null || true)"
 
-            PREVIOUS_IMAGE=$(cat \
-              "${HISTORY_DIR}/previous-image.txt")
+          if [ -n "$EXISTING_PORT" ]; then
+            HOST_PORT="$EXISTING_PORT"
+            echo "Reusing existing MASTERDB port: $HOST_PORT"
+          else
 
-            echo "Previous image: ${PREVIOUS_IMAGE}"
+            while ss -ltnH | awk '{print $4}' | grep -qE ":${HOST_PORT}$"; do
+              echo "Port $HOST_PORT is already in use."
+              HOST_PORT=$((HOST_PORT + 1))
+            done
 
-            docker pull "${PREVIOUS_IMAGE}" || true
+            echo "Selected free port: $HOST_PORT"
 
           fi
 
-          # Restart previous version
+          # ------------------------------------------------------
+          # Export compose variables
+          # ------------------------------------------------------
+
+          export DOCKER_USERNAME
+          export IMAGE_TAG="$IMAGE_TAG"
+          export MASTERDB_PORT="$HOST_PORT"
+
+          echo ""
+          echo "Image:"
+          echo "${DOCKER_USERNAME}/masterdb-ingestion-certification-service:${IMAGE_TAG}"
+
+          echo ""
+          echo "Host port:"
+          echo "$MASTERDB_PORT"
+
+          # ------------------------------------------------------
+          # Pull new image
+          # ------------------------------------------------------
+
+          echo ""
+          echo "Pulling Docker image..."
+
+          docker pull \
+            "${DOCKER_USERNAME}/masterdb-ingestion-certification-service:${IMAGE_TAG}"
+
+          # ------------------------------------------------------
+          # Stop current deployment
+          # ------------------------------------------------------
+
+          echo ""
+          echo "Stopping current deployment..."
+
           docker compose down || true
+
+          # ------------------------------------------------------
+          # Start new deployment
+          # ------------------------------------------------------
+
+          echo ""
+          echo "Starting new deployment..."
 
           docker compose up -d
 
-          # Find active port
-          ROLLBACK_PORT=$(docker inspect masterdb-api \
-            --format='{{(index (index .NetworkSettings.Ports "8000/tcp") 0).HostPort}}' \
-            2>/dev/null || true)
+          # ------------------------------------------------------
+          # Wait for container
+          # ------------------------------------------------------
 
-          if [ -z "$ROLLBACK_PORT" ]; then
+          echo ""
+          echo "Waiting for container..."
 
-            ROLLBACK_PORT=$(grep -oE '[0-9]+:8000' \
-              docker-compose.yml \
-              | head -1 \
-              | cut -d: -f1)
+          for i in $(seq 1 30); do
 
-          fi
-
-          echo "Rollback port: ${ROLLBACK_PORT}"
-
-          # Health check
-          HEALTH_OK=0
-
-          for i in {1..30}; do
-
-            if curl -fsS \
-              "http://127.0.0.1:${ROLLBACK_PORT}/health" \
-              > /dev/null 2>&1; then
-
-              HEALTH_OK=1
-
-              echo "Rollback health check PASSED."
-
+            if docker inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
+              echo "Container exists."
               break
-
             fi
 
-            echo "Rollback health attempt ${i}/30"
-
-            sleep 3
+            echo "Waiting... $i/30"
+            sleep 2
 
           done
 
-          if [ "$HEALTH_OK" -ne 1 ]; then
+          # ------------------------------------------------------
+          # Health check
+          # ------------------------------------------------------
 
-            echo "ROLLBACK FAILED"
+          echo ""
+          echo "Checking container health..."
 
+          HEALTHY="false"
+
+          for i in $(seq 1 30); do
+
+            STATUS="$(docker inspect \
+              -f '{{.State.Health.Status}}' \
+              "$CONTAINER_NAME" 2>/dev/null || echo "starting")"
+
+            echo "Health status: $STATUS"
+
+            if [ "$STATUS" = "healthy" ]; then
+              HEALTHY="true"
+              break
+            fi
+
+            sleep 5
+
+          done
+
+          # ------------------------------------------------------
+          # Deployment failed
+          # ------------------------------------------------------
+
+          if [ "$HEALTHY" != "true" ]; then
+
+            echo ""
+            echo "========================================"
+            echo "DEPLOYMENT FAILED"
+            echo "========================================"
+
+            docker compose ps || true
+            docker compose logs --tail=100 || true
+
+            echo ""
+            echo "Attempting automatic rollback..."
+
+            docker compose down || true
+
+            # Find latest previous compose file
+            PREVIOUS_COMPOSE="$(ls -t history/compose_*.yml 2>/dev/null | head -n 1 || true)"
+
+            if [ -n "$PREVIOUS_COMPOSE" ]; then
+
+              echo "Restoring:"
+              echo "$PREVIOUS_COMPOSE"
+
+              cp "$PREVIOUS_COMPOSE" docker-compose.yml
+
+              # Restore image/port variables from saved compose.
+              PREVIOUS_IMAGE="$(grep 'image:' docker-compose.yml | head -n 1 | sed 's/.*image: //')"
+              PREVIOUS_PORT="$(grep -oE '\$\{MASTERDB_PORT\}:8000|[0-9]+:8000' docker-compose.yml | head -n 1 | cut -d: -f1)"
+
+              if [ -n "$PREVIOUS_IMAGE" ]; then
+                echo "Previous image:"
+                echo "$PREVIOUS_IMAGE"
+
+                docker pull "$PREVIOUS_IMAGE" || true
+              fi
+
+              if [ -n "$PREVIOUS_PORT" ]; then
+                export MASTERDB_PORT="$PREVIOUS_PORT"
+              fi
+
+              export DOCKER_USERNAME
+
+              docker compose up -d
+
+              echo "Rollback started."
+
+            else
+
+              echo "No previous deployment available."
+              echo "Nothing to rollback to."
+
+            fi
+
+            exit 1
+
+          fi
+
+          # ------------------------------------------------------
+          # Deployment successful
+          # ------------------------------------------------------
+
+          echo ""
+          echo "========================================"
+          echo "DEPLOYMENT SUCCESSFUL"
+          echo "========================================"
+
+          docker compose ps
+
+          echo ""
+          echo "MASTERDB host port:"
+          echo "$MASTERDB_PORT"
+
+          echo ""
+          echo "Image:"
+          echo "${DOCKER_USERNAME}/masterdb-ingestion-certification-service:${IMAGE_TAG}"
+
+          REMOTE_SCRIPT
+
+
+  # ============================================================
+  # 4. MANUAL ROLLBACK
+  # ============================================================
+  rollback:
+    name: Manual Rollback
+    runs-on: ubuntu-latest
+
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.action == 'rollback'
+
+    steps:
+
+      - name: Install sshpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      - name: Rollback MASTERDB
+        env:
+          VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+          VM_USERNAME: ${{ secrets.VM_USERNAME }}
+          VM_IP: ${{ secrets.VM_IP }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        shell: bash
+        run: |
+
+          sshpass -p "$VM_PASSWORD" ssh \
+            -o StrictHostKeyChecking=no \
+            -p "$VM_PORT" \
+            "$VM_USERNAME@$VM_IP" \
+            "DOCKER_USERNAME='$DOCKER_USERNAME' \
+             DOCKER_PASSWORD='$DOCKER_PASSWORD' \
+             DEPLOY_DIR='$DEPLOY_DIR' \
+             CONTAINER_NAME='$CONTAINER_NAME' \
+             bash -s" <<'REMOTE_SCRIPT'
+
+          set -e
+
+          cd "$DEPLOY_DIR"
+
+          echo "========================================"
+          echo "MASTERDB MANUAL ROLLBACK"
+          echo "========================================"
+
+          # ------------------------------------------------------
+          # DockerHub login
+          # ------------------------------------------------------
+
+          echo "$DOCKER_PASSWORD" | docker login \
+            -u "$DOCKER_USERNAME" \
+            --password-stdin
+
+          # ------------------------------------------------------
+          # Find previous deployment
+          # ------------------------------------------------------
+
+          PREVIOUS_COMPOSE="$(ls -t history/compose_*.yml 2>/dev/null | head -n 1 || true)"
+
+          if [ -z "$PREVIOUS_COMPOSE" ]; then
+            echo "ERROR: No previous deployment found."
+            exit 1
+          fi
+
+          echo "Previous deployment:"
+          echo "$PREVIOUS_COMPOSE"
+
+          # ------------------------------------------------------
+          # Stop current deployment
+          # ------------------------------------------------------
+
+          docker compose down || true
+
+          # ------------------------------------------------------
+          # Restore compose
+          # ------------------------------------------------------
+
+          cp "$PREVIOUS_COMPOSE" docker-compose.yml
+
+          export DOCKER_USERNAME
+
+          # ------------------------------------------------------
+          # Get previous image
+          # ------------------------------------------------------
+
+          PREVIOUS_IMAGE="$(grep 'image:' docker-compose.yml | head -n 1 | sed 's/.*image: //')"
+
+          if [ -n "$PREVIOUS_IMAGE" ]; then
+
+            echo "Pulling previous image:"
+            echo "$PREVIOUS_IMAGE"
+
+            docker pull "$PREVIOUS_IMAGE"
+
+          fi
+
+          # ------------------------------------------------------
+          # Restore previous deployment
+          # ------------------------------------------------------
+
+          docker compose up -d
+
+          # ------------------------------------------------------
+          # Health check
+          # ------------------------------------------------------
+
+          HEALTHY="false"
+
+          for i in $(seq 1 30); do
+
+            STATUS="$(docker inspect \
+              -f '{{.State.Health.Status}}' \
+              "$CONTAINER_NAME" 2>/dev/null || echo "starting")"
+
+            echo "Health status: $STATUS"
+
+            if [ "$STATUS" = "healthy" ]; then
+              HEALTHY="true"
+              break
+            fi
+
+            sleep 5
+
+          done
+
+          if [ "$HEALTHY" != "true" ]; then
+
+            echo "ERROR: Rollback deployment is unhealthy."
+
+            docker compose ps || true
             docker compose logs --tail=100 || true
 
             exit 1
 
           fi
 
-          date -u +"%Y-%m-%dT%H:%M:%SZ" \
-            > "${HISTORY_DIR}/rollback-timestamp.txt"
+          echo ""
+          echo "========================================"
+          echo "ROLLBACK SUCCESSFUL"
+          echo "========================================"
 
-          echo "rollback-success" \
-            > "${HISTORY_DIR}/rollback-status.txt"
-
-          echo "=========================================="
-          echo "MASTERDB ROLLBACK SUCCESSFUL"
-          echo "=========================================="
-          echo "Directory: MASTERDB"
-          echo "Port: ${ROLLBACK_PORT}"
-          echo "=========================================="
+          docker compose ps
 
           REMOTE_SCRIPT
