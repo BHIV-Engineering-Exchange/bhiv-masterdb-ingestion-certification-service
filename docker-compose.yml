@@ -1,6 +1,31 @@
-version: "3.9"
-
 services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: masterdb-postgres
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+      - masterdb_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+    restart: unless-stopped
+
+    networks:
+      - masterdb-network
+
 
   api:
     image: ${DOCKER_USERNAME}/masterdb-ingestion-certification-service:${IMAGE_TAG}
@@ -13,22 +38,24 @@ services:
     env_file:
       - .env
 
+    depends_on:
+      postgres:
+        condition: service_healthy
+
     volumes:
       - masterdb_datasets:/app/datasets
       - masterdb_reports:/app/reports
 
     healthcheck:
       test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://localhost:8000/health"
-        ]
+        - CMD
+        - curl
+        - -f
+        - http://localhost:8000/health
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 20s
 
     restart: unless-stopped
 
@@ -37,6 +64,9 @@ services:
 
 
 volumes:
+
+  masterdb_postgres_data:
+    name: masterdb_postgres_data
 
   masterdb_datasets:
     name: masterdb_datasets
@@ -48,4 +78,5 @@ volumes:
 networks:
 
   masterdb-network:
+    name: masterdb-network
     driver: bridge
