@@ -1,0 +1,774 @@
+name: MasterDB CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Select deployment action"
+        required: true
+        default: deploy
+        type: choice
+        options:
+          - deploy
+          - rollback
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: masterdb-ingestion-certification-service
+  DEPLOY_DIR: MASTERDB
+  CONTAINER_NAME: masterdb-api
+  POSTGRES_CONTAINER: masterdb-postgres
+  START_PORT: "30308"
+
+
+# ============================================================
+# TEST
+# ============================================================
+
+jobs:
+
+  test:
+    name: Test Application
+    runs-on: ubuntu-latest
+
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.event.inputs.action == 'deploy')
+
+    steps:
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest -q
+
+
+# ============================================================
+# BUILD AND PUSH
+# ============================================================
+
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    needs:
+      - test
+
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.event.inputs.action == 'deploy')
+
+    steps:
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+
+          docker build \
+            -t "${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}:${SHORT_SHA}" \
+            -t "${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}:latest" \
+            .
+
+      - name: Push versioned image
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+
+          docker push \
+            "${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}:${SHORT_SHA}"
+
+      - name: Push latest image
+        run: |
+          docker push \
+            "${{ secrets.DOCKER_USERNAME }}/${IMAGE_NAME}:latest"
+
+
+# ============================================================
+# DEPLOY
+# ============================================================
+
+  deploy:
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+
+    needs:
+      - build
+
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.event.inputs.action == 'deploy')
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      # --------------------------------------------------------
+      # CREATE .env
+      # --------------------------------------------------------
+
+      - name: Create production .env
+        env:
+          MASTERDB_ENV_FILE: ${{ secrets.MASTERDB_ENV_FILE }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        shell: bash
+        run: |
+
+          set -e
+
+          if [ -z "$MASTERDB_ENV_FILE" ]; then
+            echo "ERROR: MASTERDB_ENV_FILE is empty."
+            exit 1
+          fi
+
+          if [ -z "$POSTGRES_PASSWORD" ]; then
+            echo "ERROR: POSTGRES_PASSWORD secret is empty."
+            exit 1
+          fi
+
+          cat > .env <<EOF
+          ${MASTERDB_ENV_FILE}
+
+          POSTGRES_DB=masterdb
+          POSTGRES_USER=masterdb
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          EOF
+
+          echo "MASTERDB_DATABASE_URL=postgresql://masterdb:$(python -c 'import os,urllib.parse; print(urllib.parse.quote(os.environ["POSTGRES_PASSWORD"], safe=""))')@postgres:5432/masterdb" >> .env
+
+          chmod 600 .env
+
+          echo ".env generated successfully."
+
+
+      # --------------------------------------------------------
+      # CREATE PRODUCTION COMPOSE
+      # --------------------------------------------------------
+
+      - name: Create production docker-compose.yml
+        shell: bash
+        run: |
+
+          cat > docker-compose.yml <<'EOF'
+
+          services:
+
+            postgres:
+              image: postgres:16-alpine
+              container_name: masterdb-postgres
+
+              environment:
+                POSTGRES_DB: ${POSTGRES_DB}
+                POSTGRES_USER: ${POSTGRES_USER}
+                POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+              volumes:
+                - masterdb_postgres_data:/var/lib/postgresql/data
+
+              healthcheck:
+                test:
+                  - CMD-SHELL
+                  - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+                interval: 10s
+                timeout: 5s
+                retries: 10
+                start_period: 10s
+
+              restart: unless-stopped
+
+              networks:
+                - masterdb-network
+
+
+            api:
+              image: ${DOCKER_USERNAME}/masterdb-ingestion-certification-service:${IMAGE_TAG}
+
+              container_name: masterdb-api
+
+              ports:
+                - "${MASTERDB_PORT}:8000"
+
+              env_file:
+                - .env
+
+              depends_on:
+                postgres:
+                  condition: service_healthy
+
+              volumes:
+                - masterdb_datasets:/app/datasets
+                - masterdb_reports:/app/reports
+
+              healthcheck:
+                test:
+                  - CMD
+                  - curl
+                  - -f
+                  - http://localhost:8000/health
+                interval: 30s
+                timeout: 10s
+                retries: 3
+                start_period: 20s
+
+              restart: unless-stopped
+
+              networks:
+                - masterdb-network
+
+
+          volumes:
+
+            masterdb_postgres_data:
+              name: masterdb_postgres_data
+
+            masterdb_datasets:
+              name: masterdb_datasets
+
+            masterdb_reports:
+              name: masterdb_reports
+
+
+          networks:
+
+            masterdb-network:
+              name: masterdb-network
+              driver: bridge
+
+          EOF
+
+
+      # --------------------------------------------------------
+      # PREPARE VM
+      # --------------------------------------------------------
+
+      - name: Prepare MASTERDB directory
+        env:
+          VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+          VM_USERNAME: ${{ secrets.VM_USERNAME }}
+          VM_IP: ${{ secrets.VM_IP }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+        shell: bash
+        run: |
+
+          sshpass -p "$VM_PASSWORD" ssh \
+            -o StrictHostKeyChecking=no \
+            -p "$VM_PORT" \
+            "$VM_USERNAME@$VM_IP" \
+            "mkdir -p '$DEPLOY_DIR/history'"
+
+
+      # --------------------------------------------------------
+      # COPY ONLY TWO FILES
+      # --------------------------------------------------------
+
+      - name: Copy deployment files
+        env:
+          VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+          VM_USERNAME: ${{ secrets.VM_USERNAME }}
+          VM_IP: ${{ secrets.VM_IP }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+        shell: bash
+        run: |
+
+          sshpass -p "$VM_PASSWORD" scp \
+            -o StrictHostKeyChecking=no \
+            -P "$VM_PORT" \
+            docker-compose.yml \
+            .env \
+            "$VM_USERNAME@$VM_IP:$DEPLOY_DIR/"
+
+
+      # --------------------------------------------------------
+      # DEPLOY
+      # --------------------------------------------------------
+
+      - name: Deploy MASTERDB
+        env:
+          VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+          VM_USERNAME: ${{ secrets.VM_USERNAME }}
+          VM_IP: ${{ secrets.VM_IP }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        shell: bash
+        run: |
+
+          SHORT_SHA="${GITHUB_SHA::7}"
+
+          sshpass -p "$VM_PASSWORD" ssh \
+            -o StrictHostKeyChecking=no \
+            -p "$VM_PORT" \
+            "$VM_USERNAME@$VM_IP" \
+            "DOCKER_USERNAME='$DOCKER_USERNAME' \
+             DOCKER_PASSWORD='$DOCKER_PASSWORD' \
+             IMAGE_TAG='$SHORT_SHA' \
+             START_PORT='$START_PORT' \
+             DEPLOY_DIR='$DEPLOY_DIR' \
+             bash -s" <<'REMOTE_SCRIPT'
+
+          set -e
+
+          cd "$DEPLOY_DIR"
+
+          echo "=========================================="
+          echo "MASTERDB DEPLOYMENT"
+          echo "=========================================="
+
+          # ------------------------------------------------------
+          # Docker login
+          # ------------------------------------------------------
+
+          echo "$DOCKER_PASSWORD" | docker login \
+            --username "$DOCKER_USERNAME" \
+            --password-stdin
+
+
+          # ------------------------------------------------------
+          # Check existing PostgreSQL
+          # ------------------------------------------------------
+
+          POSTGRES_EXISTS="false"
+
+          if docker ps -a \
+            --format '{{.Names}}' |
+            grep -qx "masterdb-postgres"; then
+
+            POSTGRES_EXISTS="true"
+
+            echo "PostgreSQL already exists."
+
+          else
+
+            echo "PostgreSQL does not exist."
+            echo "Creating PostgreSQL for the first time."
+
+          fi
+
+
+          # ------------------------------------------------------
+          # Find application port
+          # ------------------------------------------------------
+
+          HOST_PORT="$START_PORT"
+
+          EXISTING_PORT="$(docker inspect \
+            -f '{{range $p, $conf := .NetworkSettings.Ports}}{{if $conf}}{{(index $conf 0).HostPort}}{{end}}{{end}}' \
+            masterdb-api 2>/dev/null || true)"
+
+          if [ -n "$EXISTING_PORT" ]; then
+
+            HOST_PORT="$EXISTING_PORT"
+
+            echo "Existing MASTERDB port: $HOST_PORT"
+
+          else
+
+            while ss -ltnH | awk '{print $4}' | grep -qE ":${HOST_PORT}$"; do
+
+              echo "Port $HOST_PORT is already in use."
+
+              HOST_PORT=$((HOST_PORT + 1))
+
+            done
+
+            echo "Selected port: $HOST_PORT"
+
+          fi
+
+
+          # ------------------------------------------------------
+          # Export Compose variables
+          # ------------------------------------------------------
+
+          export DOCKER_USERNAME
+          export IMAGE_TAG
+          export MASTERDB_PORT="$HOST_PORT"
+
+
+          # ------------------------------------------------------
+          # Save current API compose for rollback
+          # ------------------------------------------------------
+
+          if docker inspect masterdb-api >/dev/null 2>&1; then
+
+            TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+
+            cp docker-compose.yml \
+              "history/compose_${TIMESTAMP}.yml"
+
+            echo "Previous deployment saved."
+
+          fi
+
+
+          # ------------------------------------------------------
+          # Start PostgreSQL
+          # ------------------------------------------------------
+
+          echo ""
+          echo "Starting PostgreSQL..."
+
+          docker compose up -d postgres
+
+
+          # ------------------------------------------------------
+          # Wait for PostgreSQL
+          # ------------------------------------------------------
+
+          echo ""
+          echo "Waiting for PostgreSQL..."
+
+          POSTGRES_HEALTHY="false"
+
+          for i in $(seq 1 40); do
+
+            STATUS="$(docker inspect \
+              -f '{{.State.Health.Status}}' \
+              masterdb-postgres 2>/dev/null || echo "starting")"
+
+            echo "PostgreSQL health: $STATUS"
+
+            if [ "$STATUS" = "healthy" ]; then
+
+              POSTGRES_HEALTHY="true"
+
+              break
+
+            fi
+
+            sleep 3
+
+          done
+
+
+          if [ "$POSTGRES_HEALTHY" != "true" ]; then
+
+            echo "ERROR: PostgreSQL failed health check."
+
+            docker logs --tail=100 masterdb-postgres || true
+
+            exit 1
+
+          fi
+
+
+          # ------------------------------------------------------
+          # Pull new API image
+          # ------------------------------------------------------
+
+          echo ""
+          echo "Pulling API image..."
+
+          docker pull \
+            "${DOCKER_USERNAME}/masterdb-ingestion-certification-service:${IMAGE_TAG}"
+
+
+          # ------------------------------------------------------
+          # Stop ONLY API
+          # ------------------------------------------------------
+
+          echo ""
+          echo "Stopping old API..."
+
+          docker compose stop api || true
+
+          docker compose rm -f api || true
+
+
+          # ------------------------------------------------------
+          # Start new API
+          # ------------------------------------------------------
+
+          echo ""
+          echo "Starting new API..."
+
+          docker compose up -d api
+
+
+          # ------------------------------------------------------
+          # Health check
+          # ------------------------------------------------------
+
+          echo ""
+          echo "Waiting for API health..."
+
+          API_HEALTHY="false"
+
+          for i in $(seq 1 40); do
+
+            STATUS="$(docker inspect \
+              -f '{{.State.Health.Status}}' \
+              masterdb-api 2>/dev/null || echo "starting")"
+
+            echo "API health: $STATUS"
+
+            if [ "$STATUS" = "healthy" ]; then
+
+              API_HEALTHY="true"
+
+              break
+
+            fi
+
+            sleep 5
+
+          done
+
+
+          # ------------------------------------------------------
+          # FAILED → ROLLBACK
+          # ------------------------------------------------------
+
+          if [ "$API_HEALTHY" != "true" ]; then
+
+            echo ""
+            echo "=========================================="
+            echo "API DEPLOYMENT FAILED"
+            echo "=========================================="
+
+            docker compose ps || true
+
+            docker compose logs --tail=100 api || true
+
+            PREVIOUS_COMPOSE="$(ls -t history/compose_*.yml 2>/dev/null | head -n 1 || true)"
+
+            if [ -n "$PREVIOUS_COMPOSE" ]; then
+
+              echo ""
+              echo "Rolling back API..."
+
+              docker compose stop api || true
+              docker compose rm -f api || true
+
+              cp "$PREVIOUS_COMPOSE" docker-compose.yml
+
+              export DOCKER_USERNAME
+
+              docker compose up -d api
+
+              echo "Rollback started."
+
+            else
+
+              echo ""
+              echo "No previous API deployment exists."
+
+            fi
+
+            exit 1
+
+          fi
+
+
+          # ------------------------------------------------------
+          # SUCCESS
+          # ------------------------------------------------------
+
+          echo ""
+          echo "=========================================="
+          echo "MASTERDB DEPLOYMENT SUCCESSFUL"
+          echo "=========================================="
+
+          echo ""
+          echo "Application port:"
+          echo "$MASTERDB_PORT"
+
+          echo ""
+          echo "PostgreSQL:"
+          docker ps --filter name=masterdb-postgres
+
+          echo ""
+          echo "API:"
+          docker ps --filter name=masterdb-api
+
+          echo ""
+          docker compose ps
+
+          REMOTE_SCRIPT
+
+
+# ============================================================
+# MANUAL ROLLBACK
+# ============================================================
+
+  rollback:
+    name: Manual API Rollback
+    runs-on: ubuntu-latest
+
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.action == 'rollback'
+
+    steps:
+
+      - name: Install sshpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+
+      - name: Rollback API
+        env:
+          VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+          VM_USERNAME: ${{ secrets.VM_USERNAME }}
+          VM_IP: ${{ secrets.VM_IP }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        shell: bash
+        run: |
+
+          sshpass -p "$VM_PASSWORD" ssh \
+            -o StrictHostKeyChecking=no \
+            -p "$VM_PORT" \
+            "$VM_USERNAME@$VM_IP" \
+            "DOCKER_USERNAME='$DOCKER_USERNAME' \
+             DOCKER_PASSWORD='$DOCKER_PASSWORD' \
+             DEPLOY_DIR='$DEPLOY_DIR' \
+             bash -s" <<'REMOTE_SCRIPT'
+
+          set -e
+
+          cd "$DEPLOY_DIR"
+
+          echo "=========================================="
+          echo "MASTERDB API ROLLBACK"
+          echo "=========================================="
+
+
+          # ------------------------------------------------------
+          # Docker login
+          # ------------------------------------------------------
+
+          echo "$DOCKER_PASSWORD" | docker login \
+            --username "$DOCKER_USERNAME" \
+            --password-stdin
+
+
+          # ------------------------------------------------------
+          # Find previous deployment
+          # ------------------------------------------------------
+
+          PREVIOUS_COMPOSE="$(ls -t history/compose_*.yml 2>/dev/null | head -n 1 || true)"
+
+          if [ -z "$PREVIOUS_COMPOSE" ]; then
+
+            echo "ERROR: No previous deployment available."
+
+            exit 1
+
+          fi
+
+
+          echo "Rollback compose:"
+          echo "$PREVIOUS_COMPOSE"
+
+
+          # ------------------------------------------------------
+          # Stop API only
+          # ------------------------------------------------------
+
+          docker compose stop api || true
+          docker compose rm -f api || true
+
+
+          # ------------------------------------------------------
+          # Restore previous compose
+          # ------------------------------------------------------
+
+          cp "$PREVIOUS_COMPOSE" docker-compose.yml
+
+          export DOCKER_USERNAME
+
+
+          # ------------------------------------------------------
+          # Start API
+          # ------------------------------------------------------
+
+          docker compose up -d api
+
+
+          # ------------------------------------------------------
+          # Health check
+          # ------------------------------------------------------
+
+          HEALTHY="false"
+
+          for i in $(seq 1 40); do
+
+            STATUS="$(docker inspect \
+              -f '{{.State.Health.Status}}' \
+              masterdb-api 2>/dev/null || echo "starting")"
+
+            echo "API health: $STATUS"
+
+            if [ "$STATUS" = "healthy" ]; then
+
+              HEALTHY="true"
+
+              break
+
+            fi
+
+            sleep 5
+
+          done
+
+
+          if [ "$HEALTHY" != "true" ]; then
+
+            echo "ERROR: Rollback API is unhealthy."
+
+            docker compose ps || true
+            docker compose logs --tail=100 api || true
+
+            exit 1
+
+          fi
+
+
+          echo ""
+          echo "=========================================="
+          echo "ROLLBACK SUCCESSFUL"
+          echo "=========================================="
+
+          docker compose ps
+
+          REMOTE_SCRIPT
