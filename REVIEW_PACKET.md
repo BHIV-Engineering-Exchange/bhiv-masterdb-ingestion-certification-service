@@ -46,6 +46,42 @@ consumption, and Retrieval Readiness services from the prior sprint.
 - `MDU_INTERFACE_CONTRACT.md`, `README.md`, `ARCHITECTURE.md`,
   `API_DOCUMENTATION.md`, `HANDOVER.md` all updated for the above.
 
+## Implemented — T-GOV-002 Phase 2 (Governance & Hardening)
+
+- **`security/middleware.py`** — `RS256JWTVerifier` (PyJWT RS256 with fallback
+  key generation), `ReplayMitigationTable` (thread-safe in-memory replay
+  mitigation with TTL), `SecurityMiddleware` (FastAPI `BaseHTTPMiddleware`
+  protecting `/production/*` with Bearer token extraction, replay rejection,
+  and identity attachment), `ProductionIdentity` (strict Pydantic model).
+- **`services/crypto_audit_emitter.py`** — `CryptoAuditEmitter`: immutable
+  SHA-256 chained audit log. Every entry includes the previous hash;
+  `verify_chain()` detects any tampering.
+- **`evaluation_engine/rule_engine.py`** — `RuleEngine`: deterministic,
+  stateless evaluator mapping `target_state -> pure callable(context)`. Supports
+  registration, missing-rule handling, and exception-safe fallback.
+- **`integrations/local_llm_client.py`** — `LocalLLMClient` wrapping a local
+  inference endpoint with the existing `CircuitBreaker`
+  (`middleware.circuit_breaker`). `LLMRequest` / `LLMResponse` models enforce
+  `extra="forbid"`.
+- **`task_selector/review_orchestrator.py`** — `ReviewOrchestrator`:
+  coordinates `RuleEngine` + optional `LocalLLMClient`, emitting an immutable
+  `CryptoAuditEmitter` entry for every evaluated task.
+- **`api/production.py`** — protected production routes:
+  - `POST /production/verify` — RS256-verify a token (accepts token in body,
+    requires a valid Bearer header to access the endpoint).
+  - `GET /production/audit` — return the full crypto-audit chain.
+  - `GET /production/health` — health check, returns authenticated identity.
+- **Wired into `main.py`** — `SecurityMiddleware`, `RS256JWTVerifier`,
+  `ReplayMitigationTable`, and `CryptoAuditEmitter` all instantiated at app
+  startup and bound to `app.state` so routes can access them.
+- **Dependencies** — `requirements.txt` fully pinned with `pyjwt==2.13.0`,
+  `cryptography==49.0.0`, `fastapi==0.115.8`, `pydantic==2.13.3`, etc.
+- **Tests** — `tests/test_phase2_deliverables.py` (21 tests, all passing)
+  covering RS256 acceptance/rejection, replay rejection, audit chain integrity
+  and tampering detection, rule engine determinism, LLM client circuit-breaker
+  state, review orchestrator audit emission, and all three production API
+  routes.
+
 ## Implemented — Prior Sprint (unchanged this round)
 
 - `ValidationService`

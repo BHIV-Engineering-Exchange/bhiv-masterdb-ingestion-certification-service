@@ -59,6 +59,10 @@ from services.tantra_interface_service import (
 )
 from services.validation_service import ValidationService
 
+from api.production import router as production_router
+from security.middleware import ReplayMitigationTable, RS256JWTVerifier, SecurityMiddleware
+from services.crypto_audit_emitter import CryptoAuditEmitter
+
 from database_targets.models import (
     IngestRequest,
     IngestionFormat,
@@ -121,6 +125,15 @@ rate_limiter = SlidingWindowRateLimiter(
     window_seconds=float(os.environ.get("RATE_LIMIT_WINDOW_SECONDS", "60")),
 )
 app.add_middleware(RateLimitMiddleware, limiter=rate_limiter)
+
+production_verifier = RS256JWTVerifier()
+production_replay_table = ReplayMitigationTable()
+production_audit_emitter = CryptoAuditEmitter()
+app.add_middleware(SecurityMiddleware, verifier=production_verifier, replay_table=production_replay_table)
+app.state.verifier = production_verifier
+app.state.replay_table = production_replay_table
+app.state.audit_emitter = production_audit_emitter
+app.include_router(production_router)
 
 logger = logging.getLogger("masterdb")
 if not logger.handlers:
