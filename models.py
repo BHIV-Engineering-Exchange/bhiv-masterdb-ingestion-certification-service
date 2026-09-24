@@ -250,3 +250,28 @@ class SharedRecordDeprecateRequest(BaseModel):
     actor: str
     reason: str
 
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Controlled Retrieval Request Models
+# ---------------------------------------------------------------------------
+
+
+class QueryRequest(BaseModel):
+    dataset_id: str
+    query_params: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ExportRequest(BaseModel):
+    dataset_id: str
+    format: Optional[str] = None
+
+
+class StreamRequest(BaseModel):
+    dataset_id: str
+    stream_params: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ReferenceRequest(BaseModel):
+    dataset_id: str
+
+

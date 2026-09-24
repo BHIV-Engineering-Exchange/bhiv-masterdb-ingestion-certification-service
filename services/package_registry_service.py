@@ -119,6 +119,9 @@ class PackageRegistryService:
             raise PackageNotFoundError(f"No package found for package_id={package_id}")
         return KnowledgePackage(**raw)
 
+    def list_all(self) -> List[KnowledgePackage]:
+        return [KnowledgePackage(**raw) for raw in self.store.list_all()]
+
     def history(self, package_id: str) -> List[PackageTransition]:
         return self.get(package_id).history
 
