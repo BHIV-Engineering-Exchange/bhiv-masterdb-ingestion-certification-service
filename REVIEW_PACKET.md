@@ -361,6 +361,93 @@ against the six Task 4 phases.
   with actor, reason, timestamp, and version.
 - Confirm `.../replay` correctly flags version drift (see
   `test_replay_detects_version_drift`).
+## Phase 4 — Central Data Platform & Phase 8 — Evidence Preservation (this pass)
+
+### What was implemented
+
+This task completes the convergence of MASTERDB into BHIV's Central Data Platform
+(Phase 4 — Plug-and-Play Data Access) and adds Evidence Preservation via Bucket
+(Phase 8 — Evidence Preservation & Bucket Operations), per
+`MASTERDB_CENTRAL_DATA_PLATFORM_SPEC.md` as the source of truth.
+
+#### Phase 4 — Dataset Inspection Endpoints (4 new endpoints)
+
+| Method | Path | Handler | Service Method |
+|--------|------|---------|---------------|
+| GET | `/datasets/{dataset_id}` | `get_dataset_detail` | `get_dataset()` |
+| GET | `/datasets/{dataset_id}/schema` | `get_dataset_schema` | `get_dataset_schema()` |
+| GET | `/datasets/{dataset_id}/versions` | `get_dataset_versions` | `get_dataset_versions()` |
+| GET | `/datasets/{dataset_id}/provenance` | `get_dataset_provenance` | `get_dataset_provenance()` |
+
+All four are non-governed reads. `PackageNotFoundError` → 404 for unknown dataset_id.
+`get_dataset_schema()` gracefully degrades to `source: registry-declared` when MDU
+is not configured (per spec §1.1 "Graceful Degradation").
+
+#### Phase 4 — Governed Access Endpoints (error codes corrected this pass)
+
+| Method | Path | Error Map |
+|--------|------|-----------|
+| POST | `/query` | 404/400/403 |
+| POST | `/export` | 404/400/403 |
+| POST | `/stream` | 404/400/403 |
+| POST | `/reference` | 404/400 |
+
+Key correction: `DatasetNotRetrievableError` now maps to **HTTP 400**, not 404
+(spec §5: "NOT_RETRIEVABLE and operation != reference" → 400).
+
+#### Phase 8 — Evidence Preservation (1 corrected, 2 new endpoints)
+
+| Method | Path | Error Map |
+|--------|------|-----------|
+| POST | `/evidence/{evidence_id}` | 503 (corrected from body-based to path-based per spec §4.1) |
+| GET | `/evidence/{evidence_id}` | 503 (new) |
+| POST | `/provenance/{dataset_id}` | 503 (new) |
+| GET | `/provenance/{package_id}` | 404 (existing — knowledge-object lineage) |
+| GET | `/bucket/status` | — (existing) |
+
+`GET /bucket/status` returns `configured: false` when `PRAVAH_BHIV_BUCKET` is unset;
+all bucket operations raise `BucketUnavailableError` → HTTP 503 gracefully.
+
+#### Runtime Identity
+`/runtime/identity` capabilities and `api_groups` now advertise all 9 Phase 4
+endpoints and all 4 Phase 8 endpoints.
+
+### Test Coverage
+
+- `tests/test_central_data_platform_api.py` — **23 integration tests** (new this pass):
+  fresh service instances per test, full-lifecycle promotion helper
+  `_promote_to_retrieval_ready()`. Covers: discovery, inspection (4 endpoints),
+  governed access (not-found + found), Phase 8 bucket endpoints (503 when unconfigured).
+- `tests/test_dataset_retrieval_service.py` — 15 unit tests (pre-existing).
+- `tests/test_bucket_client.py` — 10 unit tests (pre-existing).
+
+**Full suite: 350/350 passing. Zero regressions.**
+
+### Key Architectural Notes
+
+1. **Service init fix**: `DatasetRetrievalService.__init__` requires
+   `retrieval_readiness_service`, not `artifact_store`.
+2. **Handler signatures**: `query(dataset_id, query_params=dict)`,
+   `export_dataset(dataset_id, format)`, `stream(dataset_id, stream_params=dict)`,
+   `reference(dataset_id)` — flat vs nested params.
+3. **Full-lifecycle promotion required**: governed-access (query/export/stream)
+   needs `RETRIEVAL_READY`; `_promote_to_retrieval_ready()` walks the chain:
+   INGESTED → VALIDATED → VERIFIED → CERTIFIED → RETRIEVAL_READY.
+4. **`reference` is always allowed**: even REGISTERED packages; no gate applies.
+5. **Graceful Bucket degradation**: no crash when `PRAVAH_BHIV_BUCKET` is unset.
+6. **Graceful MDU degradation**: `get_dataset_schema()` returns
+   `source: registry-declared` fallback.
+
+### Strict Quality Gates
+
+| Gate | Status |
+|------|--------|
+| 100% test pass rate | ✅ 350/350 |
+| Zero unpinned `>=` deps in requirements.txt | ✅ |
+| `DatasetNotRetrievableError` → HTTP 400 | ✅ (corrected) |
+| All Phase 4/8 spec endpoints wired | ✅ (17 total) |
+| Graceful degradation (MDU, Bucket) | ✅ |
+| Fresh service instances per test | ✅ |
 - Confirm `.../resolve` reports missing dependencies rather than raising.
 - Confirm Task 1–3 routes, services, and tests are unmodified (see
   `review_packets/code_packets/architecture_delta.md` → "What did NOT

@@ -1,0 +1,674 @@
+--- Page 1 ---
+Task Title: Master DB BHIV vNEXT  KAVY  TASK 1/3  MASTERDB  BHIV CENTRAL DATA PLATFORM 
+CONVERGENCE
+Assignee Candidate: Kavy Changela
+Priority: Medium
+Target Date: 2026-09-28
+Overview & Description
+Owner: Kavy
+Role: MASTERDB Platform Lead
+Working with: Harsha
+Primary dependencies: MDU, TANTRA, Bucket, Pravah, InsightFlow, NIYANTRAN, PARIKSHAK, all BHIV 
+application teams
+Mission: Transform MASTERDB from a platform that manages datasets into the central governed data platform 
+of the BHIV ecosystem, enabling applications to discover, register, access and reuse approved data through 
+standard interfaces.
+1. Mission
+Kavy owns the technical convergence of MASTERDB into the BHIV Central Data Platform.
+The target architecture is:
+                    BHIV APPLICATIONS
+       
+                                                 
+    Gurukul         AIAIC        Marine         Government
+                               Intelligence       
+       
+                              
+                              
+                    MASTERDB DATA PLATFORM
+                 
+                  Dataset Registry        
+                  Ingestion               
+                  Validation              
+                  Metadata                
+                  Classification          
+                  Provenance              
+                  Storage / References    
+                  Indexing                
+                  Versioning              
+                  Retrieval               
+                  Access Control          
+                  APIs / SDK              
+                  Audit                   
+                 
+                              
+             
+                                             
+
+--- Page 2 ---
+            MDU             TANTRA          Analytics/
+        Semantics         Runtime           ML / AI
+                                             
+             
+                              
+                   BHIV APPLICATION ECOSYSTEM
+The important distinction:
+MASTERDB becomes the central data platform, not the central decision-maker.
+MDU remains semantic/schema authority.
+TANTRA remains runtime/orchestration authority.
+Bucket remains evidence/provenance preservation.
+MASTERDB owns the governed data platform.
+2. What Kavy Owns
+Kavy is accountable for:
+MASTERDB Core
+* Runtime
+* Dataset registry
+* Data ingestion
+* Storage/reference
+* Indexing
+* Retrieval
+* Dataset lifecycle
+* Versioning
+* Metadata
+* Provenance references
+* Dataset classification
+* APIs
+* Authentication integration
+* Authorization enforcement
+* Persistence
+* Audit integration
+* Production deployment
+* Reliability
+* Backup/recovery integration
+Central Data Platform
+Additionally:
+* Cross-application dataset discovery
+* Standard ingestion interfaces
+* Dataset registration APIs
+
+--- Page 3 ---
+* Dataset retrieval APIs
+* Data reuse mechanisms
+* Application integration contracts
+* Data access boundaries
+* Dataset compatibility
+* Controlled data sharing
+* Data lineage integration
+* Production data-platform integration
+3. The New MASTERDB Position
+MASTERDB should evolve from:
+A system that stores and registers datasets.
+to:
+The governed central data platform through which BHIV applications can discover, register, access and reuse 
+approved ecosystem data.
+This does not mean every byte of BHIV data must physically live inside one database.
+MASTERDB must support:
+CENTRAL STORAGE
+        +
+REGISTERED EXTERNAL DATA
+        +
+REFERENCED DATA
+        +
+GOVERNED DATA ACCESS
+Therefore:
+Central data platform  one giant database.
+Otherwise someone eventually dumps every CSV, telemetry stream, image and log into one PostgreSQL 
+instance and calls it architecture. Humanity has suffered enough.
+4. Phase 1  Establish the MASTERDB Canonical Contract
+Kavy must document the canonical MASTERDB contract.
+Define:
+MASTERDB owns
+
+--- Page 4 ---
+* Dataset identity
+* Dataset registration
+* Dataset lifecycle
+* Data access
+* Dataset discovery
+* Storage/reference
+* Retrieval
+* Versioning
+* Operational metadata
+* Dataset-level governance enforcement
+MDU owns
+* Schema semantics
+* Ontology
+* Canonical vocabulary
+* Semantic contracts
+* Schema compatibility
+* Provenance semantics
+Bucket owns
+* Evidence preservation
+* Immutable evidence
+* Execution/data evidence
+* Evidence provenance
+TANTRA owns
+* Runtime discovery
+* Orchestration
+* Service integration
+* Execution contracts
+InsightFlow / Pravah own
+* Runtime/data observability
+* Health
+* Telemetry
+* Operational monitoring
+MASTERDB must consume these capabilities rather than duplicate them.
+5. Phase 2  Build the Dataset Registry
+Every reusable BHIV dataset must have a canonical identity.
+Minimum record:
+
+--- Page 5 ---
+dataset_id
+name
+description
+domain
+owner
+custodian
+source
+source_authority
+physical_location
+access_location
+format
+schema_id
+schema_version
+provenance_id
+version
+created_at
+updated_at
+freshness
+record_count
+quality_status
+validation_status
+classification
+sensitivity
+licence
+access_policy
+retention_policy
+allowed_consumers
+intended_use
+derived_from
+supersedes
+integrity_hash
+encryption_status
+lifecycle_status
+The registry must support:
+REGISTER
+DISCOVER
+VALIDATE
+CLASSIFY
+VERSION
+RETRIEVE
+UPDATE
+DEPRECATE
+ARCHIVE
+6. Phase 3  Multi-Application Data Ingestion
+MASTERDB must provide a standard ingestion model for BHIV applications.
+
+--- Page 6 ---
+Target:
+Application
+     
+MASTERDB Intake API / Connector
+     
+Schema + MDU validation
+     
+Quality validation
+     
+Classification
+     
+Provenance
+     
+MASTERDB
+     
+Dataset Registry
+Supported initial formats should include:
+* JSON
+* CSV
+* Excel
+* SQL/database sources
+* REST APIs
+* structured application payloads
+The architecture should allow additional connectors without rewriting MASTERDB core.
+7. Phase 4  Plug-and-Play Data Access
+This is the most important expansion.
+A BHIV application should be able to discover reusable data through MASTERDB rather than asking another 
+application for a private copy.
+Example:
+AIAIC
+  
+   needs agricultural dataset
+  
+MASTERDB
+  
+   search
+   metadata
+   schema
+   access policy
+
+--- Page 7 ---
+   availability
+  
+  
+Approved Dataset
+  
+  
+AIAIC
+Another application can consume the same governed dataset without creating another uncontrolled copy.
+Required capabilities:
+Dataset Discovery API
+/search
+/datasets
+/datasets/{id}
+/datasets/{id}/schema
+/datasets/{id}/versions
+/datasets/{id}/provenance
+Controlled Retrieval
+/query
+/export
+/stream
+/reference
+Only expose operations appropriate to the datasets access policy.
+8. Phase 5  Data Reuse Contract
+Kavy must define a standard MASTERDB Data Access Contract.
+Every consuming application should know:
+WHO
+WHAT DATA
+WHICH VERSION
+WHY
+UNDER WHICH POLICY
+FOR WHICH PURPOSE
+HOW ACCESSED
+WHEN ACCESSED
+WHAT WAS RETURNED
+The contract must support traceability.
+Example:
+
+--- Page 8 ---
+Application: AIAIC
+Dataset: agricultural_income_v2
+Version: 2.4
+Purpose: district analysis
+Access: READ
+Timestamp: ...
+Request ID: ...
+Schema: MDU-...
+Policy: INTERNAL
+9. Phase 6  Data Movement Monitoring
+This is where Harsha works directly with Kavy.
+For every important dataset:
+SOURCE
+ 
+INGESTION
+ 
+VALIDATION
+ 
+MDU
+ 
+MASTERDB
+ 
+CONSUMER
+MASTERDB must expose enough information to determine:
+* ingestion started
+* ingestion completed
+* validation passed/failed
+* records accepted/rejected
+* schema matched
+* transformation occurred
+* dataset version created
+* consumer retrieved data
+* access failed
+* pipeline failed
+* data became stale
+Harsha will help analyse these flows.
+Kavy owns the underlying platform capability.
+
+--- Page 9 ---
+10. Phase 7  MASTERDB + MDU
+Integration must be explicit.
+MASTERDB
+   
+    dataset
+   
+MDU
+   
+    schema / semantic contract
+   
+Validation
+   
+   
+MASTERDB
+MASTERDB must never silently invent semantic definitions.
+If MDU says:
+schema = water_quality_v3
+MASTERDB registers and enforces the applicable contract.
+It does not redefine what salinity, pH, flow_rate, etc. mean.
+11. Phase 8  MASTERDB + TANTRA
+MASTERDB must become discoverable through TANTRA.
+Required integration:
+TANTRA
+  
+Service Discovery
+  
+MASTERDB
+  
+Dataset Discovery
+  
+Controlled Retrieval
+Kavy works with Rajaryan for:
+* service registration
+* capability discovery
+* authentication
+* runtime contracts
+
+--- Page 10 ---
+* API versioning
+* health/readiness
+* trace IDs
+MASTERDB remains the data authority, while TANTRA remains the runtime authority.
+12. Phase 9  Bucket Integration
+MASTERDB and Bucket must remain separate.
+For relevant operations:
+MASTERDB operation
+       
+Evidence generated
+       
+Bucket
+       
+Evidence reference
+       
+MASTERDB metadata
+MASTERDB stores the relevant reference.
+Bucket preserves the evidence.
+MASTERDB must not recreate Bucket as an evidence store.
+13. Phase 10  Production Persistence
+Kavy must eliminate the current gap between:
+works in local/runtime environment
+and
+production data platform.
+Production requirements:
+* Persistent storage
+* Database persistence
+* Backup
+* Recovery
+* Migration strategy
+* Authentication
+* Authorization
+
+--- Page 11 ---
+* Secret management
+* Audit
+* Monitoring
+* Failure recovery
+* Health/readiness
+* Rate limiting where appropriate
+* API versioning
+* Data integrity
+* Production deployment
+The current ephemeral-storage limitation must not remain hidden behind a green /health.
+14. Phase 11  Security
+MASTERDB must enforce:
+Identity
++
+Role
++
+Dataset classification
++
+Purpose
++
+Environment
++
+Action
+Actions must be separately controllable:
+READ
+WRITE
+MODIFY
+DELETE
+EXPORT
+ADMIN
+No application should receive unrestricted database credentials simply because it is inside BHIV.
+15. Phase 12  Central Data Discovery
+Create the foundation for a BHIV-wide data catalogue.
+A developer building a new application should be able to ask:
+What approved datasets already exist?
+
+--- Page 12 ---
+and discover:
+Dataset
+Owner
+Description
+Schema
+Version
+Quality
+Freshness
+Classification
+Access policy
+API
+Provenance
+Consumers
+Status
+This prevents every new product from rebuilding the same dataset.
+16. Phase 13  Real Ecosystem Onboarding
+Kavy must select initial real applications and onboard them.
+Suggested first wave:
+* Gurukul / UniGuru
+* AIAIC
+* Marine Intelligence
+* Namami Gange / Hydro
+* Government systems
+* Environmental intelligence
+* MASTERDB operational datasets
+For each application:
+1. Identify datasets
+2. Identify owner
+3. Identify source
+4. Check existing MASTERDB registration
+5. Classify
+6. Validate
+7. Register
+8. Connect ingestion
+9. Connect retrieval
+10. Prove reuse
+No blind migration.
+
+--- Page 13 ---
+17. Required Architecture Principle
+The target is:
+                BHIV DATA ECOSYSTEM
+ Applications 
+                     
+ Applications 
+                     
+              
+                 MASTERDB    
+                             
+               Registry      
+               Ingestion     
+               Governance    
+               Storage       
+               Retrieval     
+               Discovery     
+               Versioning    
+               Access        
+              
+                      
+          
+                                 
+         MDU       TANTRA       Bucket
+       Meaning     Runtime      Evidence
+                                 
+          
+                      
+               BHIV Applications
+One governed data platform.
+Many applications.
+Reusable data.
+No uncontrolled data silos.
+18. 7 Learning / Build Objectives for Kavy
+Kavy must demonstrate:
+1. MASTERDBs canonical ownership boundary
+2. Dataset registry completeness
+3. Multi-source ingestion
+4. Governed data storage/reference
+5. Plug-and-play retrieval
+6. MDU/TANTRA/Bucket integration
+7. Production-grade persistence and security
+
+--- Page 14 ---
+19. 4 Core Deliverables
+D1  MASTERDB_CENTRAL_DATA_PLATFORM_SPEC.md
+Canonical architecture and ownership.
+D2  MASTERDB_DATA_CONTRACT.md
+Standard registration, ingestion, discovery and retrieval contracts.
+D3  MASTERDB_RUNTIME_INTEGRATION.md
+MASTERDB  MDU  TANTRA  Bucket  Pravah/InsightFlow.
+D4  MASTERDB_E2E_PROOF.md
+At least one real dataset:
+Application
+ Ingestion
+ MDU validation
+ MASTERDB
+ Registry
+ Retrieval
+ Second application
+ Evidence
+ Observability
+20. 3 Proof Gates
+Gate 1  Platform
+A real dataset can be:
+registered  validated  persisted  discovered  retrieved.
+Gate 2  Ecosystem
+Two separate BHIV applications can use the same governed dataset through MASTERDB without creating an 
+uncontrolled application-to-application data dependency.
+Gate 3  Production
+The entire flow works with:
+authentication + authorization + persistence + provenance + evidence + observability + failure handling.
+
+--- Page 15 ---
+21. Kavy + Harsha Working Model
+Kavy
+Builds and owns the platform.
+Harsha
+Studies and strengthens the data movement, quality, integration and analytical intelligence around the platform.
+Together:
+KAVY
+MASTERDB PLATFORM
+       +
+HARSHA
+DATA MOVEMENT / DS / DA / ML / AI
+       
+CENTRAL BHIV DATA PLATFORM
+Harsha should be able to use the platform without becoming dependent on Kavy for every dataset operation.
+Conversely, Kavy should use Harshas analysis to identify:
+* data bottlenecks
+* quality failures
+* duplicate data
+* schema drift
+* ingestion failures
+* movement gaps
+* analytics readiness
+* ML readiness
+22. Definition of Done
+MASTERDB is considered converged toward the BHIV Central Data Platform when:
+* Every reusable dataset has a canonical identity.
+* Applications can register datasets through standard interfaces.
+* Applications can discover approved datasets.
+* Applications can consume approved datasets through controlled APIs.
+* Dataset ownership and provenance are known.
+* MDU contracts are enforced.
+* Dataset versions are traceable.
+* Data movement is observable.
+* Access is authenticated and authorized.
+* Evidence is preserved through Bucket where applicable.
+* Runtime integration exists through TANTRA.
+
+--- Page 16 ---
+* Production persistence exists.
+* Backup/recovery exists.
+* Failures are visible and recoverable.
+* No application needs a private uncontrolled copy merely to reuse BHIV data.
+* A real application can consume data produced by another application through MASTERDB.
+* The entire flow can be demonstrated with evidence.
+Final constitutional position
+MASTERDB is the governed central data platform of BHIV. It provides the common data plane through which 
+reusable ecosystem data can be registered, governed, discovered and consumed. It does not own semantics, 
+orchestration, evidence authority or business decisions.
+That is the role Kavy should now build toward.
+MASTER MISSION PROMPT: Milestone Advancement: Scalable Ecosystem Integration & 
+Pipeline Automation (T-GOV-002)
+• Task ID: T-GOV-002
+• Assigned Candidate / Agent: Kavy Changela
+• Product Governance: BHIV
+• Difficulty Level: INTERMEDIATE
+• Estimated Completion Window: 3-4 hours
+• Generated At: 2026-09-21T18:16:11.029167+00:00
+• 
+1. Executive Summary & Objective
+Advance beyond Phase 2: Enterprise RBAC, Replay Proof Verification & Automated Audit Emitters (T-GOV-002) 
+to build resilient upstream/downstream integrations.
+• Core Focus Area: System Architecture & Ecosystem Interoperability
+• 
+2. Parikshak Evaluation Findings (Previous Submission Context)
+• Previous Task Evaluated: Phase 2: Enterprise RBAC, Replay Proof Verification & Automated Audit Emitters 
+(T-GOV-002) (task-ext-fdde4eb368bf)
+• Evaluation Result: PASS (Score: 100/100)
+Candidate Learning Signals:
+• Maturity Level: Junior Associate
+• Learning Velocity: 0.0 pts/task
+• Historical Strengths: Consistently meets code completeness rules., Capable of delivering high-quality 
+architectural modularity.
+• Recurring Mistakes To Avoid:
+• 
+3. Key Learning Objectives
+You must demonstrate and document the following technical capabilities:
+• [ ] Master asynchronous event-driven streaming with Pravah replay ledgers
+• [ ] Implement strict concurrency control and deterministic state machine transitions
+• [ ] Construct end-to-end integration test suites with zero flaky assertions
+• 
+
+--- Page 17 ---
+4. Required Technical Deliverables
+Every item below must be created or updated and committed to the repository:
+• Source Code Implementation: Fully documented, typed, and clean modules
+• Automated Test Suite: Complete pytest test files covering edge cases and error boundaries
+• REVIEW_PACKET.md: Architectural proofs, self-audit scores, and verification logs
+• CODE_PACKET.md / CODE_INDEX.md: Directory tree, changed files, and git diff summaries
+• Runtime Configuration: Pinned dependencies in requirements.txt (== exact versions)
+• 
+5. Strict Acceptance Criteria & Quality Gates
+Your submission will be evaluated by Parikshak against the following strict gates:
+• 100% test pass rate across unit and integration test suites (pytest)
+• Zero unpinned >= dependencies in requirements.txt (strict version pinning enforced)
+• Deterministic execution: 50 consecutive runs must produce identical SHA-256 state hashes
+• Complete error boundary protection: zero unhandled 500 exceptions on malformed inputs
+• All API routes validate inbound request schemas with strict Pydantic models
+• 
+6. Environment Dependencies & Pinned Versions
+All dependencies in requirements.txt must be strictly pinned with == to prevent version drift:
+• fastapi==0.115.8
+• uvicorn[standard]==0.34.0
+• pydantic==2.13.3
+• pydantic-core==2.46.3
+• requests==2.34.2
+• python-dotenv==1.2.2
+• cryptography==49.0.0
+• pytest==9.0.3
+• pytest-asyncio==0.24.0
+• 
+7. Relevant Codebase Reference Files
+Inspect and build upon the following architectural components in the workspace:
+• [evaluation_engine/rule_engine.py](file:///evaluation_engine/rule_engine.py)
+• [task_selector/review_orchestrator.py](file:///task_selector/review_orchestrator.py)
+• [integrations/local_llm_client.py](file:///integrations/local_llm_client.py)
+• [security/middleware.py](file:///security/middleware.py)
+• [api/production.py](file:///api/production.py)
+• [requirements.txt](file:///requirements.txt)
+• 
+8. Step-by-Step Execution Protocol for Engineer / AI Agent
+1. Read & Understand: Study the previous task evaluation findings and review reference files.
+2. Implement Core Logic: Write clean, modular, typed Python code adhering to strict architecture boundaries.
+3. Write Automated Tests: Create unit tests in tests/unit/ and integration tests in tests/integration/.
+4. Execute Verification: Run pytest -v to ensure 100% of tests pass without warnings or errors.
+5. Generate Review Packet: Create or update REVIEW_PACKET.md documenting self-audit and proofs.
+6. Commit & Push: Stage changes (git add .), commit with descriptive message, and push to GitHub.
+• 
+• Authority: *PARIKSHAK Production Runtime Engine & NIYANTRAN Task Orchestration*
+

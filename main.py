@@ -68,112 +68,6 @@ from services.dataset_retrieval_service import (
     DatasetRetrievalService,
 )
 from services.bucket_client import BucketClient, BucketUnavailableError
-from services.bucket_client import BucketClient, BucketUnavailableError
-
-from api.production import router as production_router
-from services.bucket_client import BucketClient, BucketUnavailableError
-
-from api.production import router as production_router
-from models import (
-    CertificationRequest,
-    ExportRequest,
-    KnowledgeObjectRegisterRequest,
-    PackageDeprecateRequest,
-    PackagePromoteRequest,
-    PackageRegisterRequest,
-    PackageStatus,
-    QueryRequest,
-    ReferenceRequest,
-    SharedRecordDeprecateRequest,
-    SharedRecordRegisterRequest,
-    SharedRecordUpdateRequest,
-    StreamRequest,
-    ValidationRequest,
-)
-from services.artifact_store import ArtifactStore
-from models import (
-    CertificationRequest,
-    ExportRequest,
-    KnowledgeObjectRegisterRequest,
-    PackageDeprecateRequest,
-    PackagePromoteRequest,
-    PackageRegisterRequest,
-    PackageStatus,
-    QueryRequest,
-    ReferenceRequest,
-    SharedRecordDeprecateRequest,
-    SharedRecordRegisterRequest,
-    SharedRecordUpdateRequest,
-    StreamRequest,
-    ValidationRequest,
-)
-#     ValidationRequest,
-# )
-from services.artifact_store import ArtifactStore
-from models import (
-    CertificationRequest,
-    ExportRequest,
-    KnowledgeObjectRegisterRequest,
-    PackageDeprecateRequest,
-    PackagePromoteRequest,
-    PackageRegisterRequest,
-    PackageStatus,
-    QueryRequest,
-    ReferenceRequest,
-    SharedRecordDeprecateRequest,
-    SharedRecordRegisterRequest,
-    SharedRecordUpdateRequest,
-    StreamRequest,
-    ValidationRequest,
-)
-from models import (
-    CertificationRequest,
-    KnowledgeObjectRegisterRequest,
-    PackageDeprecateRequest,
-    PackagePromoteRequest,
-    PackageRegisterRequest,
-    PackageStatus,
-    SharedRecordDeprecateRequest,
-    SharedRecordRegisterRequest,
-    SharedRecordUpdateRequest,
-    ValidationRequest,
-)
-from services.artifact_store import ArtifactStore
-from services.certification_service import CertificationService
-from services.knowledge_object_service import (
-    KnowledgeObjectService,
-    LineageValidationError,
-    VersionIncompatibleError,
-)
-from services.mdu_client import MDUUnavailableError
-from services.mdu_contract_adapter import MDUContractAdapter
-from services.package_registry_service import (
-    InvalidTransitionError,
-    PackageNotFoundError,
-    PackageRegistryService,
-)
-from services.report_service import ReportService
-from services.retrieval_readiness_service import RetrievalReadinessService
-from services.runtime_discovery_service import RuntimeDiscoveryService
-from services.shared_data_registry_service import (
-    SharedDataRegistryService,
-    SharedDatasetNotFoundError,
-)
-from services.shared_dependency_resolver import SharedDependencyResolver
-from services.shared_platform_services import SERVICE_CONTRACTS, build_shared_service_registry
-from services.shared_record_store import (
-    SharedRecordDeprecatedError,
-    SharedRecordExistsError,
-    SharedRecordNotFoundError,
-    SharedRecordStore,
-    SharedRecordValidationError,
-)
-from services.shared_version_compatibility import negotiate_version as shared_negotiate_version
-from services.tantra_interface_service import (
-    CertificationStatusNotFoundError,
-    TantraInterfaceService,
-)
-from services.validation_service import ValidationService
 
 from api.production import router as production_router
 from security.middleware import ReplayMitigationTable, RS256JWTVerifier, SecurityMiddleware
@@ -339,6 +233,14 @@ retrieval_readiness_service = RetrievalReadinessService(
     registry=package_registry_service,
     knowledge_object_service=knowledge_object_service,
 )
+
+# --- Phase 4 — MASTERDB Dataset Retrieval & Phase 8 — Bucket Evidence -------
+dataset_retrieval_service = DatasetRetrievalService(
+    registry=package_registry_service,
+    knowledge_object_service=knowledge_object_service,
+    retrieval_readiness_service=retrieval_readiness_service,
+)
+bucket_client = BucketClient()
 
 # --- Ecosystem integration surfaces: MDU (Nupur), TANTRA, Runtime Discovery --
 mdu_contract_adapter = MDUContractAdapter()
@@ -960,6 +862,172 @@ def resolve_shared_record_dependencies(service_name: str, record_id: str) -> dic
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 # ---------------------------------------------------------------------------
+# Phase 4 — MASTERDB Central Data Platform (Dataset Retrieval)
+#
+# Bhupinder Singh's convergence layer: unified dataset access across all
+# mediums, boards, and languages. These endpoints wrap the
+# DatasetRetrievalService with standard HTTP semantics and error mapping.
+# ---------------------------------------------------------------------------
+
+
+@app.get("/datasets")
+def list_datasets() -> dict:
+    """Return all datasets known to the retrieval service."""
+    datasets = dataset_retrieval_service.list_datasets()
+    return {"count": len(datasets), "datasets": datasets}
+
+
+@app.get("/datasets/{dataset_id}")
+def get_dataset_detail(dataset_id: str) -> dict:
+    """Return full dataset detail including history, knowledge object, and retrieval evidence."""
+    try:
+        return dataset_retrieval_service.get_dataset(dataset_id)
+    except PackageNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/datasets/{dataset_id}/schema")
+def get_dataset_schema(dataset_id: str) -> dict:
+    """Return the schema contract for a dataset (MDU-live if available; registry-declared fallback)."""
+    return dataset_retrieval_service.get_dataset_schema(dataset_id)
+
+
+@app.get("/datasets/{dataset_id}/versions")
+def get_dataset_versions(dataset_id: str) -> dict:
+    """Return all registered versions of a dataset, sorted by creation time."""
+    try:
+        return dataset_retrieval_service.get_dataset_versions(dataset_id)
+    except PackageNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/datasets/{dataset_id}/provenance")
+def get_dataset_provenance(dataset_id: str) -> dict:
+    """Return MASTERDB lineage + MDU provenance for a dataset."""
+    try:
+        return dataset_retrieval_service.get_dataset_provenance(dataset_id)
+    except PackageNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/query")
+def query_dataset(request: QueryRequest) -> dict:
+    """Execute a structured query against a dataset."""
+    try:
+        result = dataset_retrieval_service.query(
+            dataset_id=request.dataset_id,
+            query_params=request.query_params,
+        )
+        return result
+    except PackageNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except DatasetNotRetrievableError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except DatasetAccessDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@app.post("/export")
+def export_dataset(request: ExportRequest) -> dict:
+    """Request an asynchronous or synchronous export of a dataset."""
+    try:
+        result = dataset_retrieval_service.export_dataset(
+            dataset_id=request.dataset_id,
+            format=request.format,
+        )
+        return result
+    except PackageNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except DatasetNotRetrievableError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except DatasetAccessDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@app.post("/stream")
+def stream_dataset(request: StreamRequest) -> dict:
+    """Request a streaming connection to a dataset."""
+    try:
+        result = dataset_retrieval_service.stream(
+            dataset_id=request.dataset_id,
+            stream_params=request.stream_params,
+        )
+        return result
+    except PackageNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except DatasetNotRetrievableError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except DatasetAccessDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@app.post("/reference")
+def reference_dataset(request: ReferenceRequest) -> dict:
+    """Generate a stable reference/citation for a dataset."""
+    try:
+        result = dataset_retrieval_service.reference(dataset_id=request.dataset_id)
+        return result
+    except PackageNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except DatasetNotRetrievableError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# Phase 8 — Evidence Preservation & Bucket Operations
+#
+# Evidence and provenance storage via Bucket, plus bucket health reporting.
+# ---------------------------------------------------------------------------
+
+
+@app.post("/evidence/{evidence_id}")
+def store_evidence(evidence_id: str, request: dict) -> dict:
+    """Persist an evidence record to the configured bucket (Phase 8).
+
+    The evidence_id is placed in the path per spec §4.1. The request body
+    is forwarded as the evidence payload.
+    """
+    try:
+        return bucket_client.store_evidence(evidence_id=evidence_id, payload=request)
+    except BucketUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/evidence/{evidence_id}")
+def retrieve_evidence(evidence_id: str) -> dict:
+    """Retrieve a stored evidence artifact from the configured bucket (Phase 8)."""
+    try:
+        return bucket_client.get_evidence(evidence_id)
+    except BucketUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/provenance/{dataset_id}")
+def store_provenance(dataset_id: str, request: dict) -> dict:
+    """Persist a provenance record for a dataset to the configured bucket (Phase 8)."""
+    try:
+        return bucket_client.store_provenance(dataset_id=dataset_id, provenance=request)
+    except BucketUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/provenance/{package_id}")
+def get_provenance(package_id: str) -> dict:
+    """Retrieve the full provenance chain for a knowledge package."""
+    try:
+        package_registry_service.get(package_id)  # confirms existence
+    except PackageNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return knowledge_object_service.lineage(package_id)
+
+
+@app.get("/bucket/status")
+def bucket_status() -> dict:
+    """Health and connectivity check for the evidence bucket."""
+    return bucket_client.status()
+
+
+# ---------------------------------------------------------------------------
 # BCAES Canonical Registry API — ecosystem bootstrap (BCAES Volumes 4-7)
 # ---------------------------------------------------------------------------
 
@@ -1429,6 +1497,8 @@ def runtime_identity() -> dict:
             "bcaes-canonical-registry",
             "bcaes-canonical-document-repository",
             "shared-data-services",
+            "central-data-platform-retrieval",
+            "evidence-preservation-bucket",
         ],
         "api_groups": {
             "certification": "/validate, /certify",
@@ -1437,6 +1507,8 @@ def runtime_identity() -> dict:
             "shared_data": "/shared/*",
             "bcaes_registry": "/bcaes/*",
             "canonical_repository": "/canonical-repository/*",
+            "central_data_platform": "/datasets, /datasets/{dataset_id}, /datasets/{dataset_id}/schema, /datasets/{dataset_id}/versions, /datasets/{dataset_id}/provenance, /query, /export, /stream, /reference",
+            "evidence_preservation": "/evidence/{evidence_id}, /provenance/{dataset_id}, /provenance/{package_id}, /bucket/status",
             "auth": "/auth/token",
             "runtime": "/runtime/identity, /health, /ready, /metrics",
         },
