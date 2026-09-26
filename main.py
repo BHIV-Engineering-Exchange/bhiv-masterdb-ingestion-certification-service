@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from middleware.rate_limit_middleware import RateLimitMiddleware
@@ -127,7 +128,43 @@ app = FastAPI(
     version="1.3.0",
 )
 
-# Rate limiting — see middleware/rate_limit_middleware.py for the exempt
+# ── CORS ─────────────────────────────────────────────────────────────────────
+# Allows the BHIV application ecosystem (and dev tooling) to call this API from
+# browser/JS environments.  Set CORS_ALLOWED_ORIGINS env var to a comma-separated
+# list of allowed origins in production (e.g. the deployed Vercel frontend's
+# exact origin); defaults to "*" for local development.
+#
+# allow_credentials is intentionally False: auth here is a Bearer JWT sent in
+# the Authorization header (see auth/service.py, /auth/token), never a cookie.
+# Starlette's CORSMiddleware only reflects the exact Origin back on *actual*
+# (non-preflight) responses when the request carries a Cookie header; with
+# allow_origins=["*"] it otherwise sends a literal "Access-Control-Allow-Origin: *"
+# on those responses. If allow_credentials were True, a browser making a
+# credentialed (`credentials: "include"`) request would pass the CORS preflight
+# (which does reflect the origin) but then have the browser reject the actual
+# response, because a literal "*" is disallowed together with credentials —
+# the request looks fine server-side (200 OK, headers present) while the
+# frontend's fetch/XHR call fails. Since nothing here uses cookies, credentials
+# mode isn't needed, and turning it off avoids that mismatch entirely rather
+# than papering over it with per-origin reflection tricks.
+_allowed_origins = [
+    o.strip()
+    for o in os.environ.get("CORS_ALLOWED_ORIGINS", "*").split(",")
+    if o.strip()
+]
+if not _allowed_origins:
+    _allowed_origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_allowed_origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Trace-Id", "X-Request-Id"],
+)
+
+# ── Rate limiting ────────────────────────────────────────────────────────────
 # paths and middleware/rate_limiter.py for the "not distributed-safe"
 # scope caveat. Configurable via RATE_LIMIT_MAX_REQUESTS /
 # RATE_LIMIT_WINDOW_SECONDS env vars. Instantiated explicitly (rather than
@@ -1815,5 +1852,3 @@ def replay_registry_manifest() -> dict:
         "note": "No Replay Registry Owner or endpoint has been named/confirmed reachable "
         "as of this manifest — see CONSTITUTIONAL_RUNTIME_DEFINITION.md §4.",
     }
-
-
