@@ -85,6 +85,10 @@ from database_targets.service import (
     UnknownDatabaseError,
 )
 
+from upload.models import UploadCancelRequest, UploadInitiationRequest, UploadStatus
+from upload.service import UploadService, UploadValidationError, UploadStateError
+from upload.store import UploadJobNotFoundError
+
 from bcaes_registry.convergence_models import ConvergenceUpdateRequest as BCAESConvergenceUpdateRequest
 from bcaes_registry.models import RegisterObjectRequest as BCAESRegisterObjectRequest
 from bcaes_registry.models import RegistryType as BCAESRegistryType
@@ -224,6 +228,11 @@ report_service = ReportService(artifact_store=artifact_store)
 # not rebuild, boundary described in the task assignment. See
 # database_targets/service.py.
 database_router_service = DatabaseRouterService(certification_artifact_store=artifact_store)
+
+# --- MASTERDB Upload Service: Canonical File Upload & Ingestion Contract ---
+# Implements governed upload capability separating UPLOAD (artifact into boundary)
+# from INGESTION (validating, processing, registering, and making data usable).
+upload_service = UploadService()
 
 # --- MASTERDB knowledge platform runtime (Knowledge Package Lifecycle,
 # Provenance/Lineage, Retrieval Readiness) ---------------------------------
@@ -461,6 +470,95 @@ def list_ingest_jobs(
     )
     return [job.model_dump(mode="json") for job in jobs]
 
+
+# MASTERDB-BE-02: Canonical File Upload (UPLOADED->RECEIVED->VALIDATING->VALIDATED->REGISTERED->INGESTED->AVAILABLE)
+ALLOWED_CONTENT_TYPES = {"text/csv", "application/json",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/pdf", "text/plain", "image/png", "image/jpeg", "image/gif", "application/zip"}
+
+@app.post("/upload", status_code=201)
+def initiate_upload(request: UploadInitiationRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    """Initiate upload. Use POST /upload/{upload_id}/content for file bytes."""
+    try:
+        job = upload_service.initiate_upload(
+            filename=request.filename, content_type=request.content_type, file_size=request.file_size,
+            actor=identity.actor, roles=identity.roles, checksum_sha256=request.checksum_sha256,
+            classification=request.classification, source_reference=request.source_reference,
+            provenance_metadata=request.provenance_metadata, schema_version=request.schema_version,
+            product_source=request.product_source, intended_use=request.intended_use, metadata=request.metadata)
+        audit_logger.info("upload.initiate actor=%s upload_id=%s filename=%s size=%d",
+            identity.actor, job.upload_id, request.filename, request.file_size)
+        return {"upload_id": job.upload_id, "trace_id": job.trace_id, "status": job.status.value,
+            "storage_path": job.storage_path, "max_size_bytes": 500*1024*1024,
+            "allowed_content_types": list(ALLOWED_CONTENT_TYPES), "checksum_algorithm": "sha256"}
+    except UploadValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.post("/upload/{upload_id}/content")
+async def upload_content(upload_id: str, request: Request, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    """Upload file content (raw bytes)."""
+    try:
+        body = await request.body()
+        job = upload_service.receive_upload(upload_id=upload_id, file_content=body)
+        audit_logger.info("upload.receive actor=%s upload_id=%s size=%d", identity.actor, upload_id, len(body))
+        return {"upload_id": job.upload_id, "status": job.status.value, "file_size_bytes": job.file_size}
+    except UploadJobNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except UploadStateError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except UploadValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.post("/upload/{upload_id}/validate")
+def validate_upload(upload_id: str, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    """Validate uploaded file (checksum verification)."""
+    try:
+        job = upload_service.validate_upload(upload_id=upload_id)
+        audit_logger.info("upload.validate actor=%s upload_id=%s status=%s", identity.actor, upload_id, job.status.value)
+        return {"upload_id": job.upload_id, "status": job.status.value,
+            "validation_passed": job.status == UploadStatus.VALIDATED,
+            "rejection_reason": job.rejection_reason, "steps": [s.model_dump() for s in job.steps]}
+    except UploadJobNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except UploadStateError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+@app.get("/upload/jobs/{upload_id}")
+def get_upload(upload_id: str) -> dict:
+    """Get upload job status and details."""
+    try:
+        job = upload_service.get_upload(upload_id)
+        return {"upload_id": job.upload_id, "status": job.status.value, "filename": job.filename,
+            "content_type": job.content_type, "file_size_bytes": job.file_size, "actor": job.actor,
+            "steps": [s.model_dump() for s in job.steps], "rejection_reason": job.rejection_reason,
+            "dataset_id": job.dataset_id, "package_id": job.package_id, "ingestion_job_id": job.ingestion_job_id,
+            "timestamps": {"uploaded_at": job.uploaded_at, "received_at": job.received_at,
+                "validated_at": job.validated_at, "registered_at": job.registered_at}}
+    except UploadJobNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+@app.get("/upload/jobs")
+def list_uploads(status: Optional[str] = None, actor: Optional[str] = None,
+                 product_source: Optional[str] = None) -> dict:
+    """List upload jobs with optional filtering."""
+    filter_status = UploadStatus(status) if status else None
+    jobs = upload_service.list_uploads(status=filter_status, actor=actor, product_source=product_source)
+    return {"count": len(jobs), "uploads": [{"upload_id": j.upload_id, "status": j.status.value,
+        "filename": j.filename, "file_size_bytes": j.file_size, "actor": j.actor,
+        "product_source": j.product_source, "uploaded_at": j.uploaded_at} for j in jobs]}
+
+@app.delete("/upload/jobs/{upload_id}")
+def cancel_upload(upload_id: str, reason: UploadCancelRequest,
+                  identity: AuthIdentity = Depends(get_identity)) -> dict:
+    """Cancel pending upload and clean up staging."""
+    try:
+        job = upload_service.cancel_upload(upload_id=upload_id, reason=reason.reason)
+        audit_logger.info("upload.cancel actor=%s upload_id=%s reason=%s", identity.actor, upload_id, reason.reason)
+        return {"upload_id": job.upload_id, "status": job.status.value, "rejection_reason": job.rejection_reason}
+    except UploadJobNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except UploadStateError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 # ---------------------------------------------------------------------------
 # Phase 4 — MASTERDB Registry API

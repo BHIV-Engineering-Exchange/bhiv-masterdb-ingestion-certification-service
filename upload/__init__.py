@@ -1,0 +1,1 @@
+"""Upload module — Canonical MASTERDB File Upload & Ingestion Contract."""
