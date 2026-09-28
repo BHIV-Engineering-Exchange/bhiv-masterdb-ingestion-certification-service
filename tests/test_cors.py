@@ -9,7 +9,7 @@ Verifies:
 
 import importlib
 import os
-import pytest
+import pytestsssssss
 from fastapi.testclient import TestClient
 
 import main as main_module
