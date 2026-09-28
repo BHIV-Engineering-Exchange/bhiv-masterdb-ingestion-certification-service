@@ -30,6 +30,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code (tests and pytest.ini excluded via .dockerignore)
 COPY main.py models.py ./
+COPY api api/
 COPY auth auth/
 COPY bcaes_registry bcaes_registry/
 COPY canonical_repository canonical_repository/
@@ -49,6 +50,7 @@ COPY reports reports/
 COPY retrieval_evidence_store retrieval_evidence_store/
 COPY review_packets review_packets/
 COPY scripts scripts/
+COPY security security/
 COPY services services/
 COPY shared_data shared_data/
 COPY shared_store shared_store/
