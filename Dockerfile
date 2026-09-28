@@ -22,14 +22,13 @@ WORKDIR /app
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python packages from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code
+# Copy application code (tests and pytest.ini excluded via .dockerignore)
 COPY main.py models.py ./
 COPY auth auth/
 COPY bcaes_registry bcaes_registry/
@@ -38,7 +37,9 @@ COPY config config/
 COPY database_targets database_targets/
 COPY datasets datasets/
 COPY engines engines/
+COPY evaluation_engine evaluation_engine/
 COPY ingestion_jobs_store ingestion_jobs_store/
+COPY integrations integrations/
 COPY knowledge_object_store knowledge_object_store/
 COPY middleware middleware/
 COPY operational_sync operational_sync/
@@ -51,21 +52,34 @@ COPY scripts scripts/
 COPY services services/
 COPY shared_data shared_data/
 COPY shared_store shared_store/
-COPY tests tests/
+COPY task_selector task_selector/
+COPY upload upload/
 COPY utils utils/
 COPY validators validators/
-COPY pytest.ini .
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# Create required runtime directories with correct permissions
+RUN mkdir -p /app/reports /app/registry_store /app/knowledge_object_store \
+    /app/retrieval_evidence_store /app/shared_store \
+    /app/ingestion_jobs_store /app/review_packets && \
+    chmod 755 /app/reports /app/registry_store /app/knowledge_object_store \
+    /app/retrieval_evidence_store /app/shared_store \
+    /app/ingestion_jobs_store /app/review_packets
+
+# Create non-root user with home directory
+RUN useradd -m -u 1000 -s /sbin/nologin appuser
+
+# Set ownership of app directory to appuser
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
 USER appuser
 
 # Expose port
 EXPOSE 8000
 
-# Health check
+# Health check using Python (more reliable than curl)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()" || exit 1
 
-# Run application
+# Run application with explicit worker settings for stability
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

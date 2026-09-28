@@ -5,8 +5,8 @@ services:
     container_name: masterdb-postgres
 
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB:-masterdb}
+      POSTGRES_USER: ${POSTGRES_USER:-masterdb}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
     volumes:
@@ -15,7 +15,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+        - pg_isready -U ${POSTGRES_USER:-masterdb} -d ${POSTGRES_DB:-masterdb}
       interval: 10s
       timeout: 5s
       retries: 10
@@ -28,12 +28,16 @@ services:
 
 
   api:
-    image: ${DOCKER_USERNAME}/masterdb-ingestion-certification-service:${IMAGE_TAG}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    image: ${DOCKER_USERNAME:-masterdb}/masterdb-ingestion-certification-service:${IMAGE_TAG:-latest}
 
     container_name: masterdb-api
 
     ports:
-      - "${MASTERDB_PORT}:8000"
+      - "${MASTERDB_PORT:-8000}:8000"
 
     env_file:
       - .env
@@ -45,13 +49,17 @@ services:
     volumes:
       - masterdb_datasets:/app/datasets
       - masterdb_reports:/app/reports
+      - masterdb_registry_store:/app/registry_store
+      - masterdb_knowledge_object_store:/app/knowledge_object_store
+      - masterdb_retrieval_evidence_store:/app/retrieval_evidence_store
+      - masterdb_shared_store:/app/shared_store
 
     healthcheck:
       test:
         - CMD
-        - curl
-        - -f
-        - http://localhost:8000/health
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"
       interval: 30s
       timeout: 10s
       retries: 3
@@ -73,6 +81,18 @@ volumes:
 
   masterdb_reports:
     name: masterdb_reports
+
+  masterdb_registry_store:
+    name: masterdb_registry_store
+
+  masterdb_knowledge_object_store:
+    name: masterdb_knowledge_object_store
+
+  masterdb_retrieval_evidence_store:
+    name: masterdb_retrieval_evidence_store
+
+  masterdb_shared_store:
+    name: masterdb_shared_store
 
 
 networks:

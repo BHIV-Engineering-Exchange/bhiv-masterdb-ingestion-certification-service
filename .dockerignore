@@ -32,21 +32,29 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+tests/
+pytest.ini
 
 # Temporary
 *.tmp
 *.log
 
-# Documentation (keep in build for reference, but exclude build artifacts)
-*.pyc
+# Documentation (markdown files not needed in runtime)
+*.md
 site/
 
 # Git
 .git/
 .gitignore
+.github/
 
-# Docker
+# Docker config files
 Dockerfile
 docker-compose.yml
 .dockerignore
 .env.example
+.env
+
+# Task/review files
+task_brief_*.txt
+pdf_extract.txt
