@@ -8,6 +8,7 @@ from engines.risk_engine import RiskEngine
 from engines.scoring_engine import ScoringEngine
 from models import CertificationState
 from profiling.dataset_profiler import DatasetProfiler
+from security.path_resolution import WORKSPACE_ROOT, resolve_secure_path
 from services.artifact_store import ArtifactStore
 from utils.loader import DatasetLoader
 from validators.completeness_validator import CompletenessValidator
@@ -26,8 +27,18 @@ class ValidationService:
         rules_path: str = "config/validation_rules.json",
         artifact_store: Optional[ArtifactStore] = None,
     ) -> None:
-        self.schema_path = schema_path
-        self.rules_path = rules_path
+        # Resolve relative config paths against the workspace root so they work
+        # regardless of the process CWD (important for pytest and Docker).
+        self.schema_path = str(
+            (WORKSPACE_ROOT / schema_path).resolve()
+            if not Path(schema_path).is_absolute()
+            else Path(schema_path)
+        )
+        self.rules_path = str(
+            (WORKSPACE_ROOT / rules_path).resolve()
+            if not Path(rules_path).is_absolute()
+            else Path(rules_path)
+        )
         self.artifact_store = artifact_store or ArtifactStore()
 
     def validate(
@@ -81,7 +92,7 @@ class ValidationService:
 
     @staticmethod
     def _dataset_id(dataset_path: str) -> str:
-        path = Path(dataset_path)
+        path = resolve_secure_path(dataset_path)
         digest = hashlib.sha256()
         digest.update(str(path.resolve()).encode("utf-8"))
         if path.exists():

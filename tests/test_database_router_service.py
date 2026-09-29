@@ -101,7 +101,7 @@ def test_ingest_succeeds_for_certified_dataset_with_role(tmp_path):
     )
     assert job.status == IngestionJobStatus.PERSISTED
     assert job.certification_state == "CERTIFIED"
-    assert [s.step for s in job.steps] == ["RBAC_CHECK", "FORMAT_CHECK", "CERTIFICATION_GATE", "ROUTED"]
+    assert [s.step for s in job.steps] == ["RBAC_CHECK", "FORMAT_CHECK", "CERTIFICATION_GATE", "PERSISTENCE", "ROUTED"]
     assert all(s.passed for s in job.steps)
 
     fetched = router.get_job(job.job_id)
