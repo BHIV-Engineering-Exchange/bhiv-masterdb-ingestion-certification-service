@@ -19,7 +19,16 @@ decides what to do with that information at runtime.
 """
 from typing import Any, Dict, List, Optional
 
-from models import KnowledgePackage, PackageStatus
+from models import (
+    AccessContract,
+    Capability,
+    CapabilityAccessRequest,
+    CapabilityContract,
+    CapabilityRetrieveRequest,
+    CapabilityRetrieveResponse,
+    KnowledgePackage,
+    PackageStatus,
+)
 from services.package_registry_service import (
     PackageNotFoundError,
     PackageRegistryService,
@@ -28,6 +37,11 @@ from services.knowledge_object_service import KnowledgeObjectService
 from services.report_service import ReportService
 from services.retrieval_readiness_service import RetrievalReadinessService
 from services.runtime_discovery_service import RuntimeDiscoveryService
+from services.capability_registry_service import (
+    CapabilityAccessDeniedError,
+    CapabilityNotFoundError,
+    CapabilityRegistryService,
+)
 
 
 class TantraInterfaceService:
@@ -38,6 +52,7 @@ class TantraInterfaceService:
         retrieval_readiness_service: Optional[RetrievalReadinessService] = None,
         report_service: Optional[ReportService] = None,
         discovery_service: Optional[RuntimeDiscoveryService] = None,
+        capability_service: Optional[CapabilityRegistryService] = None,
     ) -> None:
         self.registry = registry or PackageRegistryService()
         self.knowledge_object_service = knowledge_object_service or KnowledgeObjectService(
@@ -48,6 +63,9 @@ class TantraInterfaceService:
         )
         self.report_service = report_service or ReportService()
         self.discovery_service = discovery_service or RuntimeDiscoveryService(registry=self.registry)
+        self.capability_service = capability_service or CapabilityRegistryService(
+            package_registry=self.registry
+        )
 
     # -- dataset registration -------------------------------------------------
 
@@ -93,6 +111,41 @@ class TantraInterfaceService:
             medium=medium,
             version=version,
             status=status,
+        )
+
+    # -- capability discovery & contract resolution --------------------------
+
+    def discover_capabilities(
+        self,
+        domain: Optional[str] = None,
+        status: Optional[str] = None,
+        search: Optional[str] = None,
+    ) -> List[Capability]:
+        return self.capability_service.list_capabilities(domain=domain, status=status, search=search)
+
+    def get_capability(self, capability_id: str) -> Capability:
+        return self.capability_service.get_capability(capability_id)
+
+    def get_capability_contract(self, capability_id: str) -> CapabilityContract:
+        return self.capability_service.get_contract(capability_id)
+
+    def request_capability_access(
+        self,
+        actor: str,
+        roles: List[str],
+        request_data: CapabilityAccessRequest,
+    ) -> AccessContract:
+        return self.capability_service.request_access(actor=actor, roles=roles, request_data=request_data)
+
+    def retrieve_capability_data(
+        self,
+        actor: str,
+        roles: List[str],
+        capability_id: str,
+        retrieve_req: CapabilityRetrieveRequest,
+    ) -> CapabilityRetrieveResponse:
+        return self.capability_service.retrieve(
+            actor=actor, roles=roles, capability_id=capability_id, retrieve_req=retrieve_req
         )
 
     # -- retrieval readiness ---------------------------------------------------
@@ -142,3 +195,4 @@ class TantraInterfaceService:
 
 class CertificationStatusNotFoundError(KeyError):
     pass
+

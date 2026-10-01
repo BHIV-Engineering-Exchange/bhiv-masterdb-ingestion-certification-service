@@ -11,11 +11,6 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def build_identity_dependency(auth_service: AuthService):
-    """Returns a FastAPI dependency bound to a specific AuthService
-    instance, so main.py's single `auth_service` (and its secret key) is
-    what every route actually checks against — not a second, disconnected
-    instance."""
-
     def get_identity(
         credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
     ) -> AuthIdentity:
@@ -25,7 +20,9 @@ def build_identity_dependency(auth_service: AuthService):
                 detail="Missing bearer token. Obtain one from POST /auth/token.",
             )
         try:
-            return auth_service.decode_token(credentials.credentials)
+            import main
+            active_auth = getattr(main, "auth_service", auth_service)
+            return active_auth.decode_token(credentials.credentials)
         except AuthTokenError as exc:
             raise HTTPException(status_code=401, detail=str(exc)) from exc
 

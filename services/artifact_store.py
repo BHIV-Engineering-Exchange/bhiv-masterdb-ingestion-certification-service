@@ -56,8 +56,13 @@ class ArtifactStore:
             key = path.stem
             if any(key.startswith(prefix) for prefix in exclude_prefixes):
                 continue
-            with path.open("r", encoding="utf-8") as handle:
-                records.append(json.load(handle))
+            if not path.exists():
+                continue
+            try:
+                with path.open("r", encoding="utf-8") as handle:
+                    records.append(json.load(handle))
+            except (FileNotFoundError, json.JSONDecodeError):
+                continue
         return records
 
     def persist_target_dataset(

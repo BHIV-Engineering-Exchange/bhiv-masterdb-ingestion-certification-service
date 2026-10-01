@@ -21,3 +21,25 @@ import main
 def _reset_rate_limiter():
     main.rate_limiter.reset()
     yield
+
+
+import shutil
+from pathlib import Path
+
+
+@pytest.fixture(autouse=True)
+def _reset_capability_registry():
+    store_path = Path("capability_store")
+    if store_path.exists():
+        shutil.rmtree(store_path, ignore_errors=True)
+    pkg_registry = main.PackageRegistryService()
+    ret_service = main.DatasetRetrievalService(registry=pkg_registry)
+    cap_service = main.CapabilityRegistryService(
+        store_dir="capability_store",
+        package_registry=pkg_registry,
+        retrieval_service=ret_service,
+        audit_emitter=main.production_audit_emitter,
+    )
+    main.capability_registry_service = cap_service
+    main.tantra_interface_service.capability_service = cap_service
+    yield

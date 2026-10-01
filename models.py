@@ -275,3 +275,99 @@ class ReferenceRequest(BaseModel):
     dataset_id: str
 
 
+# ---------------------------------------------------------------------------
+# MasterDB Ecosystem Convergence — Capability, Access & Contract Models
+# ---------------------------------------------------------------------------
+
+
+class CapabilityStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    EXPERIMENTAL = "EXPERIMENTAL"
+    CERTIFIED = "CERTIFIED"
+    DEPRECATED = "DEPRECATED"
+    ARCHIVED = "ARCHIVED"
+
+
+class Capability(BaseModel):
+    capability_id: str = Field(default_factory=lambda: _new_id("cap"))
+    capability_name: str
+    description: str
+    dataset_id: str
+    capability_version: str = "1.0.0"
+    contract_version: str = "1.0.0"
+    domain: str = "general"
+    schema_version: str = "v1.0"
+    status: CapabilityStatus = CapabilityStatus.ACTIVE
+    supported_access_methods: List[str] = Field(
+        default_factory=lambda: ["QUERY", "EXPORT", "STREAM", "REFERENCE", "RETRIEVE"]
+    )
+    required_purpose: str = "general_reuse"
+    authorization_requirements: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "required_roles": ["ecosystem-reader", "viewer", "dashboard-viewer"],
+            "allowed_consumers": ["*"],
+        }
+    )
+    provenance: Dict[str, Any] = Field(default_factory=dict)
+    created_at: str = Field(default_factory=_utcnow)
+    updated_at: str = Field(default_factory=_utcnow)
+
+
+class CapabilityContract(BaseModel):
+    capability_id: str
+    capability_name: str
+    description: str
+    dataset_id: str
+    capability_version: str
+    contract_version: str
+    domain: str
+    schema_version: str
+    status: str
+    required_purpose: str
+    supported_access_methods: List[str]
+    authorization_requirements: Dict[str, Any]
+    access_endpoint: str
+    provenance_reference: Dict[str, Any]
+    mdu_contract_ref: Optional[Dict[str, Any]] = None
+    generated_at: str = Field(default_factory=_utcnow)
+
+
+class CapabilityAccessRequest(BaseModel):
+    application_id: str = Field(..., min_length=1)
+    capability_id: str = Field(..., min_length=1)
+    capability_version: Optional[str] = None
+    purpose: str = Field(..., min_length=1)
+    request_id: Optional[str] = None
+
+
+class AccessContract(BaseModel):
+    request_id: str = Field(default_factory=lambda: _new_id("req"))
+    application_id: str
+    capability_id: str
+    capability_version: str
+    contract_version: str
+    purpose: str
+    authorized: bool
+    access_token: str = Field(default_factory=lambda: f"grant-{uuid.uuid4().hex[:16]}")
+    access_scope: List[str] = Field(default_factory=lambda: ["RETRIEVE", "QUERY"])
+    reason: Optional[str] = None
+    timestamp: str = Field(default_factory=_utcnow)
+
+
+class CapabilityRetrieveRequest(BaseModel):
+    request_id: Optional[str] = None
+    application_id: Optional[str] = None
+    access_token: Optional[str] = None
+    query_params: Dict[str, Any] = Field(default_factory=dict)
+
+
+class CapabilityRetrieveResponse(BaseModel):
+    data: Any
+    capability: Dict[str, Any]
+    contract_version: str
+    provenance: Dict[str, Any]
+    request_id: str
+    access_metadata: Dict[str, Any]
+
+
+

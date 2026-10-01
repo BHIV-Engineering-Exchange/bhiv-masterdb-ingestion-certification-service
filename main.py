@@ -12,6 +12,12 @@ from fastapi.responses import JSONResponse
 from middleware.rate_limit_middleware import RateLimitMiddleware
 from middleware.rate_limiter import SlidingWindowRateLimiter
 from models import (
+    AccessContract,
+    Capability,
+    CapabilityAccessRequest,
+    CapabilityContract,
+    CapabilityRetrieveRequest,
+    CapabilityRetrieveResponse,
     CertificationRequest,
     ExportRequest,
     KnowledgeObjectRegisterRequest,
@@ -29,6 +35,11 @@ from models import (
 )
 from services.artifact_store import ArtifactStore
 from services.certification_service import CertificationService
+from services.capability_registry_service import (
+    CapabilityAccessDeniedError,
+    CapabilityNotFoundError,
+    CapabilityRegistryService,
+)
 from services.knowledge_object_service import (
     KnowledgeObjectService,
     LineageValidationError,
@@ -291,12 +302,18 @@ bucket_client = BucketClient()
 # --- Ecosystem integration surfaces: MDU (Nupur), TANTRA, Runtime Discovery --
 mdu_contract_adapter = MDUContractAdapter()
 runtime_discovery_service = RuntimeDiscoveryService(registry=package_registry_service)
+capability_registry_service = CapabilityRegistryService(
+    package_registry=package_registry_service,
+    retrieval_service=dataset_retrieval_service,
+    audit_emitter=production_audit_emitter,
+)
 tantra_interface_service = TantraInterfaceService(
     registry=package_registry_service,
     knowledge_object_service=knowledge_object_service,
     retrieval_readiness_service=retrieval_readiness_service,
     report_service=report_service,
     discovery_service=runtime_discovery_service,
+    capability_service=capability_registry_service,
 )
 
 # --- Task 4: Shared Data Services & MASTERDB Convergence ------------------
@@ -1893,3 +1910,97 @@ def replay_registry_manifest() -> dict:
         "note": "No Replay Registry Owner or endpoint has been named/confirmed reachable "
         "as of this manifest — see CONSTITUTIONAL_RUNTIME_DEFINITION.md §4.",
     }
+
+
+# ---------------------------------------------------------------------------
+# MASTERDB Ecosystem Convergence — Capabilities, Contracts, Access & Retrieval
+# ---------------------------------------------------------------------------
+
+
+@app.get("/capabilities", response_model=List[Capability])
+@app.get("/tantra/capabilities", response_model=List[Capability])
+def list_capabilities(
+    domain: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    identity: AuthIdentity = Depends(get_identity),
+) -> List[Capability]:
+    """Step 2: Discover governed MASTERDB capabilities through TANTRA integration path."""
+    return tantra_interface_service.discover_capabilities(domain=domain, status=status, search=search)
+
+
+@app.get("/capabilities/{capability_id}", response_model=Capability)
+@app.get("/tantra/capabilities/{capability_id}", response_model=Capability)
+def get_capability(
+    capability_id: str,
+    identity: AuthIdentity = Depends(get_identity),
+) -> Capability:
+    """Retrieve capability metadata by capability_id."""
+    try:
+        return tantra_interface_service.get_capability(capability_id)
+    except CapabilityNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/capabilities/{capability_id}/contract", response_model=CapabilityContract)
+@app.get("/tantra/capabilities/{capability_id}/contract", response_model=CapabilityContract)
+def get_capability_contract(
+    capability_id: str,
+    identity: AuthIdentity = Depends(get_identity),
+) -> CapabilityContract:
+    """Step 3: Machine-readable Capability Contract resolution."""
+    try:
+        return tantra_interface_service.get_capability_contract(capability_id)
+    except CapabilityNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/access/request", response_model=AccessContract)
+@app.post("/capabilities/access/request", response_model=AccessContract)
+@app.post("/tantra/access/request", response_model=AccessContract)
+def request_capability_access(
+    request_data: CapabilityAccessRequest,
+    identity: AuthIdentity = Depends(get_identity),
+) -> AccessContract:
+    """Steps 4 & 5: Request capability access authorization based on identity, roles & purpose."""
+    try:
+        return tantra_interface_service.request_capability_access(
+            actor=identity.actor, roles=identity.roles, request_data=request_data
+        )
+    except CapabilityNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CapabilityAccessDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@app.post("/capabilities/{capability_id}/retrieve", response_model=CapabilityRetrieveResponse)
+@app.post("/tantra/capabilities/{capability_id}/retrieve", response_model=CapabilityRetrieveResponse)
+def retrieve_capability_data(
+    capability_id: str,
+    retrieve_req: CapabilityRetrieveRequest,
+    identity: AuthIdentity = Depends(get_identity),
+) -> CapabilityRetrieveResponse:
+    """Steps 6, 7 & 8: Authorized data retrieval via canonical TANTRA capability access path."""
+    try:
+        return tantra_interface_service.retrieve_capability_data(
+            actor=identity.actor,
+            roles=identity.roles,
+            capability_id=capability_id,
+            retrieve_req=retrieve_req,
+        )
+    except CapabilityNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CapabilityAccessDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@app.get("/access/{request_id}", response_model=AccessContract)
+def get_access_contract_audit(
+    request_id: str,
+    identity: AuthIdentity = Depends(get_identity),
+) -> AccessContract:
+    """Audit & evidence lookup for capability access contract decisions."""
+    contract = capability_registry_service.get_access_contract(request_id)
+    if contract is None:
+        raise HTTPException(status_code=404, detail=f"Access contract with request_id '{request_id}' not found.")
+    return contract

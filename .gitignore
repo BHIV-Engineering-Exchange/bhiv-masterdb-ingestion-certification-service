@@ -4,3 +4,17 @@ storage/
 __pycache__/
 *.pyc
 .coverage
+.pytest_cache/
+
+# Local runtime data stores & test outputs
+registry_store/
+capability_store/
+upload_store/
+knowledge_objects/
+retrieval_evidence/
+reports/
+bcaes_store/
+canonical_store/
+shared_data_store/
+*.db
+*.sqlite
