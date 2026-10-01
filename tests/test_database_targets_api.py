@@ -8,17 +8,24 @@ import main
 ROOT = Path(__file__).resolve().parents[1]
 
 
+from security.path_resolution import register_allowed_root
+
+
 @pytest.fixture
 def client(tmp_path) -> TestClient:
     # Fresh, isolated stores per test so certification/ingestion records
     # from other test modules never leak in.
     main.artifact_store.reports_dir = tmp_path / "reports"
     main.artifact_store.reports_dir.mkdir(parents=True, exist_ok=True)
+    datasets_dir = tmp_path / "datasets"
+    datasets_dir.mkdir(parents=True, exist_ok=True)
+    register_allowed_root(datasets_dir)
     main.database_router_service = main.DatabaseRouterService(
         certification_artifact_store=main.artifact_store,
         store_dir=str(tmp_path / "ingestion_jobs"),
+        dataset_dir=str(datasets_dir),
     )
-    return TestClient(main.app)
+    return TestClient(main.app), datasets_dir
 
 
 def _headers(actor="kavy", roles=None):
@@ -27,12 +34,17 @@ def _headers(actor="kavy", roles=None):
     return {"Authorization": f"Bearer {token}"}
 
 
-def _certify(client, dataset_id="certifiable"):
+def _certify(client_info, dataset_id="certifiable"):
+    client, datasets_dir = client_info
+    sample_src = ROOT / "datasets" / "certifiable_sample.csv"
+    ds_file = datasets_dir / f"{dataset_id}.csv"
+    ds_file.write_bytes(sample_src.read_bytes())
+
     resp = client.post(
         "/certify",
         json={
             "dataset_id": dataset_id,
-            "dataset_path": str(ROOT / "datasets" / "certifiable_sample.csv"),
+            "dataset_path": str(ds_file),
             "metadata_path": str(ROOT / "datasets" / "metadata.json"),
         },
     )
@@ -41,12 +53,14 @@ def _certify(client, dataset_id="certifiable"):
 
 
 def test_list_databases_requires_auth(client):
-    resp = client.get("/databases")
+    c, _ = client
+    resp = c.get("/databases")
     assert resp.status_code == 401
 
 
 def test_list_databases_returns_eight_targets(client):
-    resp = client.get("/databases", headers=_headers())
+    c, _ = client
+    resp = c.get("/databases", headers=_headers())
     assert resp.status_code == 200
     keys = {db["key"] for db in resp.json()}
     assert len(keys) == 8
@@ -54,7 +68,8 @@ def test_list_databases_returns_eight_targets(client):
 
 
 def test_ingest_requires_auth(client):
-    resp = client.post(
+    c, _ = client
+    resp = c.post(
         "/ingest",
         json={"dataset_id": "x", "target_database": "RelationalDB", "source_format": "csv"},
     )
@@ -62,8 +77,9 @@ def test_ingest_requires_auth(client):
 
 
 def test_ingest_without_role_returns_403(client):
+    c, _ = client
     _certify(client, "certifiable")
-    resp = client.post(
+    resp = c.post(
         "/ingest",
         json={"dataset_id": "certifiable", "target_database": "RelationalDB", "source_format": "csv"},
         headers=_headers(roles=[]),
@@ -72,7 +88,8 @@ def test_ingest_without_role_returns_403(client):
 
 
 def test_ingest_uncertified_dataset_returns_422(client):
-    resp = client.post(
+    c, _ = client
+    resp = c.post(
         "/ingest",
         json={"dataset_id": "never-certified", "target_database": "RelationalDB", "source_format": "csv"},
         headers=_headers(roles=["ingest:relationaldb"]),
@@ -82,8 +99,9 @@ def test_ingest_uncertified_dataset_returns_422(client):
 
 
 def test_ingest_certified_dataset_succeeds_and_is_retrievable(client):
+    c, _ = client
     _certify(client, "certifiable")
-    resp = client.post(
+    resp = c.post(
         "/ingest",
         json={"dataset_id": "certifiable", "target_database": "RelationalDB", "source_format": "csv"},
         headers=_headers(roles=["ingest:relationaldb"]),
@@ -93,10 +111,10 @@ def test_ingest_certified_dataset_succeeds_and_is_retrievable(client):
     assert job["status"] == "PERSISTED"
     assert job["target_database"] == "RelationalDB"
 
-    fetched = client.get(f"/ingest/jobs/{job['job_id']}", headers=_headers())
+    fetched = c.get(f"/ingest/jobs/{job['job_id']}", headers=_headers())
     assert fetched.status_code == 200
     assert fetched.json()["job_id"] == job["job_id"]
 
-    listed = client.get("/ingest/jobs", params={"dataset_id": "certifiable"}, headers=_headers())
+    listed = c.get("/ingest/jobs", params={"dataset_id": "certifiable"}, headers=_headers())
     assert listed.status_code == 200
     assert len(listed.json()) == 1

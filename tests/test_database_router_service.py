@@ -11,40 +11,54 @@ from services.validation_service import ValidationService
 ROOT = Path(__file__).resolve().parents[1]
 
 
+from security.path_resolution import register_allowed_root
+
+
 def make_router(tmp_path):
     cert_store = ArtifactStore(str(tmp_path / "reports"))
     validator = ValidationService(artifact_store=cert_store)
     certifier = CertificationService(validation_service=validator, artifact_store=cert_store)
+    datasets_dir = tmp_path / "datasets"
+    datasets_dir.mkdir(parents=True, exist_ok=True)
+    register_allowed_root(datasets_dir)
     router = DatabaseRouterService(
         certification_artifact_store=cert_store,
         store_dir=str(tmp_path / "ingestion_jobs"),
+        dataset_dir=str(datasets_dir),
     )
-    return router, certifier
+    return router, certifier, datasets_dir
 
 
-def certify_sample(certifier, dataset_id="certifiable"):
+def certify_sample(tmp_path, certifier, dataset_id="certifiable"):
+    datasets_dir = tmp_path / "datasets"
+    datasets_dir.mkdir(parents=True, exist_ok=True)
+    register_allowed_root(datasets_dir)
+    sample_src = ROOT / "datasets" / "certifiable_sample.csv"
+    ds_file = datasets_dir / f"{dataset_id}.csv"
+    ds_file.write_bytes(sample_src.read_bytes())
+
     return certifier.certify(
         dataset_id=dataset_id,
-        dataset_path=str(ROOT / "datasets" / "certifiable_sample.csv"),
+        dataset_path=str(ds_file),
         metadata_path=str(ROOT / "datasets" / "metadata.json"),
     )
 
 
 def test_list_databases_returns_all_eight_targets(tmp_path):
-    router, _ = make_router(tmp_path)
+    router, _, _ = make_router(tmp_path)
     keys = {db.key for db in router.list_databases()}
     assert keys == set(TargetDatabase)
 
 
 def test_get_unknown_database_raises(tmp_path):
-    router, _ = make_router(tmp_path)
+    router, _, _ = make_router(tmp_path)
     with pytest.raises(UnknownDatabaseError):
         router.get_database("NotARealDB")
 
 
 def test_ingest_rejected_without_required_role(tmp_path):
-    router, certifier = make_router(tmp_path)
-    certify_sample(certifier)
+    router, certifier, _ = make_router(tmp_path)
+    certify_sample(tmp_path, certifier)
 
     job = router.ingest(
         dataset_id="certifiable",
@@ -60,8 +74,8 @@ def test_ingest_rejected_without_required_role(tmp_path):
 
 
 def test_ingest_rejected_for_unsupported_format(tmp_path):
-    router, certifier = make_router(tmp_path)
-    certify_sample(certifier)
+    router, certifier, _ = make_router(tmp_path)
+    certify_sample(tmp_path, certifier)
 
     job = router.ingest(
         dataset_id="certifiable",
@@ -75,7 +89,7 @@ def test_ingest_rejected_for_unsupported_format(tmp_path):
 
 
 def test_ingest_rejected_when_not_certified(tmp_path):
-    router, validator_service = make_router(tmp_path)
+    router, validator_service, _ = make_router(tmp_path)
     # No certification run at all — dataset unknown to the certification store.
     job = router.ingest(
         dataset_id="never-certified",
@@ -89,8 +103,8 @@ def test_ingest_rejected_when_not_certified(tmp_path):
 
 
 def test_ingest_succeeds_for_certified_dataset_with_role(tmp_path):
-    router, certifier = make_router(tmp_path)
-    certify_sample(certifier)
+    router, certifier, _ = make_router(tmp_path)
+    certify_sample(tmp_path, certifier)
 
     job = router.ingest(
         dataset_id="certifiable",
@@ -109,8 +123,8 @@ def test_ingest_succeeds_for_certified_dataset_with_role(tmp_path):
 
 
 def test_admin_role_bypasses_database_specific_role(tmp_path):
-    router, certifier = make_router(tmp_path)
-    certify_sample(certifier)
+    router, certifier, _ = make_router(tmp_path)
+    certify_sample(tmp_path, certifier)
 
     job = router.ingest(
         dataset_id="certifiable",
@@ -123,9 +137,9 @@ def test_admin_role_bypasses_database_specific_role(tmp_path):
 
 
 def test_list_jobs_filters_by_dataset_and_status(tmp_path):
-    router, certifier = make_router(tmp_path)
-    certify_sample(certifier, "ds-a")
-    certify_sample(certifier, "ds-b")
+    router, certifier, _ = make_router(tmp_path)
+    certify_sample(tmp_path, certifier, "ds-a")
+    certify_sample(tmp_path, certifier, "ds-b")
 
     router.ingest("ds-a", TargetDatabase.RELATIONAL_DB, IngestionFormat.CSV, "kavy", ["ingest:relationaldb"])
     router.ingest("ds-b", TargetDatabase.RELATIONAL_DB, IngestionFormat.CSV, "kavy", ["ingest:relationaldb"])

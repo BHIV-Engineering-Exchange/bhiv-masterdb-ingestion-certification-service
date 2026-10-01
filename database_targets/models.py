@@ -51,6 +51,7 @@ class IngestionFormat(str, Enum):
 class IngestionJobStatus(str, Enum):
     PERSISTED = "PERSISTED"
     REJECTED = "REJECTED"
+    PARTIAL_PERSISTENCE = "PARTIAL_PERSISTENCE"
 
 
 class DatabaseCapability(BaseModel):
@@ -74,6 +75,7 @@ class IngestRequest(BaseModel):
     target_database: TargetDatabase
     source_format: IngestionFormat
     package_id: Optional[str] = None
+    upload_id: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 

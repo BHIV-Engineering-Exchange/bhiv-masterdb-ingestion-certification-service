@@ -1,32 +1,12 @@
 """
 Auth — JWT issuance and verification.
-
-WHAT THIS IS: real signed-token infrastructure. Tokens are HS256-signed,
-carry an expiry, and `decode_token` cryptographically verifies the
-signature and expiry before trusting anything inside — a tampered or
-expired token is rejected, not silently accepted.
-
-WHAT THIS IS NOT: a real identity provider. `issue_token` signs whatever
-`actor`/`roles` it's asked to sign — there's no password check, no SSO
-handshake, nothing verifying the caller actually is who they claim. That
-gap is real and is the next thing to close (see
-`CANONICAL_REPOSITORY_ARCHITECTURE.md` and `PRODUCTION_HARDENING.md` for
-where), but it's a materially different, larger gap than "access control
-isn't enforced at all," which is what existed before this pass. Signature
-verification, expiry, and per-resource role checks are all real now.
-
-SECRET KEY: read from `AUTH_JWT_SECRET`. If unset, a random secret is
-generated at process startup and a warning is logged — tokens issued by
-that process instance are valid only until it restarts (fine for local
-dev, wrong for anything with more than one worker process or that
-restarts). Set `AUTH_JWT_SECRET` in the real environment before this is
-actually production-hardened.
 """
+from datetime import datetime, timedelta, timezone
+import hmac
 import logging
 import os
 import secrets
-from datetime import datetime, timedelta, timezone
-from typing import List
+from typing import List, Optional
 
 import jwt
 
@@ -43,8 +23,8 @@ class AuthTokenError(Exception):
 
 
 class AuthService:
-    def __init__(self, secret_key: str = None, expiry_minutes: int = _DEFAULT_EXPIRY_MINUTES) -> None:
-        env_secret = os.environ.get("AUTH_JWT_SECRET")
+    def __init__(self, secret_key: Optional[str] = None, expiry_minutes: Optional[int] = None) -> None:
+        env_secret = os.environ.get("AUTH_JWT_SECRET") or os.environ.get("JWT_SECRET")
         if secret_key is not None:
             self._secret_key = secret_key
         elif env_secret:
@@ -57,14 +37,69 @@ class AuthService:
                 "restart or against any other process/worker. Set AUTH_JWT_SECRET "
                 "in the environment before treating this as production-hardened."
             )
-        self._expiry_minutes = expiry_minutes
+
+        if expiry_minutes is not None:
+            self._expiry_minutes = expiry_minutes
+        else:
+            env_expiry = os.environ.get("AUTH_JWT_EXPIRY_MINUTES") or os.environ.get("JWT_EXPIRATION")
+            try:
+                self._expiry_minutes = int(env_expiry) if env_expiry else _DEFAULT_EXPIRY_MINUTES
+            except ValueError:
+                self._expiry_minutes = _DEFAULT_EXPIRY_MINUTES
+
+    def resolve_roles(self, actor: str) -> List[str]:
+        """Resolves trusted server-side roles for an actor from environment configuration or defaults."""
+        actor_clean = actor.strip().lower()
+        # 1. Environment variable override for specific actor, e.g. AUTH_ROLES_KAVY="bhiv-admin,operator"
+        env_key = f"AUTH_ROLES_{actor_clean.upper().replace('-', '_')}"
+        if os.environ.get(env_key):
+            return [r.strip() for r in os.environ[env_key].split(",") if r.strip()]
+
+        # 2. Configured admin actors list
+        admin_actors = os.environ.get("AUTH_ADMIN_ACTORS", "admin,bhiv-admin,ops,kavy").split(",")
+        admin_actors_clean = [a.strip().lower() for a in admin_actors if a.strip()]
+        if actor_clean in admin_actors_clean:
+            return ["bhiv-admin", "operator", "admin"]
+
+        # 3. Configured operator actors list
+        operator_actors = os.environ.get("AUTH_OPERATOR_ACTORS", "operator,engineer,dev").split(",")
+        operator_actors_clean = [a.strip().lower() for a in operator_actors if a.strip()]
+        if actor_clean in operator_actors_clean:
+            return ["operator", "bcaes-editor", "ingest:operator"]
+
+        # Default standard roles for normal actors
+        return ["viewer", "dashboard-viewer"]
+
+    def authenticate(
+        self, actor: str, password: Optional[str] = None, roles: Optional[List[str]] = None
+    ) -> tuple:
+        """Authenticate actor/credentials and return (token, expires_at_iso, assigned_roles)."""
+        if not actor or not str(actor).strip():
+            raise AuthTokenError("Actor/username cannot be empty.")
+
+        expected_pw = (
+            os.environ.get("AUTH_PASSWORD")
+            or os.environ.get("MASTERDB_AUTH_PASSWORD")
+            or os.environ.get("ADMIN_PASSWORD")
+        )
+        if expected_pw:
+            if not password or not hmac.compare_digest(str(password), str(expected_pw)):
+                raise AuthTokenError("Invalid credentials.")
+
+        # Ignore caller-supplied roles for public authentication; obtain trusted server-side roles
+        trusted_roles = self.resolve_roles(actor)
+        token, expires_at = self.issue_token(actor.strip(), trusted_roles)
+        return token, expires_at, trusted_roles
 
     def issue_token(self, actor: str, roles: List[str]) -> tuple:
         """Returns (token, expires_at_iso)."""
+        if not actor or not str(actor).strip():
+            raise AuthTokenError("Token actor/subject cannot be empty.")
+
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=self._expiry_minutes)
         payload = {
-            "sub": actor,
-            "roles": roles,
+            "sub": str(actor).strip(),
+            "roles": roles or [],
             "exp": expires_at,
             "iat": datetime.now(timezone.utc),
         }
@@ -72,6 +107,8 @@ class AuthService:
         return token, expires_at.isoformat()
 
     def decode_token(self, token: str) -> AuthIdentity:
+        if not token or not str(token).strip():
+            raise AuthTokenError("Token cannot be empty.")
         try:
             payload = jwt.decode(token, self._secret_key, algorithms=[_ALGORITHM])
         except jwt.ExpiredSignatureError as exc:
@@ -80,6 +117,6 @@ class AuthService:
             raise AuthTokenError("Token is invalid or badly signed.") from exc
 
         actor = payload.get("sub")
-        if not actor:
+        if not actor or not str(actor).strip():
             raise AuthTokenError("Token is missing a subject (actor).")
         return AuthIdentity(actor=actor, roles=payload.get("roles", []))

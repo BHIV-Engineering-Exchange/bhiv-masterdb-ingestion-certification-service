@@ -112,7 +112,13 @@ class UploadService:
 
     def _get_staging_path(self, upload_id: str, filename: str) -> Path:
         safe_filename = self._sanitize_filename(filename)
-        return self._staging_dir / upload_id / safe_filename
+        target = (self._staging_dir / upload_id / safe_filename).resolve()
+        staging_root = self._staging_dir.resolve()
+        try:
+            target.relative_to(staging_root)
+        except ValueError:
+            raise UploadValidationError(f"Path traversal detected in upload filename: {filename}")
+        return target
 
     def receive_upload(self, upload_id: str, file_content: bytes) -> UploadJob:
         job = self._store.load(upload_id)
@@ -206,7 +212,7 @@ class UploadService:
 
     def link_ingestion_job(self, upload_id: str, ingestion_job_id: str) -> UploadJob:
         job = self.get_upload(upload_id)
-        if job.status != UploadStatus.VALIDATED:
+        if job.status not in (UploadStatus.VALIDATED, UploadStatus.REGISTERED):
             raise UploadStateError(f"Cannot link ingestion job in state {job.status}")
         job.ingestion_job_id = ingestion_job_id
         job.steps.append(UploadJobStep(step="INGESTION_JOB_LINKED", passed=True, detail=f"Linked to ingestion job {ingestion_job_id}"))
@@ -241,3 +247,22 @@ class UploadService:
         job.available_at = job.steps[-1].at
         job.steps.append(UploadJobStep(step="AVAILABLE", passed=True, detail="Dataset is now queryable and discoverable"))
         return self._store.save(job)
+
+    def complete_upload(
+        self,
+        upload_id: str,
+        checksum_sha256: Optional[str] = None,
+        trigger_validation: bool = True,
+    ) -> UploadJob:
+        """Complete an upload: validate if needed and register the dataset."""
+        job = self.get_upload(upload_id)
+        if checksum_sha256:
+            job.checksum_sha256 = checksum_sha256
+            self._store.save(job)
+        if job.status == UploadStatus.RECEIVED and trigger_validation:
+            job = self.validate_upload(upload_id)
+        if job.status == UploadStatus.VALIDATED:
+            dataset_id = job.dataset_id or f"ds-{job.upload_id}"
+            package_id = job.package_id or f"pkg-{job.upload_id}"
+            job = self.register_dataset(upload_id, dataset_id, package_id)
+        return job

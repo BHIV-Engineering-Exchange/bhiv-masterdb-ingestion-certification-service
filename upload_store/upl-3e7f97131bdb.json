@@ -1,0 +1,79 @@
+{
+    "upload_id": "upl-3e7f97131bdb",
+    "trace_id": "trace-8e3566479f5e",
+    "filename": "certifiable_sample.csv",
+    "content_type": "text/csv",
+    "file_size": 181,
+    "checksum_sha256": null,
+    "classification": null,
+    "source_reference": null,
+    "provenance_metadata": {},
+    "schema_version": null,
+    "dataset_id": "e2e_dataset_001",
+    "dataset_version": null,
+    "product_source": null,
+    "intended_use": "E2E Convergence Testing",
+    "actor": "kavy",
+    "roles": [
+        "bhiv-admin",
+        "operator",
+        "admin"
+    ],
+    "status": "AVAILABLE",
+    "rejection_reason": null,
+    "steps": [
+        {
+            "step": "UPLOAD_INITIATED",
+            "passed": true,
+            "detail": "Upload session created for certifiable_sample.csv",
+            "at": "2026-09-30T10:58:03.884311+00:00"
+        },
+        {
+            "step": "RECEIVED",
+            "passed": true,
+            "detail": "File staged at C:\\Users\\desktop\\AppData\\Local\\Temp\\pytest-of-desktop\\pytest-45\\test_real_e2e_full_lifecycle0\\upload_staging\\upl-3e7f97131bdb\\certifiable_sample.csv",
+            "at": "2026-09-30T10:58:03.987366+00:00"
+        },
+        {
+            "step": "VALIDATING",
+            "passed": true,
+            "detail": "Starting validation",
+            "at": "2026-09-30T10:58:04.074886+00:00"
+        },
+        {
+            "step": "VALIDATION",
+            "passed": true,
+            "detail": "Validation completed. Errors: 0",
+            "at": "2026-09-30T10:58:04.079517+00:00"
+        },
+        {
+            "step": "REGISTERED",
+            "passed": true,
+            "detail": "Registered as dataset e2e_dataset_001",
+            "at": "2026-09-30T10:58:04.597411+00:00"
+        },
+        {
+            "step": "INGESTED",
+            "passed": true,
+            "detail": "Artifact RelationalDB/e2e_dataset_001 created",
+            "at": "2026-09-30T10:58:04.648886+00:00"
+        },
+        {
+            "step": "AVAILABLE",
+            "passed": true,
+            "detail": "Dataset is now queryable and discoverable",
+            "at": "2026-09-30T10:58:04.699145+00:00"
+        }
+    ],
+    "ingestion_job_id": null,
+    "package_id": "pkg-e2e_dataset_001",
+    "artifact_id": "RelationalDB/e2e_dataset_001",
+    "uploaded_at": "2026-09-30T10:58:03.875577+00:00",
+    "received_at": "2026-09-30T10:58:03.884311+00:00",
+    "validated_at": "2026-09-30T10:58:04.079517+00:00",
+    "registered_at": "2026-09-30T10:58:04.079517+00:00",
+    "ingested_at": "2026-09-30T10:58:04.597411+00:00",
+    "available_at": "2026-09-30T10:58:04.648886+00:00",
+    "storage_path": "C:\\Users\\desktop\\AppData\\Local\\Temp\\pytest-of-desktop\\pytest-45\\test_real_e2e_full_lifecycle0\\upload_staging\\upl-3e7f97131bdb\\certifiable_sample.csv",
+    "metadata": {}
+}

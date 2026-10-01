@@ -111,7 +111,7 @@ from services import startup_config
 from auth.constants import ADMIN_ROLE
 from auth.dependencies import build_identity_dependency
 from auth.models import AuthIdentity, TokenRequest, TokenResponse
-from auth.service import AuthService
+from auth.service import AuthService, AuthTokenError
 
 from canonical_repository.models import DocumentCategory as CanonicalDocumentCategory
 from canonical_repository.models import PublishVersionRequest as CanonicalPublishVersionRequest
@@ -468,6 +468,7 @@ def ingest_dataset(request: IngestRequest, identity: AuthIdentity = Depends(get_
         roles=identity.roles,
         package_id=request.package_id,
         metadata=request.metadata,
+        upload_id=request.upload_id,  # P0-3: propagate upload linkage
     )
     audit_logger.info(
         "ingest job_id=%s dataset_id=%s target=%s actor=%s status=%s",
@@ -535,6 +536,12 @@ def initiate_upload(request: UploadInitiationRequest, identity: AuthIdentity = D
 async def upload_content(upload_id: str, request: Request, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Upload file content (raw bytes)."""
     try:
+        job = upload_service.get_upload(upload_id)
+        if job.actor != identity.actor and ADMIN_ROLE not in identity.roles and "operator" not in identity.roles:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Not authorized to modify upload '{upload_id}' owned by '{job.actor}'.",
+            )
         body = await request.body()
         job = upload_service.receive_upload(upload_id=upload_id, file_content=body)
         audit_logger.info("upload.receive actor=%s upload_id=%s size=%d", identity.actor, upload_id, len(body))
@@ -550,6 +557,12 @@ async def upload_content(upload_id: str, request: Request, identity: AuthIdentit
 def validate_upload(upload_id: str, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Validate uploaded file (checksum verification)."""
     try:
+        job = upload_service.get_upload(upload_id)
+        if job.actor != identity.actor and ADMIN_ROLE not in identity.roles and "operator" not in identity.roles:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Not authorized to validate upload '{upload_id}' owned by '{job.actor}'.",
+            )
         job = upload_service.validate_upload(upload_id=upload_id)
         audit_logger.info("upload.validate actor=%s upload_id=%s status=%s", identity.actor, upload_id, job.status.value)
         return {"upload_id": job.upload_id, "status": job.status.value,
@@ -561,10 +574,19 @@ def validate_upload(upload_id: str, identity: AuthIdentity = Depends(get_identit
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 @app.get("/upload/jobs/{upload_id}")
-def get_upload(upload_id: str) -> dict:
-    """Get upload job status and details."""
+def get_upload(upload_id: str, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    """Get upload job status and details.
+
+    Authorization: The caller must be the upload owner or have admin/operator role.
+    """
     try:
         job = upload_service.get_upload(upload_id)
+        # Authorization: owner or admin/operator can view any upload
+        if job.actor != identity.actor and ADMIN_ROLE not in identity.roles and "operator" not in identity.roles:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Not authorized to view upload '{upload_id}' owned by '{job.actor}'.",
+            )
         return {"upload_id": job.upload_id, "status": job.status.value, "filename": job.filename,
             "content_type": job.content_type, "file_size_bytes": job.file_size, "actor": job.actor,
             "steps": [s.model_dump() for s in job.steps], "rejection_reason": job.rejection_reason,
@@ -576,10 +598,17 @@ def get_upload(upload_id: str) -> dict:
 
 @app.get("/upload/jobs")
 def list_uploads(status: Optional[str] = None, actor: Optional[str] = None,
-                 product_source: Optional[str] = None) -> dict:
-    """List upload jobs with optional filtering."""
+                 product_source: Optional[str] = None,
+                 identity: AuthIdentity = Depends(get_identity)) -> dict:
+    """List upload jobs with optional filtering.
+
+    Authorization: Admin/operator sees all uploads. Others only see their own.
+    """
+    # Non-admin users can only filter by their own actor
+    is_admin = ADMIN_ROLE in identity.roles or "operator" in identity.roles
+    filter_actor = actor if is_admin else identity.actor
     filter_status = UploadStatus(status) if status else None
-    jobs = upload_service.list_uploads(status=filter_status, actor=actor, product_source=product_source)
+    jobs = upload_service.list_uploads(status=filter_status, actor=filter_actor, product_source=product_source)
     return {"count": len(jobs), "uploads": [{"upload_id": j.upload_id, "status": j.status.value,
         "filename": j.filename, "file_size_bytes": j.file_size, "actor": j.actor,
         "product_source": j.product_source, "uploaded_at": j.uploaded_at} for j in jobs]}
@@ -589,6 +618,12 @@ def cancel_upload(upload_id: str, reason: UploadCancelRequest,
                   identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Cancel pending upload and clean up staging."""
     try:
+        job = upload_service.get_upload(upload_id)
+        if job.actor != identity.actor and ADMIN_ROLE not in identity.roles and "operator" not in identity.roles:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Not authorized to cancel upload '{upload_id}' owned by '{job.actor}'.",
+            )
         job = upload_service.cancel_upload(upload_id=upload_id, reason=reason.reason)
         audit_logger.info("upload.cancel actor=%s upload_id=%s reason=%s", identity.actor, upload_id, reason.reason)
         return {"upload_id": job.upload_id, "status": job.status.value, "rejection_reason": job.rejection_reason}
@@ -1504,16 +1539,22 @@ def verify_canonical_document_chain(
 
 @app.post("/auth/token", response_model=None)
 def issue_token(request: TokenRequest) -> dict:
-    """Issues a signed, expiring JWT for the given actor/roles. See
-    auth/service.py and auth/models.py module docstrings: this does not
-    verify the caller's real-world identity (no login step exists), but
-    the token itself is real — signed, tamper-evident, and time-limited —
-    and every write (and, for the canonical repository, every read) checks
-    the roles inside it for real."""
-    token, expires_at = auth_service.issue_token(request.actor, request.roles)
-    return TokenResponse(
-        access_token=token, actor=request.actor, roles=request.roles, expires_at=expires_at
-    ).model_dump(mode="json")
+    """Issues a signed, expiring JWT for authenticated callers.
+    
+    Roles are assigned from trusted server-side configuration mapping based on the actor's identity,
+    preventing self-assignment or privilege escalation from caller-supplied roles.
+    """
+    try:
+        token, expires_at, trusted_roles = auth_service.authenticate(
+            actor=request.actor,
+            password=request.password,
+            roles=request.roles,
+        )
+        return TokenResponse(
+            access_token=token, actor=request.actor, roles=trusted_roles, expires_at=expires_at
+        ).model_dump(mode="json")
+    except AuthTokenError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------
