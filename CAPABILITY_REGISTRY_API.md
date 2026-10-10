@@ -3,6 +3,12 @@
 All routes require a bearer token. Capability registration and all GEO-QUEST
 candidate routes require the `bhiv-admin` role.
 
+Privileged tokens are issued only when `AUTH_PASSWORD`,
+`MASTERDB_AUTH_PASSWORD`, or `ADMIN_PASSWORD` is configured and supplied in
+the token request. If no password is configured, `/auth/token` refuses to
+issue tokens for actors whose server-assigned roles are privileged; the
+caller cannot grant itself roles through the request body.
+
 ## Capability registration and discovery
 
 - `POST /capabilities/register` registers a capability version using a

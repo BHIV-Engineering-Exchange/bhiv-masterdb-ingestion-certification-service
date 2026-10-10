@@ -88,7 +88,7 @@ def test_capability_discovery_and_contract(client, auth_header):
     assert "outputs" in contract
 
 
-def test_capability_duplicate_detection(client, monkeypatch):
+def test_capability_registration_requires_admin(client, auth_header, monkeypatch):
     monkeypatch.setenv("AUTH_PASSWORD", "test-admin-password")
     admin_response = client.post(
         "/auth/token",
@@ -97,15 +97,27 @@ def test_capability_duplicate_detection(client, monkeypatch):
     assert admin_response.status_code == 200
     admin_header = {"Authorization": f"Bearer {admin_response.json()['access_token']}"}
     cap_payload = {
-        "capability_id": "cap-mangrove-monitoring",  # existing seeded capability
+        "capability_id": "cap-mangrove-monitoring",
         "capability_name": "Duplicate Mangrove Capability",
         "description": "Attempt to overwrite",
         "dataset_id": "ds-mangrove-001",
         "registration_authority_confirmed": True,
     }
-    res = client.post("/capabilities/register", json=cap_payload, headers=admin_header)
-    assert res.status_code == 409
-    assert "already" in res.json()["error"]["message"]
+    unauthenticated = client.post(
+        "/capabilities/register",
+        json=cap_payload,
+        headers={"Authorization": "Bearer invalid"},
+    )
+    assert unauthenticated.status_code == 401
+    res = client.post("/capabilities/register", json=cap_payload, headers=auth_header)
+    assert res.status_code == 403
+    duplicate = client.post(
+        "/capabilities/register",
+        json=cap_payload,
+        headers=admin_header,
+    )
+    assert duplicate.status_code == 409
+    assert "already" in duplicate.json()["error"]["message"]
 
 
 def test_capability_access_and_retrieval_flow(client, auth_header):

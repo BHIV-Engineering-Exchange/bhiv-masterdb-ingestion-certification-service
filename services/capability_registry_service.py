@@ -409,7 +409,7 @@ class CapabilityRegistryService:
         existing_caps = {c.capability_id for c in self.list_capabilities()}
         for cap in defaults:
             if cap.capability_id not in existing_caps:
-                self.register_capability(cap, check_duplicate=False)
+                self.register_capability(cap)
 
     def register_capability(
         self, capability: Capability, check_duplicate: bool = True
