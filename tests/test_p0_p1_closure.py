@@ -21,7 +21,8 @@ METADATA_JSON = {
 }
 
 
-def test_p0_upload_lifecycle_completion(tmp_path):
+def test_p0_upload_lifecycle_completion(tmp_path, monkeypatch):
+    monkeypatch.setenv("AUTH_PASSWORD", "test-admin-password")
     """Verify upload lifecycle transitions from VALIDATED -> REGISTERED -> INGESTED -> AVAILABLE."""
     db_file = tmp_path / "p0_test.db"
     db_url = f"sqlite:///{db_file.as_posix()}"
@@ -57,7 +58,10 @@ def test_p0_upload_lifecycle_completion(tmp_path):
     client = TestClient(main.app)
 
     # Auth
-    token_resp = client.post("/auth/token", json={"actor": "admin"})
+    token_resp = client.post(
+        "/auth/token",
+        json={"actor": "admin", "password": "test-admin-password"},
+    )
     token = token_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -129,7 +133,8 @@ def test_p0_upload_lifecycle_completion(tmp_path):
     assert up_data["timestamps"]["available_at"] is not None
 
 
-def test_p1_target_database_http_readback(tmp_path):
+def test_p1_target_database_http_readback(tmp_path, monkeypatch):
+    monkeypatch.setenv("AUTH_PASSWORD", "test-admin-password")
     """Verify P1 endpoint GET /databases/{target_database}/records/{dataset_id} returns persisted records."""
     db_file = tmp_path / "p1_test.db"
     db_url = f"sqlite:///{db_file.as_posix()}"
@@ -165,7 +170,10 @@ def test_p1_target_database_http_readback(tmp_path):
     client = TestClient(main.app)
 
     # Auth
-    token_resp = client.post("/auth/token", json={"actor": "admin"})
+    token_resp = client.post(
+        "/auth/token",
+        json={"actor": "admin", "password": "test-admin-password"},
+    )
     token = token_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -206,4 +214,3 @@ def test_p1_target_database_http_readback(tmp_path):
     assert len(readback_data["records"]) == 2
     assert readback_data["records"][0]["name"] == "John Doe"
     assert readback_data["records"][1]["name"] == "Alice Smith"
-

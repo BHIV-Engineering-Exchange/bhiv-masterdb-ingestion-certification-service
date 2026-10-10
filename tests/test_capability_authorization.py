@@ -1,6 +1,8 @@
 """
 Tests for MASTERDB Capability Access Authorization & Policy Evaluation.
 """
+import uuid
+
 from fastapi.testclient import TestClient
 import main
 
@@ -34,9 +36,10 @@ def test_request_access_unauthorized_consumer():
     token = _get_token(actor="auth-tester")
     from models import Capability
 
+    capability_id = f"cap-restricted-{uuid.uuid4().hex[:10]}"
     main.capability_registry_service.register_capability(
         Capability(
-            capability_id="cap-restricted-classified",
+            capability_id=capability_id,
             capability_name="Classified Defense Dataset",
             description="Restricted classified intelligence capability",
             dataset_id="ds-defense-001",
@@ -49,7 +52,7 @@ def test_request_access_unauthorized_consumer():
 
     payload = {
         "application_id": "UNAUTHORIZED_CONSUMER_APP",
-        "capability_id": "cap-restricted-classified",
+        "capability_id": capability_id,
         "purpose": "unauthorized_access",
     }
     res = client.post("/access/request", json=payload, headers={"Authorization": f"Bearer {token}"})
@@ -67,3 +70,26 @@ def test_request_access_nonexistent_capability():
     }
     res = client.post("/access/request", json=payload, headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 404
+
+
+def test_request_access_rejects_unapproved_purpose():
+    token = _get_token(actor="VALID_CONSUMER", roles=["ecosystem-reader"])
+    payload = {
+        "application_id": "VALID_CONSUMER",
+        "capability_id": "cap-mangrove-monitoring",
+        "purpose": "unrelated_financial_analysis",
+    }
+    res = client.post("/access/request", json=payload, headers={"Authorization": f"Bearer {token}"})
+    assert res.status_code == 403
+
+
+def test_request_access_rejects_unregistered_capability_version():
+    token = _get_token(actor="VALID_CONSUMER", roles=["ecosystem-reader"])
+    payload = {
+        "application_id": "VALID_CONSUMER",
+        "capability_id": "cap-mangrove-monitoring",
+        "capability_version": "9.9.9",
+        "purpose": "environmental_monitoring",
+    }
+    res = client.post("/access/request", json=payload, headers={"Authorization": f"Bearer {token}"})
+    assert res.status_code == 403

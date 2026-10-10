@@ -41,8 +41,19 @@ from services.certification_service import CertificationService
 from services.capability_registry_service import (
     CapabilityAccessDeniedError,
     CapabilityNotFoundError,
-    CapabilityAlreadyExistsError,
     CapabilityRegistryService,
+    CapabilityVersionConflictError,
+)
+from geo_quest_candidate.service import (
+    CandidateNotFoundError,
+    CandidateRegistrationError,
+    CandidateRetrieveRequest,
+    GeoQuestCandidateService,
+)
+from geo_quest_candidate.masterdb_import import (
+    CandidatePackageRetrieveRequest,
+    CandidateUseDeniedError,
+    GeospatialExportCandidateService,
 )
 from services.source_registry_service import (
     SourceRegistryService,
@@ -374,6 +385,18 @@ def _sql_store(subdir: str):
     if not _DATABASE_URL:
         return None
     return SqlArtifactStore(_DATABASE_URL, store_name=subdir)
+
+
+geo_quest_candidate_service = GeoQuestCandidateService(
+    store_dir=_persist_path("geo_quest_candidates") or "geo_quest_candidate_store",
+    store=_sql_store("geo_quest_candidates"),
+)
+gev_geospatial_candidate_service = GeospatialExportCandidateService(
+    store=geo_quest_candidate_service.store,
+    capability_registry=capability_registry_service,
+    dataset_registry=package_registry_service,
+    mdu_contracts=mdu_contract_adapter,
+)
 
 
 # --- BCAES Canonical Registry (ecosystem bootstrap) ------------------------
@@ -1968,6 +1991,20 @@ def replay_registry_manifest() -> dict:
 # ---------------------------------------------------------------------------
 
 
+@app.post("/capabilities/register", response_model=Capability, status_code=201)
+def register_capability(
+    capability: Capability,
+    identity: AuthIdentity = Depends(get_identity),
+) -> Capability:
+    """Register a capability version; publication requires an administrator."""
+    if ADMIN_ROLE not in identity.roles:
+        raise HTTPException(status_code=403, detail="Only bhiv-admin may register capabilities.")
+    try:
+        return capability_registry_service.register_capability(capability)
+    except CapabilityVersionConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
 @app.get("/capabilities", response_model=List[Capability])
 @app.get("/tantra/capabilities", response_model=List[Capability])
 def list_capabilities(
@@ -2002,6 +2039,18 @@ def get_capability_contract(
     """Step 3: Machine-readable Capability Contract resolution."""
     try:
         return tantra_interface_service.get_capability_contract(capability_id)
+    except CapabilityNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/capabilities/{capability_id}/versions", response_model=List[Capability])
+def get_capability_versions(
+    capability_id: str,
+    identity: AuthIdentity = Depends(get_identity),
+) -> List[Capability]:
+    """Return immutable registered versions of a capability."""
+    try:
+        return capability_registry_service.get_capability_versions(capability_id)
     except CapabilityNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -2099,24 +2148,6 @@ def get_source(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@app.post("/capabilities/register", response_model=Capability, status_code=201)
-@app.post("/capabilities", response_model=Capability, status_code=201)
-def register_capability(
-    capability: Capability,
-    identity: AuthIdentity = Depends(get_identity),
-) -> Capability:
-    """Register a reusable capability with duplicate checking and authority confirmation handling."""
-    try:
-        # Check canonical authority confirmation flag
-        if not capability.registration_authority_confirmed:
-            capability.status = CapabilityStatus.PENDING_AUTHORITY_CONFIRMATION
-        return capability_registry_service.register_capability(capability, check_duplicate=True)
-    except CapabilityAlreadyExistsError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
 @app.post("/connectors/geospatial/ingest", status_code=200)
 def geospatial_connector_ingest(
     payload: Dict[str, Any],
@@ -2136,3 +2167,111 @@ def geospatial_connector_ingest(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+@app.post("/geo-quest/candidates/gev.aircraft_tracking/register")
+def register_geo_quest_candidate(
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    """Stage validated GEO-QUEST artifacts locally without canonical publication."""
+    if ADMIN_ROLE not in identity.roles:
+        raise HTTPException(status_code=403, detail="Only bhiv-admin may stage GEO-QUEST candidates.")
+    try:
+        result = geo_quest_candidate_service.register_candidate(actor=identity.actor)
+        result["mdu_schema_contract"] = dataset_retrieval_service.get_dataset_schema(
+            result["dataset_id"],
+            local_schema_version="1.0.0",
+        )
+        result["mdu_schema_compatibility"] = mdu_contract_adapter.validate_schema_compatibility(
+            result["dataset_id"],
+            local_schema_version="1.0.0",
+        )
+        return result
+    except CandidateRegistrationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/geo-quest/candidates/{capability_id}")
+def get_geo_quest_candidate(
+    capability_id: str,
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    """Inspect a staged candidate; it is intentionally absent from public discovery."""
+    if ADMIN_ROLE not in identity.roles:
+        raise HTTPException(status_code=403, detail="Only bhiv-admin may inspect GEO-QUEST candidates.")
+    try:
+        candidate = geo_quest_candidate_service.get_candidate(capability_id)
+        candidate["mdu_schema_contract"] = dataset_retrieval_service.get_dataset_schema(
+            candidate["dataset_id"],
+            local_schema_version="1.0.0",
+        )
+        candidate["mdu_schema_compatibility"] = mdu_contract_adapter.validate_schema_compatibility(
+            candidate["dataset_id"],
+            local_schema_version="1.0.0",
+        )
+        return candidate
+    except CandidateNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CandidateRegistrationError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.post("/geo-quest/candidates/{capability_id}/retrieve")
+def retrieve_geo_quest_candidate(
+    capability_id: str,
+    request_data: CandidateRetrieveRequest,
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    """Retrieve a validated candidate snapshot for controlled, non-production reuse."""
+    if ADMIN_ROLE not in identity.roles:
+        raise HTTPException(status_code=403, detail="Only bhiv-admin may retrieve GEO-QUEST candidates.")
+    try:
+        return geo_quest_candidate_service.retrieve(capability_id, request_data)
+    except CandidateNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CandidateRegistrationError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.post("/geo-quest/imports/register", status_code=202)
+def register_gev_geospatial_candidate(
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    """Validate and stage the GEV evidence packet without canonical publication."""
+    if ADMIN_ROLE not in identity.roles:
+        raise HTTPException(status_code=403, detail="Only bhiv-admin may stage GEV candidates.")
+    try:
+        return gev_geospatial_candidate_service.register_candidate(actor=identity.actor)
+    except CandidateRegistrationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/geo-quest/imports/candidate")
+def get_gev_geospatial_candidate(
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    """Inspect GEV candidate metadata; this does not expose it to discovery."""
+    if ADMIN_ROLE not in identity.roles:
+        raise HTTPException(status_code=403, detail="Only bhiv-admin may inspect GEV candidates.")
+    try:
+        return gev_geospatial_candidate_service.get_candidate()
+    except CandidateNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CandidateRegistrationError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.post("/geo-quest/imports/candidate/retrieve")
+def retrieve_gev_geospatial_candidate(
+    request_data: CandidatePackageRetrieveRequest,
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    """Retrieve staged evidence only for an administrator registry review."""
+    if ADMIN_ROLE not in identity.roles:
+        raise HTTPException(status_code=403, detail="Only bhiv-admin may retrieve GEV candidates.")
+    try:
+        return gev_geospatial_candidate_service.retrieve(request_data)
+    except CandidateUseDeniedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except CandidateNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CandidateRegistrationError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc

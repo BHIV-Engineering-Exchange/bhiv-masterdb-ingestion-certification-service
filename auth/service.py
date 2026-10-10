@@ -88,6 +88,12 @@ class AuthService:
 
         # Ignore caller-supplied roles for public authentication; obtain trusted server-side roles
         trusted_roles = self.resolve_roles(actor)
+        privileged_roles = {"bhiv-admin", "admin", "operator", "bcaes-editor", "ingest:operator"}
+        if not expected_pw and privileged_roles.intersection(trusted_roles):
+            raise AuthTokenError(
+                "Privileged token issuance requires a configured server authentication password."
+            )
+
         token, expires_at = self.issue_token(actor.strip(), trusted_roles)
         return token, expires_at, trusted_roles
 

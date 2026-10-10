@@ -88,17 +88,22 @@ def test_capability_discovery_and_contract(client, auth_header):
     assert "outputs" in contract
 
 
-def test_capability_duplicate_detection(client, auth_header):
+def test_capability_registration_requires_admin(client, auth_header):
     cap_payload = {
-        "capability_id": "cap-mangrove-monitoring",  # existing seeded capability
+        "capability_id": "cap-mangrove-monitoring",
         "capability_name": "Duplicate Mangrove Capability",
         "description": "Attempt to overwrite",
         "dataset_id": "ds-mangrove-001",
         "registration_authority_confirmed": True,
     }
+    unauthenticated = client.post(
+        "/capabilities/register",
+        json=cap_payload,
+        headers={"Authorization": f"******"},
+    )
+    assert unauthenticated.status_code == 401
     res = client.post("/capabilities/register", json=cap_payload, headers=auth_header)
-    assert res.status_code == 409
-    assert "already exists" in res.json()["error"]["message"]
+    assert res.status_code == 403
 
 
 def test_capability_access_and_retrieval_flow(client, auth_header):
@@ -238,5 +243,3 @@ def test_license_safe_connector_ingestion(client, auth_header):
     assert result["source"]["source_id"] == "src-marine-intel-ports"
     assert result["capability"]["capability_id"] == "cap-marine-intel-ports"
     assert result["pipeline"] == "EXTERNAL_SOURCE -> CONNECTOR -> VALIDATION -> MDU -> MASTERDB -> CAPABILITY"
-
-

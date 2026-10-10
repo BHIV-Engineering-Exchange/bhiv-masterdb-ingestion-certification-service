@@ -23,11 +23,13 @@ def test_public_token_endpoint_ignores_self_assigned_roles(client):
     assert "bhiv-admin" not in identity.roles
 
 
-def test_public_token_endpoint_assigns_trusted_roles_for_configured_admin(client):
+def test_public_token_endpoint_rejects_privileged_actor_without_password(client, monkeypatch):
+    monkeypatch.delenv("AUTH_PASSWORD", raising=False)
+    monkeypatch.delenv("MASTERDB_AUTH_PASSWORD", raising=False)
+    monkeypatch.delenv("ADMIN_PASSWORD", raising=False)
     resp = client.post("/auth/token", json={"actor": "kavy", "roles": ["viewer"]})
-    assert resp.status_code == 200
-    data = resp.json()
-    assert "bhiv-admin" in data["roles"]
+    assert resp.status_code == 401
+    assert "configured server authentication password" in resp.json()["error"]["message"]
 
 
 def test_public_token_endpoint_invalid_credentials_returns_401(client, monkeypatch):

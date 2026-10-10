@@ -4,7 +4,9 @@ Capability Registry Service — Ecosystem-Wide Capability Discovery & Access.
 Owns MASTERDB Capability registration, discovery, machine-readable contract resolution,
 and authorization/access evaluation for TANTRA runtime integration.
 """
+import hashlib
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -41,6 +43,10 @@ class CapabilityAccessDeniedError(PermissionError):
     pass
 
 
+class CapabilityVersionConflictError(ValueError):
+    """Raised when a capability ID/version pair is already registered."""
+
+
 class CapabilityRegistryService:
     def __init__(
         self,
@@ -50,10 +56,12 @@ class CapabilityRegistryService:
         audit_emitter: Optional[CryptoAuditEmitter] = None,
     ) -> None:
         self.store = ArtifactStore(reports_dir=store_dir)
+        self.version_store = ArtifactStore(reports_dir=os.path.join(store_dir, "versions"))
         self.package_registry = package_registry or PackageRegistryService()
         self.retrieval_service = retrieval_service or DatasetRetrievalService(registry=self.package_registry)
         self.audit_emitter = audit_emitter or CryptoAuditEmitter()
         self._access_contracts: Dict[str, AccessContract] = {}
+        self._access_contract_actors: Dict[str, str] = {}
         self._seed_default_capabilities_if_empty()
 
     def _seed_default_capabilities_if_empty(self) -> None:
@@ -401,42 +409,49 @@ class CapabilityRegistryService:
         existing_caps = {c.capability_id for c in self.list_capabilities()}
         for cap in defaults:
             if cap.capability_id not in existing_caps:
-                self.register_capability(cap, check_duplicate=False)
+                self.register_capability(cap)
 
-    def register_capability(self, capability: Capability, check_duplicate: bool = True) -> Capability:
-        # Enforce license-safe restriction on commercially prohibited/unverified capabilities
+    def register_capability(self, capability: Capability) -> Capability:
         restricted_keywords = ["opensky", "telegeography"]
         cap_str = f"{capability.capability_id} {capability.capability_name} {capability.description} {' '.join(capability.dependencies)} {' '.join(capability.source_references)}".lower()
         if any(kw in cap_str for kw in restricted_keywords):
             raise ValueError(f"Registration of commercially restricted/unverified capability '{capability.capability_id}' is prohibited.")
 
-        if check_duplicate:
-            existing = self.store.load(capability.capability_id)
-            if existing:
-                raise CapabilityAlreadyExistsError(f"Capability '{capability.capability_id}' already exists.")
+        existing = self.store.load(capability.capability_id)
+        if existing and existing.get("capability_version") == capability.capability_version:
+            raise CapabilityVersionConflictError(
+                f"Capability '{capability.capability_id}' version "
+                f"'{capability.capability_version}' is already registered."
+            )
 
-        # Ensure underlying dataset package exists or register it in package_registry
+        version_key = self._version_key(capability.capability_id, capability.capability_version)
+        if self.version_store.load(version_key):
+            raise CapabilityVersionConflictError(
+                f"Capability '{capability.capability_id}' version "
+                f"'{capability.capability_version}' is already registered."
+            )
+
         try:
             self.package_registry.get_by_dataset_id(capability.dataset_id)
-        except (PackageNotFoundError, AttributeError):
-            try:
-                self.package_registry.register(
-                    dataset_id=capability.dataset_id,
-                    dataset_version=capability.capability_version,
-                    schema_version=capability.schema_version,
-                    board=capability.domain,
-                    medium="api",
-                    language="json",
-                    owner="masterdb-governance",
-                    actor="capability_registry",
-                    reason=f"Seeded for capability {capability.capability_id}",
-                )
-            except Exception:
-                pass
+        except PackageNotFoundError:
+            self.package_registry.register(
+                dataset_id=capability.dataset_id,
+                dataset_version=capability.capability_version,
+                schema_version=capability.schema_version,
+                board=capability.domain,
+                medium="api",
+                language="json",
+                owner="masterdb-governance",
+                actor="capability_registry",
+                reason=f"Registered for capability {capability.capability_id}",
+            )
 
-        self.store.save(capability.capability_id, capability.model_dump(mode="json"))
+        serialized = capability.model_dump(mode="json")
+        serialized["updated_at"] = datetime.now(timezone.utc).isoformat()
+        self.version_store.save(version_key, serialized)
+        self.store.save(capability.capability_id, serialized)
         logger.info("capability_registered capability_id=%s domain=%s", capability.capability_id, capability.domain)
-        return capability
+        return Capability.model_validate(serialized)
 
     def list_capabilities(
         self,
@@ -471,6 +486,22 @@ class CapabilityRegistryService:
         if not data:
             raise CapabilityNotFoundError(f"Capability '{capability_id}' not found.")
         return Capability.model_validate(data)
+
+    def get_capability_versions(self, capability_id: str) -> List[Capability]:
+        current = self.get_capability(capability_id)
+        versions = [
+            Capability.model_validate(record)
+            for record in self.version_store.list_all()
+            if record.get("capability_id") == capability_id
+        ]
+        if not any(item.capability_version == current.capability_version for item in versions):
+            versions.append(current)
+        return sorted(versions, key=lambda item: item.created_at)
+
+    @staticmethod
+    def _version_key(capability_id: str, version: str) -> str:
+        digest = hashlib.sha256(f"{capability_id}\0{version}".encode("utf-8")).hexdigest()
+        return f"cap-version-{digest}"
 
     def get_contract(self, capability_id: str) -> CapabilityContract:
         capability = self.get_capability(capability_id)
@@ -561,6 +592,23 @@ class CapabilityRegistryService:
             )
             raise CapabilityAccessDeniedError(reason)
 
+        if request_data.capability_version and request_data.capability_version != capability.capability_version:
+            reason = (
+                f"Capability '{capability.capability_id}' version "
+                f"'{request_data.capability_version}' is not the current registered version "
+                f"'{capability.capability_version}'."
+            )
+            self._emit_audit(
+                request_id=req_id,
+                actor=actor,
+                application_id=request_data.application_id,
+                capability_id=capability.capability_id,
+                action="ACCESS_REQUEST",
+                result="DENIED",
+                reason=reason,
+            )
+            raise CapabilityAccessDeniedError(reason)
+
         # Evaluate authorization requirements
         auth_reqs = capability.authorization_requirements or {}
         req_roles = auth_reqs.get("required_roles", [])
@@ -595,15 +643,27 @@ class CapabilityRegistryService:
             )
             raise CapabilityAccessDeniedError(reason)
 
-        # Check purpose requirement
-        if capability.required_purpose and request_data.purpose.lower() not in (
+        allowed_purposes = {
             capability.required_purpose.lower(),
             "general_reuse",
             "production_integration",
             "testing",
-        ):
-            # Purpose mismatch warning/denial if strict
-            pass
+        }
+        if capability.required_purpose and request_data.purpose.strip().lower() not in allowed_purposes:
+            reason = (
+                f"Purpose '{request_data.purpose}' is not permitted for capability "
+                f"'{capability.capability_id}'; required purpose is '{capability.required_purpose}'."
+            )
+            self._emit_audit(
+                request_id=req_id,
+                actor=actor,
+                application_id=request_data.application_id,
+                capability_id=capability.capability_id,
+                action="ACCESS_REQUEST",
+                result="DENIED",
+                reason=reason,
+            )
+            raise CapabilityAccessDeniedError(reason)
 
         access_contract = AccessContract(
             request_id=req_id,
@@ -619,6 +679,7 @@ class CapabilityRegistryService:
 
         self._access_contracts[access_contract.request_id] = access_contract
         self._access_contracts[access_contract.access_token] = access_contract
+        self._access_contract_actors[access_contract.access_token] = actor
 
         self._emit_audit(
             request_id=req_id,
@@ -656,10 +717,32 @@ class CapabilityRegistryService:
             access_req = CapabilityAccessRequest(
                 application_id=app_id,
                 capability_id=capability_id,
-                purpose="direct_retrieval",
+                purpose=capability.required_purpose or "general_reuse",
                 request_id=req_id,
             )
             contract = self.request_access(actor=actor, roles=roles, request_data=access_req)
+        if (
+            not contract.authorized
+            or self._access_contract_actors.get(contract.access_token) != actor
+            or contract.capability_id != capability_id
+            or contract.application_id != (retrieve_req.application_id or actor)
+            or contract.capability_version != capability.capability_version
+            or not any(
+                scope.upper() in ("RETRIEVE", "QUERY")
+                for scope in contract.access_scope
+            )
+        ):
+            reason = "The access contract is not valid for this capability, application, version, or operation."
+            self._emit_audit(
+                request_id=contract.request_id,
+                actor=actor,
+                application_id=retrieve_req.application_id or contract.application_id,
+                capability_id=capability_id,
+                action="DATA_RETRIEVAL",
+                result="DENIED",
+                reason=reason,
+            )
+            raise CapabilityAccessDeniedError(reason)
 
         # Execute data retrieval via DatasetRetrievalService / underlying governed dataset
         provenance = self.retrieval_service.get_dataset_provenance(capability.dataset_id)

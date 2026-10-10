@@ -69,6 +69,13 @@ Owned by this  service:
 - Knowledge Object / Provenance consumption (adapter boundary to MDU, live
   when configured, placeholder-safe fallback otherwise)
 - Retrieval Readiness & Retrieval Evidence
+- Capability registration, discovery/search, immutable version history,
+  access authorization, and contract/retrieval APIs (`/capabilities/*`)
+- Restricted GEO-QUEST candidate registration and snapshot retrieval
+  (`/geo-quest/candidates/*`); candidate remains non-canonical and
+  non-discoverable pending formal governance authorization
+- See `CAPABILITY_REGISTRY_API.md` for endpoint details and GEO-QUEST
+  candidate governance constraints
 - MASTERDB <-> TANTRA Runtime Interface (`/tantra/*`)
 - Runtime Discovery API (`/discovery/packages`)
 - Replay consistency & audit completeness (`/packages/{id}/replay`,
@@ -426,4 +433,3 @@ services/shared_*        Phase 2/4/5 — generic record engine, six service
                          version-compatibility utility
 shared_store/            Per-dataset JSON record storage (created on first use)
 ```
-

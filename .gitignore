@@ -9,6 +9,7 @@ __pycache__/
 # Local runtime data stores & test outputs
 registry_store/
 capability_store/
+geo_quest_candidate_store/
 upload_store/
 knowledge_objects/
 retrieval_evidence/
