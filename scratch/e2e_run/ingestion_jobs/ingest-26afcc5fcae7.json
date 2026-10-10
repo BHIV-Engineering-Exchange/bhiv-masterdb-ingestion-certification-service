@@ -1,0 +1,58 @@
+{
+    "job_id": "ingest-26afcc5fcae7",
+    "trace_id": "trace-ed44e00e5182",
+    "dataset_id": "masterdb_final_closure",
+    "target_database": "RelationalDB",
+    "source_format": "csv",
+    "package_id": null,
+    "actor": "admin",
+    "roles": [
+        "bhiv-admin",
+        "operator",
+        "admin"
+    ],
+    "status": "PERSISTED",
+    "certification_state": "CERTIFIED",
+    "integrity_score": 100.0,
+    "steps": [
+        {
+            "step": "RBAC_CHECK",
+            "passed": true,
+            "detail": "actor holds required role 'ingest:relationaldb'",
+            "at": "2026-10-03T07:35:17.386067+00:00"
+        },
+        {
+            "step": "FORMAT_CHECK",
+            "passed": true,
+            "detail": "'csv' accepted by RelationalDB",
+            "at": "2026-10-03T07:35:17.386093+00:00"
+        },
+        {
+            "step": "CERTIFICATION_GATE",
+            "passed": true,
+            "detail": "dataset is CERTIFIED and eligible_for_masterdb=True",
+            "at": "2026-10-03T07:35:17.387224+00:00"
+        },
+        {
+            "step": "PERSISTENCE",
+            "passed": true,
+            "detail": "Persisted 2 records to RelationalDB (RelationalDB/masterdb_final_closure).",
+            "at": "2026-10-03T07:35:17.431628+00:00"
+        },
+        {
+            "step": "ROUTED",
+            "passed": true,
+            "detail": "Routed to RelationalDB.",
+            "at": "2026-10-03T07:35:17.431671+00:00"
+        }
+    ],
+    "rejection_reason": null,
+    "metadata": {
+        "test_run": "FINAL_CLOSURE_RUN",
+        "author": "Rahil",
+        "target_reference": "RelationalDB/masterdb_final_closure",
+        "records_persisted": 2
+    },
+    "submitted_at": "2026-10-03T07:35:17.470101+00:00",
+    "completed_at": "2026-10-03T07:35:17.469999+00:00"
+}

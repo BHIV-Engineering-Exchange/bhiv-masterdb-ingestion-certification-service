@@ -212,7 +212,7 @@ class UploadService:
 
     def link_ingestion_job(self, upload_id: str, ingestion_job_id: str) -> UploadJob:
         job = self.get_upload(upload_id)
-        if job.status not in (UploadStatus.VALIDATED, UploadStatus.REGISTERED):
+        if job.status == UploadStatus.REJECTED:
             raise UploadStateError(f"Cannot link ingestion job in state {job.status}")
         job.ingestion_job_id = ingestion_job_id
         job.steps.append(UploadJobStep(step="INGESTION_JOB_LINKED", passed=True, detail=f"Linked to ingestion job {ingestion_job_id}"))
@@ -225,8 +225,9 @@ class UploadService:
         job.dataset_id = dataset_id
         job.package_id = package_id
         job.status = UploadStatus.REGISTERED
-        job.registered_at = job.steps[-1].at
-        job.steps.append(UploadJobStep(step="REGISTERED", passed=True, detail=f"Registered as dataset {dataset_id}"))
+        step = UploadJobStep(step="REGISTERED", passed=True, detail=f"Registered as dataset {dataset_id}")
+        job.steps.append(step)
+        job.registered_at = step.at
         return self._store.save(job)
 
     def mark_ingested(self, upload_id: str, artifact_id: str) -> UploadJob:
@@ -235,8 +236,9 @@ class UploadService:
             raise UploadStateError(f"Cannot mark ingested in state {job.status}")
         job.artifact_id = artifact_id
         job.status = UploadStatus.INGESTED
-        job.ingested_at = job.steps[-1].at
-        job.steps.append(UploadJobStep(step="INGESTED", passed=True, detail=f"Artifact {artifact_id} created"))
+        step = UploadJobStep(step="INGESTED", passed=True, detail=f"Artifact {artifact_id} created")
+        job.steps.append(step)
+        job.ingested_at = step.at
         return self._store.save(job)
 
     def mark_available(self, upload_id: str) -> UploadJob:
@@ -244,8 +246,9 @@ class UploadService:
         if job.status != UploadStatus.INGESTED:
             raise UploadStateError(f"Cannot mark available in state {job.status}")
         job.status = UploadStatus.AVAILABLE
-        job.available_at = job.steps[-1].at
-        job.steps.append(UploadJobStep(step="AVAILABLE", passed=True, detail="Dataset is now queryable and discoverable"))
+        step = UploadJobStep(step="AVAILABLE", passed=True, detail="Dataset is now queryable and discoverable")
+        job.steps.append(step)
+        job.available_at = step.at
         return self._store.save(job)
 
     def complete_upload(

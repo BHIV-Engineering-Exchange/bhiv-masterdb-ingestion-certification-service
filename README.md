@@ -61,7 +61,11 @@ Owned by this  service:
 - MASTERDB ingestion eligibility decisions
 - Validation reports and audit artifacts
 - Knowledge Package Lifecycle (Dataset Registry)
+- Source Registry (`/sources/*` — Source management, duplicate checking, unverified metadata tracking)
+- Capability Registry (`/capabilities/*` — Capability discovery, contract resolution, access requests & governed retrieval)
+- Geospatial Source-Independent Connector Adapter (`/connectors/geospatial/*` — Ingest pipeline: Source -> Connector -> Validation -> MDU -> Dataset -> Capability)
 - Package Identity & Runtime Discovery
+
 - Knowledge Object / Provenance consumption (adapter boundary to MDU, live
   when configured, placeholder-safe fallback otherwise)
 - Retrieval Readiness & Retrieval Evidence

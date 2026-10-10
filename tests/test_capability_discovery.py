@@ -38,9 +38,9 @@ def test_filter_capabilities_by_domain():
     res = client.get("/capabilities?domain=geospatial", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
     data = res.json()
-    assert len(data) == 1
-    assert data[0]["domain"] == "geospatial"
-    assert data[0]["capability_id"] == "cap-mangrove-monitoring"
+    assert len(data) >= 1
+    assert all(c["domain"] == "geospatial" for c in data)
+    assert any(c["capability_id"] == "cap-mangrove-monitoring" for c in data)
 
 
 def test_search_capabilities():

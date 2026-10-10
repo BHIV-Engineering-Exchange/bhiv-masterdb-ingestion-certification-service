@@ -31,6 +31,11 @@ class CapabilityNotFoundError(KeyError):
     pass
 
 
+class CapabilityAlreadyExistsError(ValueError):
+    """Raised when attempting to register a capability that already exists."""
+    pass
+
+
 class CapabilityAccessDeniedError(PermissionError):
     """Raised when authorization for capability access fails."""
     pass
@@ -52,17 +57,35 @@ class CapabilityRegistryService:
         self._seed_default_capabilities_if_empty()
 
     def _seed_default_capabilities_if_empty(self) -> None:
+        # NOTE: Seed records below are DEMO / TEST FIXTURES for contract demonstration.
+        # They demonstrate capability structure and discovery, not live production feeds.
         defaults = [
             Capability(
                 capability_id="cap-mangrove-monitoring",
-                capability_name="Mangrove Ecosystem Monitoring Service",
-                description="Governed satellite and ground-truth mangrove vegetation and carbon index dataset",
+                capability_name="[DEMO] Mangrove Ecosystem Monitoring Service",
+                description="Governed satellite and ground-truth mangrove vegetation and carbon index dataset (Demo Fixture)",
                 dataset_id="ds-mangrove-001",
+                source_id="src-isro-eos-001",
+                purpose="environmental_monitoring",
                 capability_version="1.0.0",
                 contract_version="1.0.0",
                 domain="geospatial",
                 schema_version="v1.2",
                 status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "area_of_interest", "type": "GeoJSON Polygon", "required": True},
+                    {"name": "spectral_band", "type": "String", "required": False},
+                ],
+                outputs=[
+                    {"name": "canopy_density_map", "type": "GeoJSON FeatureCollection"},
+                    {"name": "biomass_index", "type": "Float"},
+                ],
+                dependencies=["ISRO EO Satellite Constellation (Demo)", "MDU-Semantic-Contract-Engine"],
+                source_references=["src-isro-eos-001"],
+                dataset_references=["ds-mangrove-001"],
+                known_limitations=["Cloud cover monsoon distortion"],
+                potential_consumers=["Bharat Mala (Demo)", "VANA/FIN (Demo)", "Marine Intelligence (Demo)"],
+                licensing={"software_licence": "UNKNOWN", "dataset_licence": "PENDING VERIFICATION", "source_licence": "UNVERIFIED"},
                 supported_access_methods=["QUERY", "EXPORT", "STREAM", "REFERENCE", "RETRIEVE"],
                 required_purpose="environmental_monitoring",
                 authorization_requirements={
@@ -70,21 +93,37 @@ class CapabilityRegistryService:
                     "allowed_consumers": ["*"],
                 },
                 provenance={
-                    "source": "ISRO/EO-Sat-Mangrove-Constellation",
-                    "certification": "MASTERDB-CERT-GEO-001",
-                    "lineage_ref": "lin-mangrove-2026",
+                    "source": "ISRO/EO-Sat-Mangrove-Constellation (Demo Fixture)",
+                    "certification": "MASTERDB-CERT-GEO-001-DEMO",
+                    "lineage_ref": "lin-mangrove-2026-demo",
                 },
             ),
             Capability(
                 capability_id="cap-maritime-cargo",
-                capability_name="Marine Vessel Tracking & Port Analytics",
-                description="Real-time vessel positions, port congestion, and shipping manifest data service",
+                capability_name="[DEMO] Marine Vessel Tracking & Port Analytics",
+                description="Real-time vessel positions, port congestion, and shipping manifest data service (Demo Fixture)",
                 dataset_id="ds-maritime-001",
+                source_id="src-maritime-gateway-002",
+                purpose="maritime_logistics",
                 capability_version="1.0.0",
                 contract_version="1.0.0",
                 domain="maritime",
                 schema_version="v2.0",
                 status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "vessel_id", "type": "IMO Standard ID", "required": False},
+                    {"name": "port_code", "type": "UN/LOCODE", "required": False},
+                ],
+                outputs=[
+                    {"name": "vessel_telemetry", "type": "JSON Object"},
+                    {"name": "port_congestion_index", "type": "Float"},
+                ],
+                dependencies=["National Maritime Data Gateway (Demo)"],
+                source_references=["src-maritime-gateway-002"],
+                dataset_references=["ds-maritime-001"],
+                known_limitations=["AIS transponder blind spots"],
+                potential_consumers=["Marine (Demo)", "TANTRA", "Bharat Mala (Demo)"],
+                licensing={"software_licence": "UNKNOWN", "dataset_licence": "PENDING VERIFICATION", "source_licence": "UNVERIFIED"},
                 supported_access_methods=["QUERY", "EXPORT", "STREAM", "REFERENCE", "RETRIEVE"],
                 required_purpose="maritime_logistics",
                 authorization_requirements={
@@ -92,21 +131,31 @@ class CapabilityRegistryService:
                     "allowed_consumers": ["Marine", "TANTRA", "*"],
                 },
                 provenance={
-                    "source": "National Maritime Data Gateway",
-                    "certification": "MASTERDB-CERT-MAR-002",
-                    "lineage_ref": "lin-maritime-2026",
+                    "source": "National Maritime Data Gateway (Demo Fixture)",
+                    "certification": "MASTERDB-CERT-MAR-002-DEMO",
+                    "lineage_ref": "lin-maritime-2026-demo",
                 },
             ),
             Capability(
                 capability_id="cap-fin-market-analytics",
-                capability_name="Financial Market Analytics & Credit Risk Data",
-                description="Governed financial transactions, credit indices, and market intelligence data",
+                capability_name="[DEMO] Financial Market Analytics & Credit Risk Data",
+                description="Governed financial transactions, credit indices, and market intelligence data (Demo Fixture)",
                 dataset_id="ds-fin-001",
+                source_id="src-fin-reserve-003",
+                purpose="financial_analysis",
                 capability_version="1.0.0",
                 contract_version="1.0.0",
                 domain="finance",
                 schema_version="v1.0",
                 status=CapabilityStatus.ACTIVE,
+                inputs=[{"name": "symbol", "type": "Ticker String", "required": False}],
+                outputs=[{"name": "market_index", "type": "JSON Object"}],
+                dependencies=["Reserve Financial Network Gateway (Demo)"],
+                source_references=["src-fin-reserve-003"],
+                dataset_references=["ds-fin-001"],
+                known_limitations=["Delayed after trading hours"],
+                potential_consumers=["FIN (Demo)", "VANA/FIN (Demo)", "TANTRA"],
+                licensing={"software_licence": "UNKNOWN", "dataset_licence": "PENDING VERIFICATION", "source_licence": "UNVERIFIED"},
                 supported_access_methods=["QUERY", "EXPORT", "STREAM", "REFERENCE", "RETRIEVE"],
                 required_purpose="financial_analysis",
                 authorization_requirements={
@@ -114,21 +163,31 @@ class CapabilityRegistryService:
                     "allowed_consumers": ["FIN", "TANTRA", "*"],
                 },
                 provenance={
-                    "source": "Reserve Financial Network Gateway",
-                    "certification": "MASTERDB-CERT-FIN-003",
-                    "lineage_ref": "lin-fin-2026",
+                    "source": "Reserve Financial Network Gateway (Demo Fixture)",
+                    "certification": "MASTERDB-CERT-FIN-003-DEMO",
+                    "lineage_ref": "lin-fin-2026-demo",
                 },
             ),
             Capability(
                 capability_id="cap-bharat-mala-highways",
-                capability_name="Bharat Mala Highway Infrastructure & Corridor Data",
-                description="National highway construction status, toll collection, and freight corridor telemetry",
+                capability_name="[DEMO] Bharat Mala Highway Infrastructure & Corridor Data",
+                description="National highway construction status, toll collection, and freight corridor telemetry (Demo Fixture)",
                 dataset_id="ds-bharatmala-001",
+                source_id="src-nhai-corridor-003",
+                purpose="infrastructure_planning",
                 capability_version="1.0.0",
                 contract_version="1.0.0",
                 domain="infrastructure",
                 schema_version="v1.1",
                 status=CapabilityStatus.ACTIVE,
+                inputs=[{"name": "corridor_id", "type": "String", "required": False}],
+                outputs=[{"name": "corridor_telemetry", "type": "JSON Object"}],
+                dependencies=["NHAI Highway Infrastructure & Toll Engine (Demo)"],
+                source_references=["src-nhai-corridor-003"],
+                dataset_references=["ds-bharatmala-001"],
+                known_limitations=["Remote toll booth connectivity delay"],
+                potential_consumers=["Bharat Mala (Demo)", "VANA/FIN (Demo)", "TANTRA"],
+                licensing={"software_licence": "UNKNOWN", "dataset_licence": "PENDING VERIFICATION", "source_licence": "UNVERIFIED"},
                 supported_access_methods=["QUERY", "EXPORT", "STREAM", "REFERENCE", "RETRIEVE"],
                 required_purpose="infrastructure_planning",
                 authorization_requirements={
@@ -136,23 +195,230 @@ class CapabilityRegistryService:
                     "allowed_consumers": ["Bharat Mala", "TANTRA", "*"],
                 },
                 provenance={
-                    "source": "Ministry of Road Transport & Highways Data Engine",
-                    "certification": "MASTERDB-CERT-INF-004",
-                    "lineage_ref": "lin-infra-2026",
+                    "source": "Ministry of Road Transport & Highways Data Engine (Demo Fixture)",
+                    "certification": "MASTERDB-CERT-INF-004-DEMO",
+                    "lineage_ref": "lin-infra-2026-demo",
+                },
+            ),
+            Capability(
+                capability_id="cap-marine-intel-ports",
+                capability_name="Marine Intelligence - Indian Ports & Harbours Data Service",
+                description="Governed Indian major & non-major port infrastructure, coordinates, state jurisdiction, and operational notes dataset from Marine Intelligence data layer.",
+                dataset_id="ds-marine-intel-ports",
+                source_id="src-marine-intel-ports",
+                purpose="maritime_infrastructure_analytics",
+                capability_version="1.0.0",
+                contract_version="1.0.0",
+                domain="maritime",
+                schema_version="v1.0",
+                status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "port_name", "type": "String", "required": False},
+                    {"name": "state", "type": "String", "required": False},
+                    {"name": "port_type", "type": "String", "required": False},
+                ],
+                outputs=[
+                    {"name": "ports_list", "type": "JSON Array"},
+                    {"name": "port_details", "type": "JSON Object"},
+                ],
+                dependencies=["Ministry of Ports, Shipping and Waterways", "Sagarmala Development Company", "Marine Intelligence Data Engine"],
+                source_references=["src-marine-intel-ports"],
+                dataset_references=["ds-marine-intel-ports"],
+                known_limitations=["Port administrative updates subject to ministry publication cycles"],
+                potential_consumers=["Marine Intelligence", "Bharat Mala", "VANA/FIN", "TANTRA"],
+                licensing={"software_licence": "MIT", "dataset_licence": "PUBLIC_GOVERNMENT_DATA", "source_licence": "PUBLIC_GOVERNMENT_DATA"},
+                supported_access_methods=["QUERY", "EXPORT", "RETRIEVE"],
+                required_purpose="maritime_infrastructure_analytics",
+                authorization_requirements={
+                    "required_roles": ["ecosystem-reader", "viewer", "operator", "admin"],
+                    "allowed_consumers": ["*"],
+                },
+                provenance={
+                    "source": "Ministry of Ports, Shipping and Waterways via Marine Intelligence Data Layer",
+                    "repository": "https://github.com/shravani2207-tech/marine-intelligence-task",
+                    "commit": "03af9e32eeba275592a8e19041d7b51d6139dad7",
+                    "certification": "MASTERDB-VERIFIED-MARINE-001",
+                },
+            ),
+            Capability(
+                capability_id="cap-gev-satellite-pass-prediction",
+                capability_name="God's Eye View - Satellite Orbit Propagation & Pass Prediction",
+                description="Governed orbital state vector propagation and pass prediction using CelesTrak NORAD TLE catalogs and SGP4 orbit calculation.",
+                dataset_id="ds-gev-satellite-tles",
+                source_id="src-gev-celestrak",
+                purpose="space_situational_awareness",
+                capability_version="1.0.0",
+                contract_version="1.0.0",
+                domain="geospatial",
+                schema_version="v1.0",
+                status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "catnr", "type": "Integer", "required": False},
+                    {"name": "group", "type": "String", "required": False},
+                    {"name": "observer_lat", "type": "Float", "required": False},
+                    {"name": "observer_lon", "type": "Float", "required": False},
+                ],
+                outputs=[
+                    {"name": "tle_lines", "type": "JSON Array"},
+                    {"name": "predicted_passes", "type": "JSON Array"},
+                ],
+                dependencies=["CelesTrak TLE catalog", "GEV /api/space proxy", "GEV /api/overpass proxy", "SGP4 calculator"],
+                source_references=["src-gev-celestrak"],
+                dataset_references=["ds-gev-satellite-tles"],
+                known_limitations=["SGP4 accuracy degradation over time without fresh TLEs"],
+                potential_consumers=["Bharat Mala", "VANA/FIN", "TANTRA"],
+                licensing={"software_licence": "MIT", "dataset_licence": "US_GOVERNMENT_PUBLIC_DOMAIN", "source_licence": "US_GOVERNMENT_PUBLIC_DOMAIN"},
+                supported_access_methods=["QUERY", "EXPORT", "RETRIEVE"],
+                required_purpose="space_situational_awareness",
+                authorization_requirements={
+                    "required_roles": ["ecosystem-reader", "viewer", "operator", "admin"],
+                    "allowed_consumers": ["*"],
+                },
+                provenance={
+                    "source": "CelesTrak via God's Eye View Proxy",
+                    "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+                    "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30",
+                    "certification": "MASTERDB-VERIFIED-GEV-002",
+                },
+            ),
+            Capability(
+                capability_id="cap-gev-wildfire-perimeter-monitoring",
+                capability_name="God's Eye View - Wildfire Incident & Perimeter Monitoring",
+                description="Governed active wildfire perimeters, containment status, thermal hot-spots, and InciWeb incident narrative integration.",
+                dataset_id="ds-gev-wildfire-perimeters",
+                source_id="src-gev-nifc-firms",
+                purpose="disaster_response_and_safety",
+                capability_version="1.0.0",
+                contract_version="1.0.0",
+                domain="geospatial",
+                schema_version="v1.0",
+                status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "bbox", "type": "BoundingBox Array", "required": False},
+                    {"name": "incident_name", "type": "String", "required": False},
+                ],
+                outputs=[
+                    {"name": "fire_perimeters", "type": "GeoJSON FeatureCollection"},
+                    {"name": "inciweb_narrative", "type": "JSON Object"},
+                ],
+                dependencies=["NIFC WFIGS ArcGIS FeatureServer", "GEV /api/fire-perimeters proxy", "NASA FIRMS WMTS"],
+                source_references=["src-gev-nifc-firms"],
+                dataset_references=["ds-gev-wildfire-perimeters"],
+                known_limitations=["Agency perimeter publication lag", "Cloud and smoke coverage on optical sensors"],
+                potential_consumers=["Bharat Mala", "VANA/FIN", "TANTRA"],
+                licensing={"software_licence": "MIT", "dataset_licence": "US_GOVERNMENT_PUBLIC_DOMAIN", "source_licence": "US_GOVERNMENT_PUBLIC_DOMAIN"},
+                supported_access_methods=["QUERY", "STREAM", "RETRIEVE"],
+                required_purpose="disaster_response_and_safety",
+                authorization_requirements={
+                    "required_roles": ["ecosystem-reader", "viewer", "operator", "admin"],
+                    "allowed_consumers": ["*"],
+                },
+                provenance={
+                    "source": "NIFC WFIGS & NASA FIRMS via God's Eye View Proxy",
+                    "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+                    "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30",
+                    "certification": "MASTERDB-VERIFIED-GEV-003",
+                },
+            ),
+            Capability(
+                capability_id="cap-gev-weather-forecast-tracking",
+                capability_name="God's Eye View - Severe Weather & Cyclone Track Forecast",
+                description="Governed 10m global wind vectors, rain radar, satellite clouds, lightning density, and NHC cyclone forecast cones.",
+                dataset_id="ds-gev-weather-telemetry",
+                source_id="src-gev-noaa-weather",
+                purpose="meteorological_monitoring",
+                capability_version="1.0.0",
+                contract_version="1.0.0",
+                domain="geospatial",
+                schema_version="v1.0",
+                status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "layer_type", "type": "String (wind/cyclones/radar/satellite/lightning)", "required": True},
+                    {"name": "storm_id", "type": "String", "required": False},
+                ],
+                outputs=[
+                    {"name": "weather_grid_or_track", "type": "JSON Object"},
+                ],
+                dependencies=["NOAA GFS AWS S3", "NOAA nowCOAST GeoServer WMS", "NHC Tropical Weather MapServer", "GEV /api/weather /api/cyclones /api/wind proxies"],
+                source_references=["src-gev-noaa-weather"],
+                dataset_references=["ds-gev-weather-telemetry"],
+                known_limitations=["GFS 0.25deg grid resolution limit", "nowCOAST radar coverage limited to CONUS/Americas"],
+                potential_consumers=["Bharat Mala", "VANA/FIN", "Marine Intelligence", "TANTRA"],
+                licensing={"software_licence": "MIT", "dataset_licence": "US_PUBLIC_DOMAIN", "source_licence": "US_PUBLIC_DOMAIN"},
+                supported_access_methods=["QUERY", "STREAM", "RETRIEVE"],
+                required_purpose="meteorological_monitoring",
+                authorization_requirements={
+                    "required_roles": ["ecosystem-reader", "viewer", "operator", "admin"],
+                    "allowed_consumers": ["*"],
+                },
+                provenance={
+                    "source": "NOAA NWS & nowCOAST via God's Eye View Proxy",
+                    "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+                    "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30",
+                    "certification": "MASTERDB-VERIFIED-GEV-004",
+                },
+            ),
+            Capability(
+                capability_id="cap-gev-earthquake-monitoring",
+                capability_name="God's Eye View - Real-time Global Seismic Event Detection",
+                description="Governed real-time global earthquake events, magnitudes, focal depths, and shake-map intensity indicators from USGS.",
+                dataset_id="ds-gev-seismic-events",
+                source_id="src-gev-usgs-seismic",
+                purpose="seismic_hazard_monitoring",
+                capability_version="1.0.0",
+                contract_version="1.0.0",
+                domain="geospatial",
+                schema_version="v1.0",
+                status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "min_magnitude", "type": "Float", "required": False},
+                    {"name": "time_window", "type": "String", "required": False},
+                ],
+                outputs=[
+                    {"name": "seismic_events", "type": "GeoJSON FeatureCollection"},
+                ],
+                dependencies=["USGS Earthquake API GeoJSON feed"],
+                source_references=["src-gev-usgs-seismic"],
+                dataset_references=["ds-gev-seismic-events"],
+                known_limitations=["Automated initial magnitude estimates revised after manual analyst review"],
+                potential_consumers=["Bharat Mala", "VANA/FIN", "TANTRA"],
+                licensing={"software_licence": "MIT", "dataset_licence": "US_GOVERNMENT_PUBLIC_DOMAIN", "source_licence": "US_GOVERNMENT_PUBLIC_DOMAIN"},
+                supported_access_methods=["QUERY", "STREAM", "RETRIEVE"],
+                required_purpose="seismic_hazard_monitoring",
+                authorization_requirements={
+                    "required_roles": ["ecosystem-reader", "viewer", "operator", "admin"],
+                    "allowed_consumers": ["*"],
+                },
+                provenance={
+                    "source": "USGS Earthquake Hazards Program via God's Eye View Proxy",
+                    "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+                    "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30",
+                    "certification": "MASTERDB-VERIFIED-GEV-005",
                 },
             ),
         ]
 
+        existing_caps = {c.capability_id for c in self.list_capabilities()}
         for cap in defaults:
-            if not self.store.load(cap.capability_id):
-                self.register_capability(cap)
+            if cap.capability_id not in existing_caps:
+                self.register_capability(cap, check_duplicate=False)
 
-    def register_capability(self, capability: Capability) -> Capability:
-        # Also ensure underlying dataset package exists or register it in package_registry
+    def register_capability(self, capability: Capability, check_duplicate: bool = True) -> Capability:
+        # Enforce license-safe restriction on commercially prohibited/unverified capabilities
+        restricted_keywords = ["opensky", "telegeography"]
+        cap_str = f"{capability.capability_id} {capability.capability_name} {capability.description} {' '.join(capability.dependencies)} {' '.join(capability.source_references)}".lower()
+        if any(kw in cap_str for kw in restricted_keywords):
+            raise ValueError(f"Registration of commercially restricted/unverified capability '{capability.capability_id}' is prohibited.")
+
+        if check_duplicate:
+            existing = self.store.load(capability.capability_id)
+            if existing:
+                raise CapabilityAlreadyExistsError(f"Capability '{capability.capability_id}' already exists.")
+
+        # Ensure underlying dataset package exists or register it in package_registry
         try:
             self.package_registry.get_by_dataset_id(capability.dataset_id)
         except (PackageNotFoundError, AttributeError):
-            # Register dataset package in lifecycle registry
             try:
                 self.package_registry.register(
                     dataset_id=capability.dataset_id,
@@ -231,13 +497,23 @@ class CapabilityRegistryService:
         return CapabilityContract(
             capability_id=capability.capability_id,
             capability_name=capability.capability_name,
+            purpose=capability.purpose,
             description=capability.description,
             dataset_id=capability.dataset_id,
+            source_id=capability.source_id or "src-unknown",
             capability_version=capability.capability_version,
             contract_version=capability.contract_version,
             domain=capability.domain,
             schema_version=capability.schema_version,
             status=capability.status.value,
+            inputs=capability.inputs,
+            outputs=capability.outputs,
+            dependencies=capability.dependencies,
+            source_references=capability.source_references,
+            dataset_references=capability.dataset_references,
+            known_limitations=capability.known_limitations,
+            potential_consumers=capability.potential_consumers,
+            licensing_metadata=capability.licensing,
             required_purpose=capability.required_purpose,
             supported_access_methods=capability.supported_access_methods,
             authorization_requirements=capability.authorization_requirements,
@@ -409,6 +685,9 @@ class CapabilityRegistryService:
                 "masterdb_lineage": provenance.get("masterdb_lineage"),
                 "mdu_provenance": provenance.get("mdu_provenance"),
                 "source": capability.provenance.get("source", "MASTERDB Canonical Data Layer"),
+                "repository": capability.provenance.get("repository"),
+                "commit": capability.provenance.get("commit"),
+                "certification": capability.provenance.get("certification"),
             },
             request_id=contract.request_id,
             access_metadata={

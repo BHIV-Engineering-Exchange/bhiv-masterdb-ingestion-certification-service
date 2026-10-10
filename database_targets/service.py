@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import uuid
 
 from auth.constants import ADMIN_ROLE
 from database_targets.models import (
@@ -237,8 +238,10 @@ class DatabaseRouterService:
         job_metadata["target_reference"] = target_ref
         job_metadata["records_persisted"] = record_count
 
+        job_id = f"ingest-{uuid.uuid4().hex[:12]}"
+
         # Advance linked upload if present
-        upload_advance_ok = self._advance_linked_upload(dataset_id, upload_id, target_ref)
+        upload_advance_ok = self._advance_linked_upload(dataset_id, upload_id, target_ref, ingestion_job_id=job_id)
         if not upload_advance_ok:
             steps.append(
                 IngestJobStep(
@@ -254,6 +257,7 @@ class DatabaseRouterService:
                 certification_state=state,
                 integrity_score=report.get("integrity_score") if report else None,
                 status_override=IngestionJobStatus.PARTIAL_PERSISTENCE,
+                job_id=job_id,
             )
 
         return self._finalize(
@@ -262,6 +266,7 @@ class DatabaseRouterService:
             rejection_reason=None,
             certification_state=state,
             integrity_score=report.get("integrity_score") if report else None,
+            job_id=job_id,
         )
 
     def _attempt_auto_certify(
@@ -403,6 +408,7 @@ class DatabaseRouterService:
         dataset_id: str,
         upload_id: Optional[str],
         target_ref: str,
+        ingestion_job_id: Optional[str] = None,
     ) -> bool:
         """Advance linked upload job through REGISTERED -> INGESTED -> AVAILABLE.
 
@@ -440,7 +446,9 @@ class DatabaseRouterService:
                     target_upload = self._upload_service.get_upload(target_upload.upload_id)
                 if target_upload.status == UploadStatus.REGISTERED:
                     self._upload_service.mark_ingested(target_upload.upload_id, artifact_id=target_ref)
-                    self._upload_service.mark_available(target_upload.upload_id)
+                    target_upload = self._upload_service.mark_available(target_upload.upload_id)
+                if ingestion_job_id:
+                    self._upload_service.link_ingestion_job(target_upload.upload_id, ingestion_job_id)
                 return True
             except Exception as exc:
                 _logger.error(
@@ -464,6 +472,7 @@ class DatabaseRouterService:
         certification_state: Optional[str] = None,
         integrity_score: Optional[float] = None,
         status_override: Optional[IngestionJobStatus] = None,
+        job_id: Optional[str] = None,
     ) -> IngestJob:
         if status_override:
             status = status_override
@@ -471,6 +480,7 @@ class DatabaseRouterService:
             status = IngestionJobStatus.REJECTED if rejection_reason else IngestionJobStatus.PERSISTED
 
         job = IngestJob(
+            job_id=job_id or f"ingest-{uuid.uuid4().hex[:12]}",
             dataset_id=dataset_id,
             target_database=target_database,
             source_format=source_format,

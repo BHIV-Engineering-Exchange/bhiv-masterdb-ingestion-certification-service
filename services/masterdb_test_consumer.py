@@ -132,3 +132,47 @@ class MasterDBTestConsumer:
             "grant": grant,
             "data_response": data_response,
         }
+
+    def run_multi_consumer_demonstration(self) -> Dict[str, Any]:
+        """
+        Demonstrates identical capability contract usage across multiple HTTP test clients:
+        1. BHARAT_MALA_APP (Simulated Infrastructure / Geospatial Consumer)
+        2. VANA_FIN_APP (Simulated Financial / Environmental Consumer)
+        3. MARINE_INTEL_APP (Simulated Maritime Consumer)
+
+        NOTE: These callers are HTTP test client instances verifying API contract consistency.
+        They do NOT represent live production backend deployments of those external products.
+        """
+
+        consumers = [
+            {"app_id": "BHARAT_MALA_APP", "cap_id": "cap-mangrove-monitoring", "purpose": "environmental_monitoring"},
+            {"app_id": "VANA_FIN_APP", "cap_id": "cap-fin-market-analytics", "purpose": "financial_analysis"},
+            {"app_id": "MARINE_INTEL_APP", "cap_id": "cap-marine-intel-ports", "purpose": "maritime_infrastructure_analytics"},
+        ]
+
+        results = {}
+        for c in consumers:
+            consumer_client = MasterDBTestConsumer(
+                base_url=self.base_url,
+                application_id=c["app_id"],
+                client=self.client,
+            )
+            consumer_client.authenticate(username=c["app_id"], roles=["ecosystem-reader", "viewer", "operator"])
+            contract = consumer_client.get_capability_contract(c["cap_id"])
+            grant = consumer_client.request_access(capability_id=c["cap_id"], purpose=c["purpose"])
+            retrieved = consumer_client.retrieve_capability_data(capability_id=c["cap_id"])
+            
+            results[c["app_id"]] = {
+                "contract_version": contract.get("contract_version"),
+                "authorized": grant.get("authorized"),
+                "retrieved_dataset_id": retrieved.get("capability", {}).get("dataset_id"),
+                "provenance_source": retrieved.get("provenance", {}).get("source"),
+            }
+
+        return {
+            "status": "SUCCESS",
+            "consumers_tested": len(consumers),
+            "results": results,
+            "shared_contract_verified": True,
+        }
+

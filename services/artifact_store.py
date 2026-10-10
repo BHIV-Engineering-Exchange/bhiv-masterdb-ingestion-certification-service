@@ -14,6 +14,7 @@ class ArtifactStore:
 
     def save(self, dataset_id: str, report: Dict[str, Any]) -> Dict[str, Any]:
         path = self.report_path(dataset_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", encoding="utf-8") as handle:
             json.dump(report, handle, indent=4)
         return report

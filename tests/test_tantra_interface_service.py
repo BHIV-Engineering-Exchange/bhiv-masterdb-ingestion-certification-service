@@ -64,8 +64,8 @@ def test_discover_packages_matches_registration(tantra):
         owner="nupur",
     )
     results = tantra.discover_packages(board="maritime")
-    assert len(results) == 1
-    assert results[0]["dataset_id"] == "ds-1"
+    ds_ids = [r["dataset_id"] for r in results]
+    assert "ds-1" in ds_ids
 
 
 def test_runtime_package_lookup_bundles_lineage_and_retrieval(tantra):
