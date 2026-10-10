@@ -106,12 +106,16 @@ def _service(tmp_path, *, invalid_schema=False, provenance_mismatch=False, inval
 
 
 def _token(actor, roles):
-    response = client.post("/auth/token", json={"actor": actor, "roles": roles})
+    response = client.post(
+        "/auth/token",
+        json={"actor": actor, "roles": roles, "password": "test-admin-password"},
+    )
     assert response.status_code == 200
     return response.json()["access_token"]
 
 
 def test_valid_export_stages_noncanonical_candidate_and_is_not_discoverable(tmp_path, monkeypatch):
+    monkeypatch.setenv("AUTH_PASSWORD", "test-admin-password")
     service = _service(tmp_path)
     monkeypatch.setattr(main, "gev_geospatial_candidate_service", service)
     headers = {"Authorization": f"Bearer {_token('admin', ['bhiv-admin'])}"}

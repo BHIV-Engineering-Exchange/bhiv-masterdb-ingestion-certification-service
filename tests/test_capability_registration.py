@@ -8,7 +8,10 @@ client = TestClient(app)
 
 
 def _token(actor, roles):
-    response = client.post("/auth/token", json={"actor": actor, "roles": roles})
+    response = client.post(
+        "/auth/token",
+        json={"actor": actor, "roles": roles, "password": "test-admin-password"},
+    )
     assert response.status_code == 200
     return response.json()["access_token"]
 
@@ -34,7 +37,8 @@ def _capability(capability_id, version):
     }
 
 
-def test_capability_registration_search_and_immutable_versions():
+def test_capability_registration_search_and_immutable_versions(monkeypatch):
+    monkeypatch.setenv("AUTH_PASSWORD", "test-admin-password")
     admin_token = _token("admin", ["bhiv-admin"])
     headers = {"Authorization": f"Bearer {admin_token}"}
     capability_id = f"cap-registration-{uuid.uuid4().hex[:10]}"

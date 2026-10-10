@@ -41,6 +41,12 @@ class PackageRegistryService:
         # artifacts.
         self.store = ArtifactStore(reports_dir=store_dir)
 
+    def get_by_dataset_id(self, dataset_id: str) -> KnowledgePackage:
+        for pkg in self.list_all():
+            if pkg.dataset_id.lower() == dataset_id.lower():
+                return pkg
+        raise PackageNotFoundError(f"No package found for dataset_id={dataset_id}")
+
     # -- lifecycle mutation ------------------------------------------------
 
     def register(

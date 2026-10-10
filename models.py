@@ -276,6 +276,55 @@ class ReferenceRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# GEO-QUEST-01 — Source Registry Model
+# ---------------------------------------------------------------------------
+
+
+class SourceStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    PENDING_VALIDATION = "PENDING_VALIDATION"
+    PENDING_AUTHORITY_CONFIRMATION = "PENDING AUTHORITY CONFIRMATION"
+    DEPRECATED = "DEPRECATED"
+    UNKNOWN = "UNKNOWN"
+
+
+class SourceRecord(BaseModel):
+    source_id: str = Field(default_factory=lambda: _new_id("src"))
+    name: str
+    authority: str = "NOT VERIFIED"
+    source_type: str = "GEOSPATIAL_PORTAL"
+    licence: str = "PENDING"
+    access_method: str = "REST_API"
+    geographic_coverage: str = "UNKNOWN"
+    update_characteristics: str = "UNKNOWN"
+    reliability_limitations: str = "UNKNOWN"
+    attribution: str = "NOT VERIFIED"
+    connector: str = "generic_connector"
+    last_validation: str = "NOT VERIFIED"
+    status: SourceStatus = SourceStatus.ACTIVE
+    provenance_reference: Dict[str, Any] = Field(default_factory=dict)
+    write_authority_confirmed: bool = False
+    created_at: str = Field(default_factory=_utcnow)
+    updated_at: str = Field(default_factory=_utcnow)
+
+
+class SourceRegisterRequest(BaseModel):
+    source_id: Optional[str] = None
+    name: str
+    authority: Optional[str] = "NOT VERIFIED"
+    source_type: Optional[str] = "GEOSPATIAL_PORTAL"
+    licence: Optional[str] = "PENDING"
+    access_method: Optional[str] = "REST_API"
+    geographic_coverage: Optional[str] = "UNKNOWN"
+    update_characteristics: Optional[str] = "UNKNOWN"
+    reliability_limitations: Optional[str] = "UNKNOWN"
+    attribution: Optional[str] = "NOT VERIFIED"
+    connector: Optional[str] = "generic_connector"
+    provenance_reference: Dict[str, Any] = Field(default_factory=dict)
+    confirm_write_authority: bool = False
+
+
+# ---------------------------------------------------------------------------
 # MasterDB Ecosystem Convergence — Capability, Access & Contract Models
 # ---------------------------------------------------------------------------
 
@@ -284,6 +333,7 @@ class CapabilityStatus(str, Enum):
     ACTIVE = "ACTIVE"
     EXPERIMENTAL = "EXPERIMENTAL"
     CERTIFIED = "CERTIFIED"
+    PENDING_AUTHORITY_CONFIRMATION = "PENDING AUTHORITY CONFIRMATION"
     DEPRECATED = "DEPRECATED"
     ARCHIVED = "ARCHIVED"
 
@@ -293,11 +343,32 @@ class Capability(BaseModel):
     capability_name: str
     description: str
     dataset_id: str
+    source_id: Optional[str] = "src-unknown"
+    purpose: str = "general_reuse"
     capability_version: str = "1.0.0"
     contract_version: str = "1.0.0"
     domain: str = "general"
     schema_version: str = "v1.0"
     status: CapabilityStatus = CapabilityStatus.ACTIVE
+    inputs: List[Dict[str, Any]] = Field(default_factory=list)
+    outputs: List[Dict[str, Any]] = Field(default_factory=list)
+    dependencies: List[str] = Field(default_factory=list)
+    interface: str = "REST/TANTRA"
+    source_references: List[str] = Field(default_factory=list)
+    dataset_references: List[str] = Field(default_factory=list)
+    validation_status: str = "VALIDATED"
+    known_limitations: List[str] = Field(default_factory=list)
+    potential_consumers: List[str] = Field(
+        default_factory=lambda: ["Bharat Mala (Demo)", "VANA/FIN (Demo)", "Marine Intelligence (Demo)", "TANTRA"]
+    )
+    evidence_references: List[str] = Field(default_factory=list)
+    licensing: Dict[str, str] = Field(
+        default_factory=lambda: {
+            "software_licence": "UNKNOWN",
+            "dataset_licence": "PENDING VERIFICATION",
+            "source_licence": "UNVERIFIED",
+        }
+    )
     supported_access_methods: List[str] = Field(
         default_factory=lambda: ["QUERY", "EXPORT", "STREAM", "REFERENCE", "RETRIEVE"]
     )
@@ -309,20 +380,32 @@ class Capability(BaseModel):
         }
     )
     provenance: Dict[str, Any] = Field(default_factory=dict)
+    registration_authority_confirmed: bool = True
     created_at: str = Field(default_factory=_utcnow)
     updated_at: str = Field(default_factory=_utcnow)
+
 
 
 class CapabilityContract(BaseModel):
     capability_id: str
     capability_name: str
+    purpose: str
     description: str
     dataset_id: str
+    source_id: str
     capability_version: str
     contract_version: str
     domain: str
     schema_version: str
     status: str
+    inputs: List[Dict[str, Any]] = Field(default_factory=list)
+    outputs: List[Dict[str, Any]] = Field(default_factory=list)
+    dependencies: List[str] = Field(default_factory=list)
+    source_references: List[str] = Field(default_factory=list)
+    dataset_references: List[str] = Field(default_factory=list)
+    known_limitations: List[str] = Field(default_factory=list)
+    potential_consumers: List[str] = Field(default_factory=list)
+    licensing_metadata: Dict[str, str] = Field(default_factory=dict)
     required_purpose: str
     supported_access_methods: List[str]
     authorization_requirements: Dict[str, Any]
@@ -368,6 +451,7 @@ class CapabilityRetrieveResponse(BaseModel):
     provenance: Dict[str, Any]
     request_id: str
     access_metadata: Dict[str, Any]
+
 
 
 

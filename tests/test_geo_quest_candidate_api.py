@@ -8,12 +8,16 @@ client = TestClient(app)
 
 
 def _token(actor, roles):
-    response = client.post("/auth/token", json={"actor": actor, "roles": roles})
+    response = client.post(
+        "/auth/token",
+        json={"actor": actor, "roles": roles, "password": "test-admin-password"},
+    )
     assert response.status_code == 200
     return response.json()["access_token"]
 
 
 def test_geo_quest_registration_and_end_to_end_retrieval(tmp_path, monkeypatch):
+    monkeypatch.setenv("AUTH_PASSWORD", "test-admin-password")
     monkeypatch.setattr(
         main,
         "geo_quest_candidate_service",

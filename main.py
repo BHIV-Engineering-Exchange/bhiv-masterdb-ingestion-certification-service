@@ -18,6 +18,7 @@ from models import (
     CapabilityContract,
     CapabilityRetrieveRequest,
     CapabilityRetrieveResponse,
+    CapabilityStatus,
     CertificationRequest,
     ExportRequest,
     KnowledgeObjectRegisterRequest,
@@ -32,12 +33,16 @@ from models import (
     SharedRecordUpdateRequest,
     StreamRequest,
     ValidationRequest,
+    SourceRecord,
+    SourceRegisterRequest,
+    SourceStatus,
 )
 from services.artifact_store import ArtifactStore
 from services.certification_service import CertificationService
 from services.capability_registry_service import (
     CapabilityAccessDeniedError,
     CapabilityNotFoundError,
+    CapabilityAlreadyExistsError,
     CapabilityRegistryService,
     CapabilityVersionConflictError,
 )
@@ -52,6 +57,13 @@ from geo_quest_candidate.masterdb_import import (
     CandidateUseDeniedError,
     GeospatialExportCandidateService,
 )
+from services.source_registry_service import (
+    SourceRegistryService,
+    SourceNotFoundError,
+    SourceAlreadyExistsError,
+)
+from integrations.geospatial_connector import GeospatialConnectorAdapter
+
 from services.knowledge_object_service import (
     KnowledgeObjectService,
     LineageValidationError,
@@ -314,11 +326,20 @@ bucket_client = BucketClient()
 # --- Ecosystem integration surfaces: MDU (Nupur), TANTRA, Runtime Discovery --
 mdu_contract_adapter = MDUContractAdapter()
 runtime_discovery_service = RuntimeDiscoveryService(registry=package_registry_service)
+source_registry_service = SourceRegistryService(
+    audit_emitter=production_audit_emitter,
+)
 capability_registry_service = CapabilityRegistryService(
     package_registry=package_registry_service,
     retrieval_service=dataset_retrieval_service,
     audit_emitter=production_audit_emitter,
 )
+geospatial_connector = GeospatialConnectorAdapter(
+    source_registry=source_registry_service,
+    package_registry=package_registry_service,
+    capability_registry=capability_registry_service,
+)
+
 tantra_interface_service = TantraInterfaceService(
     registry=package_registry_service,
     knowledge_object_service=knowledge_object_service,
@@ -499,6 +520,36 @@ def get_database(database_key: TargetDatabase, identity: AuthIdentity = Depends(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@app.get("/databases/{database_key}/records/{dataset_id}")
+def get_target_database_records(
+    database_key: TargetDatabase,
+    dataset_id: str,
+    limit: int = 100,
+    offset: int = 0,
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    """Retrieve target database records for a dataset (P1 target database HTTP read-back)."""
+    try:
+        database_router_service.get_database(database_key)
+    except UnknownDatabaseError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    records = database_router_service.list_target_records(
+        target_database=database_key,
+        dataset_id=dataset_id,
+        limit=limit,
+        offset=offset,
+    )
+    return {
+        "target_database": database_key.value,
+        "dataset_id": dataset_id,
+        "count": len(records),
+        "limit": limit,
+        "offset": offset,
+        "records": records,
+    }
+
+
 @app.post("/ingest", status_code=201)
 def ingest_dataset(request: IngestRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     job = database_router_service.ingest(
@@ -633,7 +684,8 @@ def get_upload(upload_id: str, identity: AuthIdentity = Depends(get_identity)) -
             "steps": [s.model_dump() for s in job.steps], "rejection_reason": job.rejection_reason,
             "dataset_id": job.dataset_id, "package_id": job.package_id, "ingestion_job_id": job.ingestion_job_id,
             "timestamps": {"uploaded_at": job.uploaded_at, "received_at": job.received_at,
-                "validated_at": job.validated_at, "registered_at": job.registered_at}}
+                "validated_at": job.validated_at, "registered_at": job.registered_at,
+                "ingested_at": job.ingested_at, "available_at": job.available_at}}
     except UploadJobNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -1942,6 +1994,7 @@ def replay_registry_manifest() -> dict:
 
 
 @app.post("/capabilities/register", response_model=Capability, status_code=201)
+@app.post("/capabilities", response_model=Capability, status_code=201)
 def register_capability(
     capability: Capability,
     identity: AuthIdentity = Depends(get_identity),
@@ -1950,7 +2003,11 @@ def register_capability(
     if ADMIN_ROLE not in identity.roles:
         raise HTTPException(status_code=403, detail="Only bhiv-admin may register capabilities.")
     try:
-        return capability_registry_service.register_capability(capability)
+        if not capability.registration_authority_confirmed:
+            capability.status = CapabilityStatus.PENDING_AUTHORITY_CONFIRMATION
+        return capability_registry_service.register_capability(capability, check_duplicate=True)
+    except CapabilityAlreadyExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except CapabilityVersionConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
@@ -2164,3 +2221,66 @@ def retrieve_gev_geospatial_candidate(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except CandidateRegistrationError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# GEO-QUEST-01 — Source Registry & Connector API Surface
+# ---------------------------------------------------------------------------
+
+
+@app.post("/sources/register", response_model=SourceRecord, status_code=201)
+@app.post("/sources", response_model=SourceRecord, status_code=201)
+def register_source(
+    request_data: SourceRegisterRequest,
+    identity: AuthIdentity = Depends(get_identity),
+) -> SourceRecord:
+    """Register a governed ecosystem source with canonical deduplication & authority check."""
+    try:
+        return source_registry_service.register_source(request_data, actor=identity.actor)
+    except SourceAlreadyExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/sources", response_model=List[SourceRecord])
+def list_sources(
+    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    identity: AuthIdentity = Depends(get_identity),
+) -> List[SourceRecord]:
+    """List governed source records in MASTERDB Source Registry."""
+    return source_registry_service.list_sources(search=search, status=status)
+
+
+@app.get("/sources/{source_id}", response_model=SourceRecord)
+def get_source(
+    source_id: str,
+    identity: AuthIdentity = Depends(get_identity),
+) -> SourceRecord:
+    """Retrieve details for a single governed source by source_id."""
+    try:
+        return source_registry_service.get_source(source_id)
+    except SourceNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/connectors/geospatial/ingest", status_code=200)
+def geospatial_connector_ingest(
+    payload: Dict[str, Any],
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """
+    Source-Independent Geospatial Connector Pipeline:
+    External Source -> BHIV Connector -> Validation -> MDU -> Dataset -> Capability
+    """
+    try:
+        return geospatial_connector.ingest_and_register_geospatial_capability(
+            source_payload=payload,
+            actor=identity.actor,
+            confirm_write_authority=payload.get("confirm_write_authority", True),
+        )
+    except SourceAlreadyExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
