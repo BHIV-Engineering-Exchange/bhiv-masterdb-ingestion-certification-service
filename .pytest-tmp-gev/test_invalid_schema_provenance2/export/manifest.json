@@ -1,0 +1,1 @@
+{"packetId": "gev-geospatial-masterdb-intake", "packetVersion": 1, "datasets": [{"datasetId": "forest-data-gap", "registryRecordId": "TBD-MASTERDB-FOREST-DATA-GAP", "file": "data/forest_data_status.json", "format": "JSON availability status (not geospatial features)", "recordCount": 0, "license": "CC BY-NC 4.0"}]}

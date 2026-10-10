@@ -1,0 +1,130 @@
+{
+    "candidate_package_id": "gev-geospatial-masterdb-intake",
+    "packet_version": 1,
+    "registration_status": "PENDING_AUTHORIZATION",
+    "canonical": false,
+    "discoverable": false,
+    "registered_by": "reviewer",
+    "manifest": {
+        "packetId": "gev-geospatial-masterdb-intake",
+        "packetVersion": 1,
+        "datasets": [
+            {
+                "datasetId": "forest-data-gap",
+                "registryRecordId": "TBD-MASTERDB-FOREST-DATA-GAP",
+                "file": "data/forest_data_status.json",
+                "format": "JSON availability status (not geospatial features)",
+                "recordCount": 0,
+                "license": null
+            }
+        ]
+    },
+    "registry_records": [
+        {
+            "capabilityId": "TBD-MASTERDB-FOREST-DATA-GAP",
+            "capabilityName": "Forest data availability status",
+            "classification": {
+                "source": "Not identified"
+            },
+            "purpose": "Record the absence of forest data",
+            "source": "Not identified",
+            "datasets": [
+                {
+                    "file": "data/forest_data_status.json",
+                    "format": "JSON availability status; not a geospatial dataset"
+                }
+            ],
+            "authorityCustodian": "Unknown",
+            "input": [],
+            "output": [],
+            "dependencies": [],
+            "spatialCoverage": "Not available",
+            "temporalCoverage": "Not available",
+            "schema": {
+                "is_dataset": false,
+                "feature_count": 0,
+                "features": []
+            },
+            "apiInterface": {},
+            "license": "Not applicable until source is identified",
+            "attribution": "Not applicable",
+            "provenance": {},
+            "validationStatus": "review required",
+            "qualityStatus": "no data",
+            "knownLimitations": [
+                "No forest/woodland geometry is supplied"
+            ],
+            "potentialConsumers": [],
+            "bharatMalaRelevance": "None without sourced data",
+            "vanaFinRelevance": "Potential future relevance",
+            "masterdbRegistrationStatus": "candidate",
+            "nextRequiredAction": "Identify source and license",
+            "evidenceLocation": "data/forest_data_status.json"
+        }
+    ],
+    "dataset_records_sidecar": [
+        {
+            "capabilityId": "TBD-MASTERDB-FOREST-DATA-GAP",
+            "capabilityName": "Forest data availability status",
+            "classification": {
+                "source": "Not identified"
+            },
+            "purpose": "Record the absence of forest data",
+            "source": "Not identified",
+            "datasets": [
+                {
+                    "file": "data/forest_data_status.json",
+                    "format": "JSON availability status; not a geospatial dataset"
+                }
+            ],
+            "authorityCustodian": "Unknown",
+            "input": [],
+            "output": [],
+            "dependencies": [],
+            "spatialCoverage": "Not available",
+            "temporalCoverage": "Not available",
+            "schema": {
+                "is_dataset": false,
+                "feature_count": 0,
+                "features": []
+            },
+            "apiInterface": {},
+            "license": "Not applicable until source is identified",
+            "attribution": "Not applicable",
+            "provenance": {},
+            "validationStatus": "review required",
+            "qualityStatus": "no data",
+            "knownLimitations": [
+                "No forest/woodland geometry is supplied"
+            ],
+            "potentialConsumers": [],
+            "bharatMalaRelevance": "None without sourced data",
+            "vanaFinRelevance": "Potential future relevance",
+            "masterdbRegistrationStatus": "candidate",
+            "nextRequiredAction": "Identify source and license",
+            "evidenceLocation": "data/forest_data_status.json"
+        }
+    ],
+    "mdu_contract_validation": {
+        "status": "PENDING",
+        "canonical_publication_allowed": false,
+        "results": [
+            {
+                "dataset_id": "forest-data-gap",
+                "status": "PENDING_MDU_MAPPING",
+                "reason": "The export contains no canonical MDU dataset ID; schema compatibility is not asserted."
+            }
+        ]
+    },
+    "artifacts": {
+        "data/forest_data_status.json": {
+            "content": "{\"dataset\": \"forest-data-gap\", \"status\": \"unavailable\", \"feature_count\": 0, \"features\": [], \"is_dataset\": false, \"required_before_submission\": [\"identify an authoritative source\"]}",
+            "sha256": "22f480714af77ca3af3bb6c8278f21f553ad09745ae6dee9d39969a7ecc591df"
+        }
+    },
+    "artifact_sha256": {
+        "data/forest_data_status.json": "22f480714af77ca3af3bb6c8278f21f553ad09745ae6dee9d39969a7ecc591df"
+    },
+    "source_package_sha256": "6772b2af7e3e92c252b642cd9d90754f734b9cb6f5a6d0181d5b314acc853544",
+    "bundle_sha256": "731c623e96d22a0851659bc534ec08b38f1798ca6b43eab07bef3a1d8ebbcbc7"
+}

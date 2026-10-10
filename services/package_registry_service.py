@@ -119,6 +119,12 @@ class PackageRegistryService:
             raise PackageNotFoundError(f"No package found for package_id={package_id}")
         return KnowledgePackage(**raw)
 
+    def get_by_dataset_id(self, dataset_id: str) -> KnowledgePackage:
+        matches = [package for package in self.list_all() if package.dataset_id == dataset_id]
+        if not matches:
+            raise PackageNotFoundError(f"No package found for dataset_id={dataset_id}")
+        return max(matches, key=lambda package: package.created_at)
+
     def list_all(self) -> List[KnowledgePackage]:
         return [KnowledgePackage(**raw) for raw in self.store.list_all()]
 

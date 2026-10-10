@@ -1,0 +1,1357 @@
+{
+    "capability_id": "gev.aircraft_tracking",
+    "dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+    "registration_status": "PENDING_AUTHORIZATION",
+    "canonical": false,
+    "discoverable": false,
+    "registered_by": "candidate-reviewer",
+    "source": {
+        "source_registration_status": "PENDING AUTHORIZATION",
+        "source_name": "adsb.lol",
+        "source_type": "external_geospatial_aircraft_surveillance_feed",
+        "reference_project": "God's Eye View (GEV) Open Surveillance Architecture",
+        "relationship_to_gev": "adsb.lol serves as the primary community ADS-B/Mode-S aggregation backend and open telemetry reference architecture for the God's Eye View project.",
+        "endpoint_used": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+        "base_url": "https://api.adsb.lol/v2",
+        "geographic_coverage_query": {
+            "center_latitude": 19.076,
+            "center_longitude": 72.8777,
+            "radius_nautical_miles": 100,
+            "target_airspace": "Mumbai FIR (VABB / BOM) and coastal airspace"
+        },
+        "acquisition_method": "Automated HTTP GET request to REST v2 geographic bounding circle endpoint with 25s timeout",
+        "exact_acquisition_timestamp_utc": "2026-10-03T08:26:35.695048+00:00",
+        "http_status_received": 200,
+        "response_latency_seconds": 0.698772,
+        "verified_licence": {
+            "data_licence": "Open Data Commons Open Database License (ODbL) v1.0",
+            "data_licence_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+            "api_software_licence": "BSD 3-Clause 'New' or 'Revised' License",
+            "contributor_terms": "Creative Commons Zero 1.0 Universal (CC0 1.0)",
+            "official_sources": [
+                "https://adsb.lol/",
+                "https://adsb.lol/docs/",
+                "https://github.com/adsblol/api",
+                "https://github.com/adsblol/globe_history"
+            ]
+        },
+        "attribution_requirements": {
+            "statutory_reference": "ODbL v1.0 Section 4.3",
+            "required_credit": "Must attribute source as 'adsb.lol and its contributors' and include notice of the ODbL license in any public distribution or Produced Work",
+            "share_alike_clause": "ODbL v1.0 Section 4.4 requires public derivative databases to be distributed under ODbL v1.0",
+            "open_access_clause": "ODbL v1.0 Section 4.6 prohibits DRM or technical measures that restrict access"
+        },
+        "provenance": {
+            "origin": "Airborne aircraft transponders (1090 MHz Mode-S / ADS-B Extended Squitter)",
+            "ingestion_layer": "Volunteer SDR ground station receivers uploading via dump1090/readsb feeds",
+            "aggregation_layer": "adsb.lol globally distributed ingestion and deduplication servers",
+            "local_pipeline_collector": "scripts/collect_aircraft.py",
+            "local_raw_artifact": "raw/aircraft_raw.json",
+            "acquisition_meta_artifact": "raw/acquisition_metadata.json"
+        },
+        "source_limitations": [
+            "Feeder Density Variation: Coverage is proportional to volunteer SDR receiver density; reduced fidelity over open ocean and unpopulated landmasses.",
+            "Temporal Snapshot: Per-request snapshot; requires continuous scheduled polling or WebSocket streaming for uninterrupted tracking.",
+            "MLAT Dilution of Precision: Multilaterated targets exhibit higher horizontal variance compared to GNSS-backed ADS-B.",
+            "Barometric Datum: Uncorrected pressure altitudes assume standard atmosphere (1013.25 hPa) rather than local QNH.",
+            "Uncooperative Targets: Aircraft with disabled or non-functioning transponders cannot be tracked."
+        ],
+        "governance_notice": {
+            "masterdb_registration_id": "PENDING / NOT PERFORMED",
+            "masterdb_authority_claimed": false,
+            "canonical_status": "PROPOSED CANDIDATE SOURCE ONLY",
+            "notes": "Source metadata prepared for formal BHIV MasterDB evaluation. No write or registration has been executed."
+        }
+    },
+    "dataset": {
+        "registration_status": "PENDING",
+        "dataset_name": "BHIV vNEXT Normalized Aircraft Observation Dataset",
+        "proposed_dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+        "dataset_classification": "Candidate Governed Spatial Asset",
+        "canonical_status": "NOT CANONICAL (CANDIDATE ONLY)",
+        "version": "1.0.0-candidate",
+        "description": "Standardized, schema-conformant, quality-validated snapshot of real-time ADS-B aircraft observations in the Mumbai Flight Information Region (FIR), collected from adsb.lol under ODbL v1.0 licensing.",
+        "source_reference": {
+            "source_name": "adsb.lol",
+            "endpoint": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+            "source_record_reference": "registration/source_record.json"
+        },
+        "record_counts": {
+            "raw_record_count": 19,
+            "cleaned_record_count": 19,
+            "quarantined_record_count": 0,
+            "total_governed_records": 19,
+            "duplicate_hex_identifiers": 0,
+            "conservation_verified": true
+        },
+        "geographic_coverage": {
+            "center_latitude": 19.076,
+            "center_longitude": 72.8777,
+            "radius_nautical_miles": 100,
+            "airspace_name": "Mumbai FIR (VABB / BOM)",
+            "bounding_envelope_actual": {
+                "min_latitude": 17.525521,
+                "max_latitude": 19.832883,
+                "min_longitude": 71.867365,
+                "max_longitude": 74.218489
+            },
+            "coordinate_reference_system": "EPSG:4326 (WGS84)"
+        },
+        "acquisition_timestamp_utc": "2026-10-03T08:26:35.695048+00:00",
+        "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+        "licence": {
+            "licence_name": "Open Data Commons Open Database License (ODbL) v1.0",
+            "licence_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+            "attribution_requirement": "Attribute to 'adsb.lol and its contributors' and include ODbL notice",
+            "share_alike_requirement": "Any publicly distributed adapted database must be under ODbL v1.0"
+        },
+        "schema": {
+            "format": "JSON Tabular (Array of Normalized Aircraft Objects)",
+            "field_count": 20,
+            "fields": [
+                {
+                    "name": "aircraft_hex_id",
+                    "type": "string",
+                    "description": "24-bit ICAO aircraft hex transponder address (uppercase)",
+                    "nullable": false
+                },
+                {
+                    "name": "callsign",
+                    "type": "string",
+                    "description": "Flight callsign (whitespace stripped, uppercase)",
+                    "nullable": true
+                },
+                {
+                    "name": "registration",
+                    "type": "string",
+                    "description": "Aircraft civil/military tail registration number",
+                    "nullable": true
+                },
+                {
+                    "name": "aircraft_type_icao",
+                    "type": "string",
+                    "description": "ICAO aircraft model designator (e.g. B77L, A20N)",
+                    "nullable": true
+                },
+                {
+                    "name": "squawk_code",
+                    "type": "string",
+                    "description": "4-digit octal secondary surveillance transponder code",
+                    "nullable": true
+                },
+                {
+                    "name": "emitter_category",
+                    "type": "string",
+                    "description": "ADS-B emitter category code (e.g. A3, A5)",
+                    "nullable": true
+                },
+                {
+                    "name": "latitude",
+                    "type": "float",
+                    "description": "WGS84 latitude coordinate rounded to 6 decimal places",
+                    "nullable": false
+                },
+                {
+                    "name": "longitude",
+                    "type": "float",
+                    "description": "WGS84 longitude coordinate rounded to 6 decimal places",
+                    "nullable": false
+                },
+                {
+                    "name": "altitude_baro_ft",
+                    "type": "integer",
+                    "description": "Barometric pressure altitude in feet (0 if on ground)",
+                    "nullable": true
+                },
+                {
+                    "name": "altitude_geom_ft",
+                    "type": "integer",
+                    "description": "Geometric altitude in feet above WGS84 ellipsoid",
+                    "nullable": true
+                },
+                {
+                    "name": "is_on_ground",
+                    "type": "boolean",
+                    "description": "True if aircraft is on ground surface, False if airborne",
+                    "nullable": false
+                },
+                {
+                    "name": "ground_speed_kts",
+                    "type": "float",
+                    "description": "Speed over ground in knots (>= 0)",
+                    "nullable": true
+                },
+                {
+                    "name": "true_track_deg",
+                    "type": "float",
+                    "description": "Course over ground in degrees clockwise from true north [0.0, 360.0]",
+                    "nullable": true
+                },
+                {
+                    "name": "vertical_rate_fpm",
+                    "type": "integer",
+                    "description": "Rate of climb or descent in feet per minute",
+                    "nullable": true
+                },
+                {
+                    "name": "position_age_seconds",
+                    "type": "float",
+                    "description": "Latency in seconds since last geographic position report",
+                    "nullable": true
+                },
+                {
+                    "name": "last_seen_seconds",
+                    "type": "float",
+                    "description": "Latency in seconds since last transmission message received",
+                    "nullable": true
+                },
+                {
+                    "name": "distance_from_center_nm",
+                    "type": "float",
+                    "description": "Distance from query reference point in nautical miles",
+                    "nullable": true
+                },
+                {
+                    "name": "bearing_from_center_deg",
+                    "type": "float",
+                    "description": "Bearing angle from query reference point in degrees",
+                    "nullable": true
+                },
+                {
+                    "name": "signal_rssi_db",
+                    "type": "float",
+                    "description": "Received signal strength indicator in dBFS",
+                    "nullable": true
+                },
+                {
+                    "name": "provenance",
+                    "type": "object",
+                    "description": "Complete lineage block containing source endpoint, query center, and timestamps",
+                    "nullable": false
+                }
+            ]
+        },
+        "transformations_applied": [
+            "Unpacked aircraft records from raw API 'ac' collection container.",
+            "Mapped raw field keys to standardized domain attributes (hex, flight, r, t, alt_baro, gs, track).",
+            "Stripped trailing and leading whitespace on callsigns, registrations, and aircraft types.",
+            "Enforced uppercase formatting on all alphanumeric identifiers.",
+            "Validated WGS84 coordinate boundary constraints (latitude in [-90, +90], longitude in [-180, +180]).",
+            "Decoupled surface state: 'alt_baro: ground' mapped to is_on_ground=True and altitude_baro_ft=0.",
+            "Attached immutable audit provenance to each record."
+        ],
+        "quality_checks_summary": {
+            "quality_report_reference": "validation/aircraft_quality_report.json",
+            "overall_status": "PASS",
+            "checks_executed": [
+                {
+                    "check_id": "CHK_01_RECORD_CONSERVATION",
+                    "result": "PASS",
+                    "description": "19 raw == 19 cleaned + 0 quarantined"
+                },
+                {
+                    "check_id": "CHK_02_IDENTIFIER_UNIQUENESS",
+                    "result": "PASS",
+                    "description": "0 duplicate aircraft hex addresses"
+                },
+                {
+                    "check_id": "CHK_03_COORDINATE_VALIDITY",
+                    "result": "PASS",
+                    "description": "100% of cleaned coordinates within WGS84 bounds"
+                },
+                {
+                    "check_id": "CHK_04_NUMERIC_RANGE_VALIDITY",
+                    "result": "PASS",
+                    "description": "Speeds, tracks, and altitudes within valid aviation envelopes"
+                },
+                {
+                    "check_id": "CHK_05_TIMESTAMP_AGE_INTEGRITY",
+                    "result": "PASS",
+                    "description": "Sensor latencies non-negative"
+                },
+                {
+                    "check_id": "CHK_06_PROVENANCE_COMPLETENESS",
+                    "result": "PASS",
+                    "description": "100% of records embed complete provenance"
+                }
+            ]
+        },
+        "provenance": {
+            "raw_input_path": "raw/aircraft_raw.json",
+            "cleaned_output_path": "cleaned/aircraft_cleaned.json",
+            "quarantine_output_path": "cleaned/aircraft_quarantine.json",
+            "profiling_report_path": "validation/profiling_report.json",
+            "quality_report_path": "validation/aircraft_quality_report.json"
+        },
+        "limitations": [
+            "Temporal Snapshot: Dataset represents a discrete temporal query at 2026-10-03T08:26:35Z.",
+            "Regional Feeder Coverage: Ground receiver density determines boundary detection fidelity.",
+            "Line-of-Sight Decay: Radio horizon over open water reduces low-altitude oceanic coverage."
+        ],
+        "intended_consumers": [
+            "BHIV Geospatial MasterDB Query Engine",
+            "Airspace Situational Awareness Service",
+            "Spatial Anomaly Detection Pipeline",
+            "Trajectory Prediction and Conflict Detection Agents"
+        ],
+        "governance_notice": {
+            "masterdb_registration_id": "PENDING / NOT PERFORMED",
+            "canonical_registration_claimed": false,
+            "runtime_integration_status": "PENDING",
+            "production_deployment_status": "NOT PERFORMED"
+        }
+    },
+    "capability": {
+        "capability_registration": "PENDING",
+        "capability_id": "gev.aircraft_tracking",
+        "capability_name": "God's Eye View Airspace Aircraft Tracking Capability",
+        "capability_status": "PROPOSED (PENDING MASTERDB AUTHORIZATION)",
+        "discoverable": false,
+        "registered_in_masterdb": false,
+        "purpose": "Provide near real-time spatial positioning, kinematic monitoring, and situational awareness for commercial and general aviation aircraft within monitored airspace sectors.",
+        "source_dataset_reference": {
+            "proposed_dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+            "dataset_record_file": "registration/dataset_record.json",
+            "data_licence": "Open Data Commons Open Database License (ODbL) v1.0"
+        },
+        "inputs": [
+            {
+                "name": "center_latitude",
+                "type": "float",
+                "description": "Geographic center point latitude in decimal degrees [-90.0, 90.0]",
+                "required": true,
+                "reference_value": 19.076
+            },
+            {
+                "name": "center_longitude",
+                "type": "float",
+                "description": "Geographic center point longitude in decimal degrees [-180.0, 180.0]",
+                "required": true,
+                "reference_value": 72.8777
+            },
+            {
+                "name": "search_radius_nm",
+                "type": "float",
+                "description": "Observation radius around center in nautical miles [1, 250]",
+                "required": true,
+                "reference_value": 100
+            },
+            {
+                "name": "filter_hex_id",
+                "type": "string",
+                "description": "Optional filter for specific 24-bit ICAO aircraft hex identifier",
+                "required": false
+            },
+            {
+                "name": "filter_callsign",
+                "type": "string",
+                "description": "Optional filter for specific commercial flight callsign prefix",
+                "required": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "aircraft_state_vectors",
+                "type": "array[object]",
+                "description": "Array of normalized aircraft observations matching schema defined in dataset_record.json",
+                "elements": {
+                    "aircraft_hex_id": "string (uppercase ICAO address)",
+                    "callsign": "string (trimmed uppercase callsign)",
+                    "registration": "string (tail registration)",
+                    "aircraft_type_icao": "string (model designator)",
+                    "latitude": "float (WGS84 decimal degrees)",
+                    "longitude": "float (WGS84 decimal degrees)",
+                    "altitude_baro_ft": "integer (feet)",
+                    "ground_speed_kts": "float (knots)",
+                    "true_track_deg": "float (degrees clockwise from north)",
+                    "is_on_ground": "boolean (surface status)",
+                    "provenance": "object (audit lineage)"
+                }
+            },
+            {
+                "name": "query_metadata",
+                "type": "object",
+                "description": "Execution timestamp, observation count, and query bounding parameters"
+            }
+        ],
+        "geographic_scope": {
+            "primary_sector": "Mumbai FIR (VABB / BOM)",
+            "initial_operational_radius_nm": 100,
+            "extensible": true,
+            "coordinate_reference_system": "EPSG:4326 (WGS84)"
+        },
+        "freshness_characteristics": {
+            "cadence_type": "Polling snapshot / Scheduled recurring ingestion",
+            "typical_latency_seconds": "< 1.5s from radio broadcast reception to normalized record output",
+            "observation_age_metrics": "Monitored via 'seen' and 'seen_pos' sensor age attributes"
+        },
+        "provenance_requirements": {
+            "mandatory_audit_trace": true,
+            "required_attributes": [
+                "source_system",
+                "source_url",
+                "query_center_lat",
+                "query_center_lon",
+                "query_radius_nm",
+                "raw_acquisition_utc",
+                "cleaning_pipeline_utc"
+            ]
+        },
+        "limitations": [
+            "VHF Radio Line-of-Sight: Target aircraft below radar/SDR horizon or masked by terrain cannot report positions.",
+            "Feeder Infrastructure Availability: Relies on community SDR ground receiver uptime.",
+            "Transponder Dependency: Excludes military stealth or unequipped general aviation aircraft lacking Mode-S/ADS-B transponders."
+        ],
+        "possible_bhiv_consumers": [
+            "BHIV MasterDB Geospatial Truth Engine",
+            "Airspace Density & Flow Management Analytics",
+            "Flight Route Deviation & Anomaly Detection Agent",
+            "Urban Air Mobility (UAM) Corridor Monitoring Agent"
+        ],
+        "dependencies": [
+            "adsb.lol REST API v2 network connectivity",
+            "Python 3.9+ runtime environment",
+            "WGS84 spatial coordinate validation module",
+            "BHIV MasterDB authorization and service bus routing (PENDING)"
+        ],
+        "governance_notice": {
+            "registration_authority": "BHIV Architecture & MasterDB Governance Council",
+            "current_status": "PROPOSED CANDIDATE ONLY",
+            "authorized_for_production": false
+        }
+    },
+    "schema": {
+        "format": "JSON Tabular (Array of Normalized Aircraft Objects)",
+        "field_count": 20,
+        "fields": [
+            {
+                "name": "aircraft_hex_id",
+                "type": "string",
+                "description": "24-bit ICAO aircraft hex transponder address (uppercase)",
+                "nullable": false
+            },
+            {
+                "name": "callsign",
+                "type": "string",
+                "description": "Flight callsign (whitespace stripped, uppercase)",
+                "nullable": true
+            },
+            {
+                "name": "registration",
+                "type": "string",
+                "description": "Aircraft civil/military tail registration number",
+                "nullable": true
+            },
+            {
+                "name": "aircraft_type_icao",
+                "type": "string",
+                "description": "ICAO aircraft model designator (e.g. B77L, A20N)",
+                "nullable": true
+            },
+            {
+                "name": "squawk_code",
+                "type": "string",
+                "description": "4-digit octal secondary surveillance transponder code",
+                "nullable": true
+            },
+            {
+                "name": "emitter_category",
+                "type": "string",
+                "description": "ADS-B emitter category code (e.g. A3, A5)",
+                "nullable": true
+            },
+            {
+                "name": "latitude",
+                "type": "float",
+                "description": "WGS84 latitude coordinate rounded to 6 decimal places",
+                "nullable": false
+            },
+            {
+                "name": "longitude",
+                "type": "float",
+                "description": "WGS84 longitude coordinate rounded to 6 decimal places",
+                "nullable": false
+            },
+            {
+                "name": "altitude_baro_ft",
+                "type": "integer",
+                "description": "Barometric pressure altitude in feet (0 if on ground)",
+                "nullable": true
+            },
+            {
+                "name": "altitude_geom_ft",
+                "type": "integer",
+                "description": "Geometric altitude in feet above WGS84 ellipsoid",
+                "nullable": true
+            },
+            {
+                "name": "is_on_ground",
+                "type": "boolean",
+                "description": "True if aircraft is on ground surface, False if airborne",
+                "nullable": false
+            },
+            {
+                "name": "ground_speed_kts",
+                "type": "float",
+                "description": "Speed over ground in knots (>= 0)",
+                "nullable": true
+            },
+            {
+                "name": "true_track_deg",
+                "type": "float",
+                "description": "Course over ground in degrees clockwise from true north [0.0, 360.0]",
+                "nullable": true
+            },
+            {
+                "name": "vertical_rate_fpm",
+                "type": "integer",
+                "description": "Rate of climb or descent in feet per minute",
+                "nullable": true
+            },
+            {
+                "name": "position_age_seconds",
+                "type": "float",
+                "description": "Latency in seconds since last geographic position report",
+                "nullable": true
+            },
+            {
+                "name": "last_seen_seconds",
+                "type": "float",
+                "description": "Latency in seconds since last transmission message received",
+                "nullable": true
+            },
+            {
+                "name": "distance_from_center_nm",
+                "type": "float",
+                "description": "Distance from query reference point in nautical miles",
+                "nullable": true
+            },
+            {
+                "name": "bearing_from_center_deg",
+                "type": "float",
+                "description": "Bearing angle from query reference point in degrees",
+                "nullable": true
+            },
+            {
+                "name": "signal_rssi_db",
+                "type": "float",
+                "description": "Received signal strength indicator in dBFS",
+                "nullable": true
+            },
+            {
+                "name": "provenance",
+                "type": "object",
+                "description": "Complete lineage block containing source endpoint, query center, and timestamps",
+                "nullable": false
+            }
+        ]
+    },
+    "quality_report": {
+        "execution_utc": "2026-10-03T08:27:40.563194+00:00",
+        "script_version": "1.0.0",
+        "live_data_validation": "EXECUTED_ON_LIVE_DATA",
+        "overall_status": "PASS",
+        "record_counts": {
+            "raw_record_count": 19,
+            "cleaned_record_count": 19,
+            "quarantined_record_count": 0,
+            "duplicate_count": 0
+        },
+        "coordinate_validation": {
+            "status": "PASS",
+            "lat_bounds": [
+                -90.0,
+                90.0
+            ],
+            "lon_bounds": [
+                -180.0,
+                180.0
+            ],
+            "records_evaluated": 19,
+            "missing_coordinates": 0
+        },
+        "numeric_validation": {
+            "status": "PASS",
+            "invalid_speed_count": 0,
+            "invalid_track_count": 0,
+            "invalid_altitude_count": 0
+        },
+        "timestamp_validation": {
+            "status": "PASS",
+            "invalid_age_count": 0
+        },
+        "missing_value_statistics": {
+            "aircraft_hex_id": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "callsign": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "registration": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "aircraft_type_icao": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "squawk_code": {
+                "present_count": 18,
+                "missing_count": 1,
+                "missing_percentage": 5.26
+            },
+            "emitter_category": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "latitude": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "longitude": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "altitude_baro_ft": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "altitude_geom_ft": {
+                "present_count": 18,
+                "missing_count": 1,
+                "missing_percentage": 5.26
+            },
+            "is_on_ground": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "ground_speed_kts": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "true_track_deg": {
+                "present_count": 18,
+                "missing_count": 1,
+                "missing_percentage": 5.26
+            },
+            "vertical_rate_fpm": {
+                "present_count": 18,
+                "missing_count": 1,
+                "missing_percentage": 5.26
+            },
+            "position_age_seconds": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "last_seen_seconds": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "distance_from_center_nm": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "bearing_from_center_deg": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "signal_rssi_db": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            },
+            "provenance": {
+                "present_count": 19,
+                "missing_count": 0,
+                "missing_percentage": 0.0
+            }
+        },
+        "executed_checks": [
+            {
+                "check_id": "CHK_01_RECORD_CONSERVATION",
+                "name": "Raw record count equals cleaned plus quarantined count",
+                "status": "PASS",
+                "details": {
+                    "raw_count": 19,
+                    "cleaned_count": 19,
+                    "quarantined_count": 0,
+                    "sum_cleaned_quarantine": 19
+                }
+            },
+            {
+                "check_id": "CHK_02_IDENTIFIER_UNIQUENESS",
+                "name": "Zero duplicate aircraft hex identifiers in cleaned set",
+                "status": "PASS",
+                "details": {
+                    "total_cleaned_identifiers": 19,
+                    "unique_identifiers": 19,
+                    "duplicate_count": 0
+                }
+            },
+            {
+                "check_id": "CHK_03_COORDINATE_VALIDITY",
+                "name": "All cleaned records possess valid WGS84 latitude and longitude coordinates",
+                "status": "PASS",
+                "details": {
+                    "records_evaluated": 19,
+                    "missing_coordinates": 0,
+                    "invalid_latitudes": 0,
+                    "invalid_longitudes": 0
+                }
+            },
+            {
+                "check_id": "CHK_04_NUMERIC_RANGE_VALIDITY",
+                "name": "Ground speeds, tracks, and altitudes within physically realistic aviation envelopes",
+                "status": "PASS",
+                "details": {
+                    "invalid_speed_count": 0,
+                    "invalid_track_count": 0,
+                    "invalid_altitude_count": 0
+                }
+            },
+            {
+                "check_id": "CHK_05_TIMESTAMP_AGE_INTEGRITY",
+                "name": "Observation age and sensor latency values are non-negative",
+                "status": "PASS",
+                "details": {
+                    "invalid_sensor_age_count": 0
+                }
+            },
+            {
+                "check_id": "CHK_06_PROVENANCE_COMPLETENESS",
+                "name": "Every cleaned record maintains complete source lineage and audit provenance",
+                "status": "PASS",
+                "details": {
+                    "missing_provenance_count": 0
+                }
+            }
+        ]
+    },
+    "records": [
+        {
+            "aircraft_hex_id": "ABE5A2",
+            "callsign": "FDX8",
+            "registration": "N866FD",
+            "aircraft_type_icao": "B77L",
+            "squawk_code": "6202",
+            "emitter_category": "A5",
+            "latitude": 18.567127,
+            "longitude": 71.867365,
+            "altitude_baro_ft": 18500,
+            "altitude_geom_ft": 19500,
+            "is_on_ground": false,
+            "ground_speed_kts": 417.9,
+            "true_track_deg": 86.16,
+            "vertical_rate_fpm": -768,
+            "position_age_seconds": 0.72,
+            "last_seen_seconds": 0.7,
+            "distance_from_center_nm": 64.94,
+            "bearing_from_center_deg": 242.1,
+            "signal_rssi_db": -11.1,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "80163F",
+            "callsign": "AIC6PQ",
+            "registration": "VT-TCV",
+            "aircraft_type_icao": "A20N",
+            "squawk_code": "0620",
+            "emitter_category": "A3",
+            "latitude": 17.525521,
+            "longitude": 72.359047,
+            "altitude_baro_ft": 30825,
+            "altitude_geom_ft": 32750,
+            "is_on_ground": false,
+            "ground_speed_kts": 437.7,
+            "true_track_deg": 314.54,
+            "vertical_rate_fpm": -3264,
+            "position_age_seconds": 35.64,
+            "last_seen_seconds": 33.6,
+            "distance_from_center_nm": 97.75,
+            "bearing_from_center_deg": 197.7,
+            "signal_rssi_db": -28.7,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "801811",
+            "callsign": "AKJ1141",
+            "registration": "VT-YBJ",
+            "aircraft_type_icao": "B38M",
+            "squawk_code": "0360",
+            "emitter_category": "A3",
+            "latitude": 19.041641,
+            "longitude": 72.75328,
+            "altitude_baro_ft": 2925,
+            "altitude_geom_ft": 2900,
+            "is_on_ground": false,
+            "ground_speed_kts": 279.9,
+            "true_track_deg": 210.96,
+            "vertical_rate_fpm": 2432,
+            "position_age_seconds": 13.18,
+            "last_seen_seconds": 0.2,
+            "distance_from_center_nm": 7.34,
+            "bearing_from_center_deg": 253.7,
+            "signal_rssi_db": -14.3,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "896181",
+            "callsign": "UAE398",
+            "registration": "A6-EEB",
+            "aircraft_type_icao": "A388",
+            "squawk_code": "6225",
+            "emitter_category": "A5",
+            "latitude": 17.939138,
+            "longitude": 72.772064,
+            "altitude_baro_ft": 35000,
+            "altitude_geom_ft": 37100,
+            "is_on_ground": false,
+            "ground_speed_kts": 489.7,
+            "true_track_deg": 116.83,
+            "vertical_rate_fpm": 0,
+            "position_age_seconds": 0.74,
+            "last_seen_seconds": 0.1,
+            "distance_from_center_nm": 68.6,
+            "bearing_from_center_deg": 185.1,
+            "signal_rssi_db": -25.8,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "8016B8",
+            "callsign": "IGO950H",
+            "registration": "VT-ICV",
+            "aircraft_type_icao": "A21N",
+            "squawk_code": "2757",
+            "emitter_category": "A3",
+            "latitude": 19.092705,
+            "longitude": 72.865914,
+            "altitude_baro_ft": 0,
+            "altitude_geom_ft": null,
+            "is_on_ground": true,
+            "ground_speed_kts": 11.8,
+            "true_track_deg": null,
+            "vertical_rate_fpm": null,
+            "position_age_seconds": 21.67,
+            "last_seen_seconds": 21.7,
+            "distance_from_center_nm": 1.21,
+            "bearing_from_center_deg": 326.3,
+            "signal_rssi_db": -15.8,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "80182A",
+            "callsign": "IGO625",
+            "registration": "VT-IKU",
+            "aircraft_type_icao": "A21N",
+            "squawk_code": "0325",
+            "emitter_category": "A3",
+            "latitude": 18.627645,
+            "longitude": 72.867221,
+            "altitude_baro_ft": 14575,
+            "altitude_geom_ft": 15275,
+            "is_on_ground": false,
+            "ground_speed_kts": 389.9,
+            "true_track_deg": 168.46,
+            "vertical_rate_fpm": 1216,
+            "position_age_seconds": 0.72,
+            "last_seen_seconds": 0.7,
+            "distance_from_center_nm": 26.96,
+            "bearing_from_center_deg": 181.3,
+            "signal_rssi_db": -15.9,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "800C4A",
+            "callsign": "AIC3PK",
+            "registration": "VT-CIH",
+            "aircraft_type_icao": "A20N",
+            "squawk_code": null,
+            "emitter_category": "A3",
+            "latitude": 19.374203,
+            "longitude": 72.880654,
+            "altitude_baro_ft": 10925,
+            "altitude_geom_ft": 11375,
+            "is_on_ground": false,
+            "ground_speed_kts": 274.0,
+            "true_track_deg": 123.69,
+            "vertical_rate_fpm": -768,
+            "position_age_seconds": 10.45,
+            "last_seen_seconds": 6.7,
+            "distance_from_center_nm": 17.93,
+            "bearing_from_center_deg": 0.5,
+            "signal_rssi_db": -14.9,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "8017E4",
+            "callsign": "IGO6676",
+            "registration": "VT-NCN",
+            "aircraft_type_icao": "A21N",
+            "squawk_code": "0523",
+            "emitter_category": "A3",
+            "latitude": 19.089615,
+            "longitude": 72.930925,
+            "altitude_baro_ft": 1025,
+            "altitude_geom_ft": 875,
+            "is_on_ground": false,
+            "ground_speed_kts": 145.0,
+            "true_track_deg": 269.21,
+            "vertical_rate_fpm": -576,
+            "position_age_seconds": 1.27,
+            "last_seen_seconds": 0.7,
+            "distance_from_center_nm": 3.12,
+            "bearing_from_center_deg": 74.8,
+            "signal_rssi_db": -10.0,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "8015CE",
+            "callsign": "IGO5275",
+            "registration": "VT-IPW",
+            "aircraft_type_icao": "A20N",
+            "squawk_code": "2601",
+            "emitter_category": "A3",
+            "latitude": 19.091445,
+            "longitude": 73.069269,
+            "altitude_baro_ft": 3125,
+            "altitude_geom_ft": 3125,
+            "is_on_ground": false,
+            "ground_speed_kts": 179.0,
+            "true_track_deg": 269.04,
+            "vertical_rate_fpm": -896,
+            "position_age_seconds": 17.0,
+            "last_seen_seconds": 2.9,
+            "distance_from_center_nm": 10.88,
+            "bearing_from_center_deg": 85.1,
+            "signal_rssi_db": -15.3,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "801830",
+            "callsign": "AKJ1105",
+            "registration": "VT-YBM",
+            "aircraft_type_icao": "B38M",
+            "squawk_code": "0302",
+            "emitter_category": "A3",
+            "latitude": 17.554871,
+            "longitude": 73.082356,
+            "altitude_baro_ft": 27000,
+            "altitude_geom_ft": 28625,
+            "is_on_ground": false,
+            "ground_speed_kts": 415.5,
+            "true_track_deg": 153.25,
+            "vertical_rate_fpm": 0,
+            "position_age_seconds": 2.29,
+            "last_seen_seconds": 0.7,
+            "distance_from_center_nm": 92.17,
+            "bearing_from_center_deg": 172.7,
+            "signal_rssi_db": -26.5,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "801434",
+            "callsign": "IGO346Y",
+            "registration": "VT-ISU",
+            "aircraft_type_icao": "A20N",
+            "squawk_code": "0321",
+            "emitter_category": "A3",
+            "latitude": 17.909088,
+            "longitude": 73.085584,
+            "altitude_baro_ft": 28500,
+            "altitude_geom_ft": 30250,
+            "is_on_ground": false,
+            "ground_speed_kts": 430.4,
+            "true_track_deg": 155.28,
+            "vertical_rate_fpm": 1088,
+            "position_age_seconds": 0.74,
+            "last_seen_seconds": 0.1,
+            "distance_from_center_nm": 71.13,
+            "bearing_from_center_deg": 170.4,
+            "signal_rssi_db": -21.9,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "8015C9",
+            "callsign": "IGO465",
+            "registration": "VT-IBU",
+            "aircraft_type_icao": "A21N",
+            "squawk_code": "2713",
+            "emitter_category": "A3",
+            "latitude": 18.793045,
+            "longitude": 73.18093,
+            "altitude_baro_ft": 32725,
+            "altitude_geom_ft": 34925,
+            "is_on_ground": false,
+            "ground_speed_kts": 491.4,
+            "true_track_deg": 315.25,
+            "vertical_rate_fpm": -704,
+            "position_age_seconds": 0.11,
+            "last_seen_seconds": 0.1,
+            "distance_from_center_nm": 24.18,
+            "bearing_from_center_deg": 134.6,
+            "signal_rssi_db": -16.1,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "8018B9",
+            "callsign": "IGO416P",
+            "registration": "VT-NOA",
+            "aircraft_type_icao": "A21N",
+            "squawk_code": "2717",
+            "emitter_category": "A3",
+            "latitude": 19.351501,
+            "longitude": 73.201708,
+            "altitude_baro_ft": 9825,
+            "altitude_geom_ft": 10200,
+            "is_on_ground": false,
+            "ground_speed_kts": 248.4,
+            "true_track_deg": 193.98,
+            "vertical_rate_fpm": -832,
+            "position_age_seconds": 57.08,
+            "last_seen_seconds": 26.0,
+            "distance_from_center_nm": 24.7,
+            "bearing_from_center_deg": 47.9,
+            "signal_rssi_db": -28.7,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "8018CA",
+            "callsign": "IGO766H",
+            "registration": "VT-NOB",
+            "aircraft_type_icao": "A21N",
+            "squawk_code": "0221",
+            "emitter_category": "A3",
+            "latitude": 18.393627,
+            "longitude": 73.328896,
+            "altitude_baro_ft": 15550,
+            "altitude_geom_ft": 16300,
+            "is_on_ground": false,
+            "ground_speed_kts": 274.0,
+            "true_track_deg": 317.81,
+            "vertical_rate_fpm": -768,
+            "position_age_seconds": 0.11,
+            "last_seen_seconds": 0.1,
+            "distance_from_center_nm": 48.35,
+            "bearing_from_center_deg": 147.9,
+            "signal_rssi_db": -15.3,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "800B12",
+            "callsign": "IGO637N",
+            "registration": "VT-IAQ",
+            "aircraft_type_icao": "A320",
+            "squawk_code": "2710",
+            "emitter_category": "A3",
+            "latitude": 18.758131,
+            "longitude": 73.37429,
+            "altitude_baro_ft": 11000,
+            "altitude_geom_ft": 11475,
+            "is_on_ground": false,
+            "ground_speed_kts": 254.1,
+            "true_track_deg": 1.8,
+            "vertical_rate_fpm": -192,
+            "position_age_seconds": 0.11,
+            "last_seen_seconds": 0.0,
+            "distance_from_center_nm": 34.02,
+            "bearing_from_center_deg": 124.0,
+            "signal_rssi_db": -14.2,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "8016D4",
+            "callsign": "IGO297E",
+            "registration": "VT-IAZ",
+            "aircraft_type_icao": "A21N",
+            "squawk_code": "2020",
+            "emitter_category": "A3",
+            "latitude": 18.571596,
+            "longitude": 73.383978,
+            "altitude_baro_ft": 13050,
+            "altitude_geom_ft": 13625,
+            "is_on_ground": false,
+            "ground_speed_kts": 264.4,
+            "true_track_deg": 354.14,
+            "vertical_rate_fpm": -320,
+            "position_age_seconds": 0.0,
+            "last_seen_seconds": 0.0,
+            "distance_from_center_nm": 41.79,
+            "bearing_from_center_deg": 136.4,
+            "signal_rssi_db": -13.3,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "800CB9",
+            "callsign": "AIC2184",
+            "registration": "VT-TNJ",
+            "aircraft_type_icao": "A20N",
+            "squawk_code": "4725",
+            "emitter_category": "A0",
+            "latitude": 19.362658,
+            "longitude": 73.493791,
+            "altitude_baro_ft": 14025,
+            "altitude_geom_ft": 14675,
+            "is_on_ground": false,
+            "ground_speed_kts": 311.5,
+            "true_track_deg": 249.12,
+            "vertical_rate_fpm": -928,
+            "position_age_seconds": 0.47,
+            "last_seen_seconds": 0.5,
+            "distance_from_center_nm": 38.88,
+            "bearing_from_center_deg": 63.7,
+            "signal_rssi_db": -22.0,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "801640",
+            "callsign": "AIC2337",
+            "registration": "VT-RTU",
+            "aircraft_type_icao": "A20N",
+            "squawk_code": "0346",
+            "emitter_category": "A3",
+            "latitude": 19.17485,
+            "longitude": 73.503685,
+            "altitude_baro_ft": 27925,
+            "altitude_geom_ft": 29650,
+            "is_on_ground": false,
+            "ground_speed_kts": 421.1,
+            "true_track_deg": 39.7,
+            "vertical_rate_fpm": 1280,
+            "position_age_seconds": 9.4,
+            "last_seen_seconds": 9.4,
+            "distance_from_center_nm": 35.92,
+            "bearing_from_center_deg": 80.4,
+            "signal_rssi_db": -25.6,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        },
+        {
+            "aircraft_hex_id": "801681",
+            "callsign": "AXB1HP",
+            "registration": "VT-BXY",
+            "aircraft_type_icao": "B38M",
+            "squawk_code": "0354",
+            "emitter_category": "A3",
+            "latitude": 19.832883,
+            "longitude": 74.218489,
+            "altitude_baro_ft": 33000,
+            "altitude_geom_ft": 35075,
+            "is_on_ground": false,
+            "ground_speed_kts": 421.6,
+            "true_track_deg": 69.16,
+            "vertical_rate_fpm": 0,
+            "position_age_seconds": 8.91,
+            "last_seen_seconds": 7.3,
+            "distance_from_center_nm": 88.35,
+            "bearing_from_center_deg": 58.9,
+            "signal_rssi_db": -26.7,
+            "provenance": {
+                "source_system": "adsb.lol",
+                "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+                "query_center_lat": 19.076,
+                "query_center_lon": 72.8777,
+                "query_radius_nm": 100,
+                "raw_acquisition_utc": "2026-10-03T08:26:35.695048+00:00",
+                "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+                "pipeline_stage": "CLEANED_AND_NORMALIZED",
+                "schema_version": "1.0.0"
+            }
+        }
+    ],
+    "bundle_sha256": "0d54deada7f1057b8bb09e8414f2bb8e6694ead583a45a2551921a5e9a594ee0"
+}
