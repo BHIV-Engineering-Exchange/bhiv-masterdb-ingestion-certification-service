@@ -20,6 +20,7 @@ import main
 import os
 
 TEST_AUTH_PASSWORD = "test-auth-password"
+TEST_ADMIN_PASSWORD = "test-admin-password"
 
 
 @pytest.fixture(autouse=True)
@@ -27,9 +28,10 @@ def _ensure_test_auth_env(monkeypatch):
     if not (
         os.environ.get("AUTH_PASSWORD")
         or os.environ.get("MASTERDB_AUTH_PASSWORD")
-        or os.environ.get("ADMIN_PASSWORD")
     ):
         monkeypatch.setenv("AUTH_PASSWORD", TEST_AUTH_PASSWORD)
+    if not os.environ.get("ADMIN_PASSWORD"):
+        monkeypatch.setenv("ADMIN_PASSWORD", TEST_ADMIN_PASSWORD)
 
 
 @pytest.fixture(autouse=True)

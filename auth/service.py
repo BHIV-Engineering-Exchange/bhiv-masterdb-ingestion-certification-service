@@ -71,7 +71,7 @@ class AuthService:
         actor_clean = actor.strip().lower()
 
         if is_admin:
-            return ["bhiv-admin", "operator", "admin"]
+            return ["bhiv-admin", "operator", "admin", "ingest:operator", "bcaes-editor"]
 
         # 1. Environment variable override for specific actor, e.g. AUTH_ROLES_KAVY="operator,ingest:relationaldb"
         env_key = f"AUTH_ROLES_{actor_clean.upper().replace('-', '_')}"
@@ -103,6 +103,7 @@ class AuthService:
         if not actor or not str(actor).strip():
             raise AuthTokenError("Actor/username cannot be empty.")
 
+        actor_clean = actor.strip().lower()
         auth_pw = os.environ.get("AUTH_PASSWORD") or os.environ.get("MASTERDB_AUTH_PASSWORD")
         admin_pw = os.environ.get("ADMIN_PASSWORD")
 
@@ -114,16 +115,17 @@ class AuthService:
         is_admin_auth = False
         authenticated = False
 
+        admin_actors = os.environ.get("AUTH_ADMIN_ACTORS", "admin,bhiv-admin,ops,kavy").split(",")
+        admin_actors_clean = [a.strip().lower() for a in admin_actors if a.strip()]
+
         if admin_pw and password and hmac.compare_digest(str(password), str(admin_pw)):
-            # Caller provided valid admin password
-            if not auth_pw or not hmac.compare_digest(str(admin_pw), str(auth_pw)):
-                is_admin_auth = True
             authenticated = True
+            if actor_clean in admin_actors_clean:
+                is_admin_auth = True
         elif auth_pw and password and hmac.compare_digest(str(password), str(auth_pw)):
             authenticated = True
-        elif admin_pw and not auth_pw and password and hmac.compare_digest(str(password), str(admin_pw)):
-            # Only admin_pw was configured as the shared password; authenticate as standard user (fail closed for admin)
-            authenticated = True
+            if not admin_pw and actor_clean in admin_actors_clean:
+                is_admin_auth = True
 
         if not authenticated:
             raise AuthTokenError("Invalid credentials.")
