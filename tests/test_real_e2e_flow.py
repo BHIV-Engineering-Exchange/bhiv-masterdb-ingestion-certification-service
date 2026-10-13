@@ -11,8 +11,9 @@ from services.sql_artifact_store import SqlArtifactStore
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_real_e2e_full_lifecycle(tmp_path):
+def test_real_e2e_full_lifecycle(tmp_path, monkeypatch):
     # Setup isolated stores & directories
+    monkeypatch.setenv("AUTH_ROLES_KAVY", "ingest:relationaldb,operator")
     db_file = tmp_path / "e2e_test_target_store.db"
     db_url = f"sqlite:///{db_file.as_posix()}"
     store_dir = tmp_path / "ingestion_jobs"
@@ -50,7 +51,7 @@ def test_real_e2e_full_lifecycle(tmp_path):
     # Step 1: Authentication - Login / Token Request
     token_resp = client.post(
         "/auth/token",
-        json={"actor": "kavy", "roles": ["ingest:relationaldb", "operator"]},
+        json={"actor": "kavy", "password": "test-auth-password", "roles": ["ingest:relationaldb", "operator"]},
     )
     assert token_resp.status_code == 200
     token_data = token_resp.json()

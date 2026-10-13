@@ -8,7 +8,7 @@ client = TestClient(main.app)
 
 
 def _get_token(actor="auth-tester", roles=None):
-    res = client.post("/auth/token", json={"actor": actor, "roles": roles or ["ecosystem-reader"]})
+    res = client.post("/auth/token", json={"actor": actor, "password": "test-auth-password", "roles": roles or ["ecosystem-reader"]})
     assert res.status_code == 200
     return res.json()["access_token"]
 

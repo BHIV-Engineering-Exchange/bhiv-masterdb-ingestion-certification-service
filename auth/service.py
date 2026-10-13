@@ -24,15 +24,30 @@ class AuthTokenError(Exception):
 
 class AuthService:
     def __init__(self, secret_key: Optional[str] = None, expiry_minutes: Optional[int] = None) -> None:
-        env_secret = os.environ.get("AUTH_JWT_SECRET") or os.environ.get("JWT_SECRET")
+        env_secret = (os.environ.get("AUTH_JWT_SECRET") or os.environ.get("JWT_SECRET") or "").strip()
+        env_mode = (
+            os.environ.get("ENVIRONMENT")
+            or os.environ.get("APP_ENV")
+            or os.environ.get("MASTERDB_ENV")
+            or ""
+        ).strip().lower()
+        is_production = env_mode in ("production", "prod")
+
         if secret_key is not None:
+            if not str(secret_key).strip():
+                raise RuntimeError("JWT secret key cannot be empty.")
             self._secret_key = secret_key
         elif env_secret:
             self._secret_key = env_secret
         else:
+            if is_production:
+                raise RuntimeError(
+                    "AUTH_JWT_SECRET must be configured in production mode. "
+                    "Refusing to start with an ephemeral random secret."
+                )
             self._secret_key = secrets.token_hex(32)
             logger.warning(
-                "AUTH_JWT_SECRET not set — generated a random per-process secret. "
+                "AUTH_JWT_SECRET not set — generated a random per-process secret (non-production mode only). "
                 "Tokens issued by this process instance will not validate after a "
                 "restart or against any other process/worker. Set AUTH_JWT_SECRET "
                 "in the environment before treating this as production-hardened."
@@ -47,25 +62,32 @@ class AuthService:
             except ValueError:
                 self._expiry_minutes = _DEFAULT_EXPIRY_MINUTES
 
-    def resolve_roles(self, actor: str) -> List[str]:
-        """Resolves trusted server-side roles for an actor from environment configuration or defaults."""
-        actor_clean = actor.strip().lower()
-        # 1. Environment variable override for specific actor, e.g. AUTH_ROLES_KAVY="bhiv-admin,operator"
-        env_key = f"AUTH_ROLES_{actor_clean.upper().replace('-', '_')}"
-        if os.environ.get(env_key):
-            return [r.strip() for r in os.environ[env_key].split(",") if r.strip()]
+    def resolve_roles(self, actor: str, is_admin: bool = False) -> List[str]:
+        """Resolves trusted server-side roles for an actor from environment configuration or defaults.
 
-        # 2. Configured admin actors list
-        admin_actors = os.environ.get("AUTH_ADMIN_ACTORS", "admin,bhiv-admin,ops,kavy").split(",")
-        admin_actors_clean = [a.strip().lower() for a in admin_actors if a.strip()]
-        if actor_clean in admin_actors_clean:
+        Privileged roles (bhiv-admin, admin) are NEVER granted based solely on caller-controlled
+        actor names. They require verified administrative credentials (is_admin=True).
+        """
+        actor_clean = actor.strip().lower()
+
+        if is_admin:
             return ["bhiv-admin", "operator", "admin"]
 
-        # 3. Configured operator actors list
-        operator_actors = os.environ.get("AUTH_OPERATOR_ACTORS", "operator,engineer,dev").split(",")
-        operator_actors_clean = [a.strip().lower() for a in operator_actors if a.strip()]
-        if actor_clean in operator_actors_clean:
-            return ["operator", "bcaes-editor", "ingest:operator"]
+        # 1. Environment variable override for specific actor, e.g. AUTH_ROLES_KAVY="operator,ingest:relationaldb"
+        env_key = f"AUTH_ROLES_{actor_clean.upper().replace('-', '_')}"
+        if os.environ.get(env_key):
+            assigned = [r.strip() for r in os.environ[env_key].split(",") if r.strip()]
+            # Privileged roles cannot be granted via actor-name environment mapping without admin credentials
+            safe_roles = [r for r in assigned if r not in {"bhiv-admin", "admin"}]
+            if safe_roles:
+                return safe_roles
+
+        # 2. Configured operator actors list (if explicitly set in environment, no default fallback)
+        operator_actors_env = os.environ.get("AUTH_OPERATOR_ACTORS", "").strip()
+        if operator_actors_env:
+            operator_actors_clean = [a.strip().lower() for a in operator_actors_env.split(",") if a.strip()]
+            if actor_clean in operator_actors_clean:
+                return ["operator", "bcaes-editor", "ingest:operator"]
 
         # Default standard roles for normal actors
         return ["viewer", "dashboard-viewer"]
@@ -73,21 +95,39 @@ class AuthService:
     def authenticate(
         self, actor: str, password: Optional[str] = None, roles: Optional[List[str]] = None
     ) -> tuple:
-        """Authenticate actor/credentials and return (token, expires_at_iso, assigned_roles)."""
+        """Authenticate actor/credentials and return (token, expires_at_iso, assigned_roles).
+
+        Fails closed if authentication password environment variables are not configured.
+        Caller-supplied roles are ignored; roles are assigned only via verified server-side mechanisms.
+        """
         if not actor or not str(actor).strip():
             raise AuthTokenError("Actor/username cannot be empty.")
 
-        expected_pw = (
-            os.environ.get("AUTH_PASSWORD")
-            or os.environ.get("MASTERDB_AUTH_PASSWORD")
-            or os.environ.get("ADMIN_PASSWORD")
-        )
-        if expected_pw:
-            if not password or not hmac.compare_digest(str(password), str(expected_pw)):
-                raise AuthTokenError("Invalid credentials.")
+        auth_pw = os.environ.get("AUTH_PASSWORD") or os.environ.get("MASTERDB_AUTH_PASSWORD")
+        admin_pw = os.environ.get("ADMIN_PASSWORD")
+
+        if not auth_pw and not admin_pw:
+            raise AuthTokenError("Authentication is not configured on the server.")
+
+        is_admin_auth = False
+        authenticated = False
+
+        if admin_pw and password and hmac.compare_digest(str(password), str(admin_pw)):
+            # Caller provided valid admin password
+            if not auth_pw or not hmac.compare_digest(str(admin_pw), str(auth_pw)):
+                is_admin_auth = True
+            authenticated = True
+        elif auth_pw and password and hmac.compare_digest(str(password), str(auth_pw)):
+            authenticated = True
+        elif admin_pw and not auth_pw and password and hmac.compare_digest(str(password), str(admin_pw)):
+            # Only admin_pw was configured as the shared password; authenticate as standard user (fail closed for admin)
+            authenticated = True
+
+        if not authenticated:
+            raise AuthTokenError("Invalid credentials.")
 
         # Ignore caller-supplied roles for public authentication; obtain trusted server-side roles
-        trusted_roles = self.resolve_roles(actor)
+        trusted_roles = self.resolve_roles(actor, is_admin=is_admin_auth)
         token, expires_at = self.issue_token(actor.strip(), trusted_roles)
         return token, expires_at, trusted_roles
 

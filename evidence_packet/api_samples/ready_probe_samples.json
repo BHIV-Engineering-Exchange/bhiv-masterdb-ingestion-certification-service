@@ -1,0 +1,55 @@
+{
+  "description": "Health and readiness probe responses under active backend storage checks",
+  "samples": [
+    {
+      "test_case": "Liveness Probe (GET /health)",
+      "request": {
+        "method": "GET",
+        "url": "/health"
+      },
+      "response": {
+        "status_code": 200,
+        "body": {
+          "status": "healthy",
+          "service": "MASTERDB Ingestion & Certification Service",
+          "version": "1.0.0"
+        }
+      }
+    },
+    {
+      "test_case": "Readiness Probe - Healthy Persistent Storage (GET /ready)",
+      "request": {
+        "method": "GET",
+        "url": "/ready"
+      },
+      "response": {
+        "status_code": 200,
+        "body": {
+          "status": "ok",
+          "persistence": "ready",
+          "backend": "sql",
+          "checks": {
+            "database_ping": "ok",
+            "table_schema": "verified"
+          }
+        }
+      }
+    },
+    {
+      "test_case": "Readiness Probe - Degraded Storage (F-PERSIST-04)",
+      "request": {
+        "method": "GET",
+        "url": "/ready"
+      },
+      "response": {
+        "status_code": 503,
+        "body": {
+          "status": "degraded",
+          "persistence": "unavailable",
+          "error": "Storage backend ping failed"
+        },
+        "note": "Credentials and connection strings are strictly redacted from error message"
+      }
+    }
+  ]
+}

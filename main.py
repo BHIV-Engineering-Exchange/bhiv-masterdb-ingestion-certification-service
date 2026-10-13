@@ -345,6 +345,23 @@ _STORAGE_ROOT = os.environ.get("MASTERDB_STORAGE_DIR")
 # authenticated API, not raw database credentials.
 _DATABASE_URL = os.environ.get("MASTERDB_DATABASE_URL")
 
+_ENV_MODE = (
+    os.environ.get("ENVIRONMENT")
+    or os.environ.get("APP_ENV")
+    or os.environ.get("MASTERDB_ENV")
+    or ""
+).strip().lower()
+_IS_PRODUCTION = _ENV_MODE in ("production", "prod")
+
+if _IS_PRODUCTION:
+    _is_persist_ok, _persist_err = startup_config.validate_production_persistence(
+        storage_dir=_STORAGE_ROOT,
+        database_url=_DATABASE_URL,
+    )
+    if not _is_persist_ok:
+        logger.critical("PRODUCTION PERSISTENCE STARTUP ERROR: %s", _persist_err)
+        raise RuntimeError(_persist_err)
+
 
 def _persist_path(subdir: str) -> Optional[str]:
     return os.path.join(_STORAGE_ROOT, subdir) if _STORAGE_ROOT else None
@@ -379,6 +396,7 @@ canonical_repository_service = CanonicalRepositoryService(
 # not prove. get_identity is a FastAPI dependency bound to this specific
 # auth_service instance/secret.
 auth_service = AuthService()
+app.state.auth_service = auth_service
 get_identity = build_identity_dependency(auth_service)
 
 # --- Operational sync (PARIKSHAK review references, NIYANTRAN task state) ---
@@ -1606,6 +1624,37 @@ def ready() -> dict:
     except Exception as exc:  # noqa: BLE001
         checks["canonical_repository"] = f"error: {exc}"
         ok = False
+
+    env_mode = (
+        os.environ.get("ENVIRONMENT")
+        or os.environ.get("APP_ENV")
+        or os.environ.get("MASTERDB_ENV")
+        or ""
+    ).strip().lower()
+    is_production = env_mode in ("production", "prod")
+
+    artifact_store = getattr(bcaes_registry_service, "artifact_store", None)
+    if is_production:
+        if artifact_store is None:
+            checks["persistence"] = "error: Ephemeral in-memory storage is not permitted in production mode"
+            ok = False
+        else:
+            try:
+                if hasattr(artifact_store, "ping"):
+                    artifact_store.ping()
+                checks["persistence"] = "ok"
+            except Exception as exc:  # noqa: BLE001
+                checks["persistence"] = f"error: {exc}"
+                ok = False
+    elif artifact_store is not None:
+        try:
+            if hasattr(artifact_store, "ping"):
+                artifact_store.ping()
+            checks["persistence"] = "ok"
+        except Exception as exc:  # noqa: BLE001
+            checks["persistence"] = f"error: {exc}"
+            ok = False
+
     status_code = 200 if ok else 503
     return JSONResponse(status_code=status_code, content={"status": "ok" if ok else "degraded", "checks": checks})
 

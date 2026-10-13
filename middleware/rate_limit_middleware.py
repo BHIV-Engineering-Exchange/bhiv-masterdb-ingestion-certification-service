@@ -16,6 +16,7 @@ See middleware/rate_limiter.py's module docstring for the single-process/
 not-distributed-safe caveat — that applies here unchanged.
 """
 import os
+from typing import Any, Optional
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -26,44 +27,60 @@ from middleware.rate_limiter import SlidingWindowRateLimiter
 _EXEMPT_PATHS = {"/health", "/ready", "/metrics", "/docs", "/openapi.json", "/redoc"}
 
 
-def _extract_key(request: Request) -> str:
+def _extract_key(request: Request, auth_service: Optional[Any] = None) -> str:
     auth_header = request.headers.get("authorization", "")
     if auth_header.lower().startswith("bearer "):
-        token = auth_header.split(" ", 1)[1]
-        try:
-            import jwt as _jwt  # local import: keeps this module importable even if
-            # PyJWT is ever swapped out, since this is a best-effort convenience
-            # extraction, not the actual auth check.
-            # unverified: we don't have the signing key here by design (this
-            # middleware runs before route-level auth), and rate-limit keying
-            # doesn't need cryptographic proof — worst case an attacker crafts
-            # a token claiming to be someone else and gets THAT actor's rate
-            # limit bucket, which is a mild nuisance, not a security bypass
-            # (route-level auth still independently verifies the token for
-            # anything that matters).
-            payload = _jwt.decode(token, options={"verify_signature": False})
-            actor = payload.get("sub")
-            if actor:
-                return f"actor:{actor}"
-        except Exception:
-            pass
+        token = auth_header.split(" ", 1)[1].strip()
+        if token:
+            try:
+                active_auth = auth_service
+                if active_auth is None:
+                    # Resolve active auth_service from request app state or main module
+                    app = getattr(request, "app", None)
+                    if app is not None:
+                        active_auth = getattr(app.state, "auth_service", None)
+                    if active_auth is None:
+                        import main
+                        active_auth = getattr(main, "auth_service", None)
+                if active_auth is not None:
+                    identity = active_auth.decode_token(token)
+                    if identity.actor:
+                        return f"actor:{identity.actor}"
+            except Exception:
+                # Token is invalid, malformed, expired, forged, or unverified.
+                # Never trust unverified claims for rate-limit keying.
+                # Fall back safely to client IP so forged tokens cannot
+                # impersonate or exhaust another actor's rate-limit bucket.
+                pass
     client = request.client
     return f"ip:{client.host}" if client else "ip:unknown"
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, limiter: SlidingWindowRateLimiter = None) -> None:
+    def __init__(
+        self,
+        app,
+        limiter: SlidingWindowRateLimiter = None,
+        auth_service: Optional[Any] = None,
+    ) -> None:
         super().__init__(app)
         self.limiter = limiter or SlidingWindowRateLimiter(
             max_requests=int(os.environ.get("RATE_LIMIT_MAX_REQUESTS", "120")),
             window_seconds=float(os.environ.get("RATE_LIMIT_WINDOW_SECONDS", "60")),
         )
+        self.auth_service = auth_service
 
     async def dispatch(self, request: Request, call_next):
         if request.url.path in _EXEMPT_PATHS:
             return await call_next(request)
 
-        key = _extract_key(request)
+        active_auth = self.auth_service
+        if active_auth is None:
+            app = getattr(request, "app", None)
+            if app is not None:
+                active_auth = getattr(app.state, "auth_service", None)
+
+        key = _extract_key(request, auth_service=active_auth)
         if not self.limiter.allow(key):
             retry_after = self.limiter.retry_after_seconds(key)
             return JSONResponse(

@@ -1,0 +1,109 @@
+{
+  "description": "End-to-end dataset lifecycle: Upload -> Content Stream -> Validation -> Certification Gate -> Ingestion -> Retrieval",
+  "samples": [
+    {
+      "step": 1,
+      "name": "Upload Initiation",
+      "request": {
+        "method": "POST",
+        "url": "/upload/initiate",
+        "body": {
+          "dataset_id": "ds-geo-test-01",
+          "filename": "sample_points.csv",
+          "expected_size_bytes": 1024
+        }
+      },
+      "response": {
+        "status_code": 201,
+        "body": {
+          "upload_id": "upl-49f82d1c",
+          "status": "INITIATED",
+          "dataset_id": "ds-geo-test-01"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "name": "Dataset Validation",
+      "request": {
+        "method": "POST",
+        "url": "/validation/validate",
+        "body": {
+          "dataset_id": "ds-geo-test-01",
+          "schema_type": "tabular",
+          "upload_id": "upl-49f82d1c"
+        }
+      },
+      "response": {
+        "status_code": 200,
+        "body": {
+          "validation_id": "val-8a21f7",
+          "is_valid": true,
+          "error_count": 0,
+          "warning_count": 0
+        }
+      }
+    },
+    {
+      "step": 3,
+      "name": "Certification Gate Evaluation",
+      "request": {
+        "method": "POST",
+        "url": "/certification/certify",
+        "body": {
+          "dataset_id": "ds-geo-test-01",
+          "validation_id": "val-8a21f7",
+          "governance_signoff": true
+        }
+      },
+      "response": {
+        "status_code": 200,
+        "body": {
+          "certification_id": "cert-11e9a4",
+          "status": "CERTIFIED",
+          "certification_score": 1.0,
+          "eligible_for_ingestion": true
+        }
+      }
+    },
+    {
+      "step": 4,
+      "name": "Target Ingestion (Relational DB)",
+      "request": {
+        "method": "POST",
+        "url": "/ingest/target",
+        "body": {
+          "dataset_id": "ds-geo-test-01",
+          "certification_id": "cert-11e9a4",
+          "target_engine": "RelationalDB"
+        }
+      },
+      "response": {
+        "status_code": 201,
+        "body": {
+          "ingest_job_id": "ingest-5a264c81f1b3",
+          "status": "PERSISTED",
+          "target_database": "RelationalDB",
+          "record_count": 5
+        }
+      }
+    },
+    {
+      "step": 5,
+      "name": "Retrieval Readiness Assessment",
+      "request": {
+        "method": "GET",
+        "url": "/tantra/packages/pkg-9d6317e0dc66/retrieval-readiness"
+      },
+      "response": {
+        "status_code": 200,
+        "body": {
+          "package_id": "pkg-9d6317e0dc66",
+          "status": "CERTIFIED_RETRIEVABLE",
+          "provenance_verified": true,
+          "ready_for_tantra_consumption": true
+        }
+      }
+    }
+  ]
+}

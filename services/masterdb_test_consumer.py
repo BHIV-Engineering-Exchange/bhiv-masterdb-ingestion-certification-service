@@ -16,6 +16,7 @@ Demonstrates the 10-step canonical access flow for new and existing applications
 IMPORTANT: This consumer depends ONLY on HTTP/TANTRA API contracts.
 It does NOT import OR use database connection OR ORM models.
 """
+import os
 from typing import Any, Dict, List, Optional
 import httpx
 
@@ -41,11 +42,24 @@ class MasterDBTestConsumer:
             headers["Authorization"] = f"Bearer {self.access_token}"
         return headers
 
-    def authenticate(self, username: str = "test-consumer", roles: List[str] = None) -> str:
+    def authenticate(
+        self,
+        username: str = "test-consumer",
+        roles: List[str] = None,
+        password: Optional[str] = None,
+    ) -> str:
         """Step 1: Identify application and obtain ecosystem JWT token."""
+        auth_password = (
+            password
+            or os.environ.get("AUTH_PASSWORD")
+            or os.environ.get("MASTERDB_AUTH_PASSWORD")
+            or os.environ.get("ADMIN_PASSWORD")
+            or ""
+        )
         payload = {
             "actor": self.application_id,
             "roles": roles or ["ecosystem-reader", "viewer"],
+            "password": auth_password,
         }
         res = self.client.post("/auth/token", json=payload)
         if res.status_code == 200:
