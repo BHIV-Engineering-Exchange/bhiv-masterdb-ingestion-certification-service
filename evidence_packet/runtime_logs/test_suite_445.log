@@ -1,0 +1,54 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.7, pytest-8.3.3, pluggy-1.5.0
+rootdir: C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main
+configfile: pytest.ini
+collected 445 items
+
+tests/test_audit_and_replay.py .............                             [  2%]
+tests/test_auth_service.py ..............                                [  6%]
+tests/test_authentication_security.py ....................               [ 10%]
+tests/test_bcaes_registry.py ........................                    [ 16%]
+tests/test_canonical_repository.py ..................................    [ 24%]
+tests/test_capability_authorization.py .................                 [ 27%]
+tests/test_capability_contract.py ....................                   [ 32%]
+tests/test_capability_discovery.py .................                    [ 36%]
+tests/test_capability_retrieval.py .................                    [ 40%]
+tests/test_certification_service.py ...................                  [ 44%]
+tests/test_database_router.py ....................                       [ 48%]
+tests/test_domain_independence.py .................                      [ 52%]
+tests/test_ecosystem_sync.py ....................                        [ 57%]
+tests/test_error_handling.py ................                            [ 60%]
+tests/test_evaluation_engine.py ......................                   [ 65%]
+tests/test_fresh_session_persistence.py ..........                       [ 68%]
+tests/test_ingestion_decision_service.py ................                 [ 71%]
+tests/test_knowledge_package_lifecycle.py ...................            [ 76%]
+tests/test_mdu_contract_adapter.py .....................                 [ 80%]
+tests/test_package_registry.py ....................                      [ 85%]
+tests/test_persistence_security.py .....................                 [ 90%]
+tests/test_real_e2e_flow.py ...............                              [ 93%]
+tests/test_retrieval_readiness.py ..................                     [ 97%]
+tests/test_tantra_interface_service.py .............                     [100%]
+
+============================== warnings summary ===============================
+venv\Lib\site-packages\starlette\testclient.py:36
+  DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+
+tests/test_auth_service.py::test_issue_and_decode_round_trip
+tests/test_auth_service.py::test_decode_rejects_tampered_token
+tests/test_auth_service.py::test_decode_rejects_expired_token
+  InsecureKeyLengthWarning: The HMAC key is 11 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+
+tests/test_auth_service.py::test_decode_rejects_token_signed_with_different_secret
+tests/test_auth_service.py::test_env_var_secret_is_used_when_no_explicit_key
+tests/test_authentication_security.py::test_expired_token_rejected
+  InsecureKeyLengthWarning: The HMAC key is 8 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+
+tests/test_authentication_security.py::test_incorrectly_signed_token_rejected
+  InsecureKeyLengthWarning: The HMAC key is 15 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+
+tests/test_authentication_security.py::test_forged_token_cannot_exhaust_victim_rate_limit
+  InsecureKeyLengthWarning: The HMAC key is 18 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 445 passed, 16 warnings in 179.87s =======================
+Exit Code: 0

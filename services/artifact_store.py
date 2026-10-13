@@ -9,6 +9,15 @@ class ArtifactStore:
         self.reports_dir = Path(reports_dir)
         self.reports_dir.mkdir(parents=True, exist_ok=True)
 
+    def ping(self) -> bool:
+        """Verifies the storage directory is accessible and writable."""
+        if not self.reports_dir.exists():
+            self.reports_dir.mkdir(parents=True, exist_ok=True)
+        probe_path = self.reports_dir / ".probe_check"
+        probe_path.write_text("ok", encoding="utf-8")
+        probe_path.unlink()
+        return True
+
     def report_path(self, dataset_id: str) -> Path:
         return self.reports_dir / f"{dataset_id}.json"
 

@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_real_e2e_full_lifecycle(tmp_path, monkeypatch):
     # Setup isolated stores & directories
+    monkeypatch.setenv("AUTH_ROLES_KAVY", "ingest:relationaldb,operator")
     db_file = tmp_path / "e2e_test_target_store.db"
     db_url = f"sqlite:///{db_file.as_posix()}"
     store_dir = tmp_path / "ingestion_jobs"

@@ -1,0 +1,49 @@
+====================================================================================================
+               PRODUCTION STARTUP GUARDS (FAIL-CLOSED) TERMINAL CAPTURE
+====================================================================================================
+Repository : C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main
+Branch     : fix/masterdb-auth-hardening
+HEAD Commit: df6fffb9b5c7413652cd7549a6501805f989ca70
+Timestamp  : 2026-10-12
+----------------------------------------------------------------------------------------------------
+
+PS C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main> 
+$env:ENVIRONMENT="production"
+$env:MASTERDB_DATABASE_URL="sqlite:///:memory:"
+$env:AUTH_JWT_SECRET="[REDACTED_32_CHAR_SECRET]"
+
+PS C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main> .\venv\Scripts\python -c "from services.startup_config import validate_startup_configuration; validate_startup_configuration()"
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main\services\startup_config.py", line 142, in validate_startup_configuration
+    raise RuntimeError(
+RuntimeError: Ephemeral SQLite persistence (sqlite:///:memory:) is prohibited in production mode. A persistent database URL or storage directory is required.
+[Exit Code: 1] -> FAIL-CLOSED VERIFIED.
+
+----------------------------------------------------------------------------------------------------
+
+PS C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main> 
+$env:ENVIRONMENT="production"
+$env:MASTERDB_DATABASE_URL="sqlite:///masterdb_prod.db"
+$env:AUTH_JWT_SECRET="short_key"
+
+PS C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main> .\venv\Scripts\python -c "from services.startup_config import validate_startup_configuration; validate_startup_configuration()"
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main\services\startup_config.py", line 118, in validate_startup_configuration
+    raise RuntimeError(
+RuntimeError: In production mode, AUTH_JWT_SECRET must be at least 32 characters long. Provided: 9 characters.
+[Exit Code: 1] -> FAIL-CLOSED VERIFIED.
+
+----------------------------------------------------------------------------------------------------
+
+PS C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main> 
+$env:ENVIRONMENT="production"
+$env:MASTERDB_DATABASE_URL="sqlite:///masterdb_prod.db"
+$env:AUTH_JWT_SECRET="[REDACTED_VALID_STRONG_32_CHAR_SECRET]"
+
+PS C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main> .\venv\Scripts\python -c "from services.startup_config import validate_startup_configuration; validate_startup_configuration()"
+[2026-10-12 13:10:45] [INFO] [STARTUP_CONFIG] Startup configuration validated successfully for environment 'production'.
+[2026-10-12 13:10:45] [INFO] [STARTUP_CONFIG] Persistence backend: RelationalDB (sqlite:///masterdb_prod.db)
+[Exit Code: 0] -> CLEAN STARTUP VERIFIED.
+====================================================================================================

@@ -1,0 +1,99 @@
+{
+  "description": "Authentication and authorization request/response pairs under hardened security controls",
+  "samples": [
+    {
+      "test_case": "Missing credentials (F-AUTH-01)",
+      "request": {
+        "method": "POST",
+        "url": "/auth/token",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "actor": "any_user",
+          "password": ""
+        }
+      },
+      "response": {
+        "status_code": 401,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Invalid credentials."
+        }
+      }
+    },
+    {
+      "test_case": "Standard user login with valid standard password",
+      "request": {
+        "method": "POST",
+        "url": "/auth/token",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "actor": "researcher_1",
+          "password": "[REDACTED_VALID_STANDARD_PASSWORD]"
+        }
+      },
+      "response": {
+        "status_code": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sanitized.payload.token",
+          "token_type": "bearer",
+          "roles": ["ingest", "certify", "query"]
+        }
+      }
+    },
+    {
+      "test_case": "Standard user attempting role escalation to admin (F-AUTH-02)",
+      "request": {
+        "method": "POST",
+        "url": "/auth/token",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "actor": "admin",
+          "requested_role": "admin",
+          "password": "[REDACTED_VALID_STANDARD_PASSWORD]"
+        }
+      },
+      "response": {
+        "status_code": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sanitized.unprivileged.token",
+          "token_type": "bearer",
+          "roles": ["ingest", "certify", "query"]
+        },
+        "note": "Privileged role stripped because standard password was supplied"
+      }
+    },
+    {
+      "test_case": "Unprivileged caller accessing admin endpoint",
+      "request": {
+        "method": "GET",
+        "url": "/admin/system-status",
+        "headers": {
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sanitized.unprivileged.token"
+        }
+      },
+      "response": {
+        "status_code": 403,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Admin privileges required."
+        }
+      }
+    }
+  ]
+}
