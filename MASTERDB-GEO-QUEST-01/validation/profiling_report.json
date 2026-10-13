@@ -1,0 +1,574 @@
+{
+  "profiling_utc": "2026-10-03T08:26:49.744520+00:00",
+  "live_data_status": "PROFILED",
+  "raw_source_file": "C:\\Users\\Microsoft\\.gemini\\antigravity-ide\\scratch\\MASTERDB-GEO-QUEST-01\\raw\\aircraft_raw.json",
+  "api_metadata": {
+    "now_epoch": 1791016059501,
+    "msg": "No error",
+    "total_reported_by_api": 19,
+    "ptime": 0,
+    "ctime": 1791016059501
+  },
+  "records": {
+    "total_aircraft_records": 19,
+    "unique_hex_identifiers": 19,
+    "duplicate_hex_count": 0,
+    "duplicate_hex_list": [],
+    "with_callsign_count": 19,
+    "with_registration_count": 19
+  },
+  "fields": {
+    "total_unique_fields": 52,
+    "field_list": [
+      "alert",
+      "alt_baro",
+      "alt_geom",
+      "baro_rate",
+      "category",
+      "dir",
+      "dst",
+      "emergency",
+      "flight",
+      "geom_rate",
+      "gs",
+      "gva",
+      "hex",
+      "ias",
+      "lat",
+      "lon",
+      "mach",
+      "mag_heading",
+      "messages",
+      "mlat",
+      "nac_p",
+      "nac_v",
+      "nav_altitude_fms",
+      "nav_altitude_mcp",
+      "nav_heading",
+      "nav_modes",
+      "nav_qnh",
+      "nic",
+      "nic_baro",
+      "oat",
+      "r",
+      "rc",
+      "roll",
+      "rssi",
+      "sda",
+      "seen",
+      "seen_pos",
+      "sil",
+      "sil_type",
+      "spi",
+      "squawk",
+      "t",
+      "tas",
+      "tat",
+      "tisb",
+      "track",
+      "track_rate",
+      "true_heading",
+      "type",
+      "version",
+      "wd",
+      "ws"
+    ],
+    "field_details": {
+      "alert": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "int"
+        ]
+      },
+      "alt_baro": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "int",
+          "str"
+        ]
+      },
+      "alt_geom": {
+        "present_records": 18,
+        "coverage_percentage": 94.74,
+        "missing_or_absent_count": 1,
+        "data_types": [
+          "int"
+        ]
+      },
+      "baro_rate": {
+        "present_records": 18,
+        "coverage_percentage": 94.74,
+        "missing_or_absent_count": 1,
+        "data_types": [
+          "int"
+        ]
+      },
+      "category": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "str"
+        ]
+      },
+      "dir": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "float"
+        ]
+      },
+      "dst": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "float"
+        ]
+      },
+      "emergency": {
+        "present_records": 15,
+        "coverage_percentage": 78.95,
+        "missing_or_absent_count": 4,
+        "data_types": [
+          "str"
+        ]
+      },
+      "flight": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "str"
+        ]
+      },
+      "geom_rate": {
+        "present_records": 16,
+        "coverage_percentage": 84.21,
+        "missing_or_absent_count": 3,
+        "data_types": [
+          "int"
+        ]
+      },
+      "gs": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "float"
+        ]
+      },
+      "gva": {
+        "present_records": 13,
+        "coverage_percentage": 68.42,
+        "missing_or_absent_count": 6,
+        "data_types": [
+          "int"
+        ]
+      },
+      "hex": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "str"
+        ]
+      },
+      "ias": {
+        "present_records": 16,
+        "coverage_percentage": 84.21,
+        "missing_or_absent_count": 3,
+        "data_types": [
+          "int"
+        ]
+      },
+      "lat": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "float"
+        ]
+      },
+      "lon": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "float"
+        ]
+      },
+      "mach": {
+        "present_records": 16,
+        "coverage_percentage": 84.21,
+        "missing_or_absent_count": 3,
+        "data_types": [
+          "float"
+        ]
+      },
+      "mag_heading": {
+        "present_records": 16,
+        "coverage_percentage": 84.21,
+        "missing_or_absent_count": 3,
+        "data_types": [
+          "float"
+        ]
+      },
+      "messages": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "int"
+        ]
+      },
+      "mlat": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "list"
+        ]
+      },
+      "nac_p": {
+        "present_records": 18,
+        "coverage_percentage": 94.74,
+        "missing_or_absent_count": 1,
+        "data_types": [
+          "int"
+        ]
+      },
+      "nac_v": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "int"
+        ]
+      },
+      "nav_altitude_fms": {
+        "present_records": 3,
+        "coverage_percentage": 15.79,
+        "missing_or_absent_count": 16,
+        "data_types": [
+          "int"
+        ]
+      },
+      "nav_altitude_mcp": {
+        "present_records": 17,
+        "coverage_percentage": 89.47,
+        "missing_or_absent_count": 2,
+        "data_types": [
+          "int"
+        ]
+      },
+      "nav_heading": {
+        "present_records": 7,
+        "coverage_percentage": 36.84,
+        "missing_or_absent_count": 12,
+        "data_types": [
+          "float"
+        ]
+      },
+      "nav_modes": {
+        "present_records": 1,
+        "coverage_percentage": 5.26,
+        "missing_or_absent_count": 18,
+        "data_types": [
+          "list"
+        ]
+      },
+      "nav_qnh": {
+        "present_records": 17,
+        "coverage_percentage": 89.47,
+        "missing_or_absent_count": 2,
+        "data_types": [
+          "float"
+        ]
+      },
+      "nic": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "int"
+        ]
+      },
+      "nic_baro": {
+        "present_records": 16,
+        "coverage_percentage": 84.21,
+        "missing_or_absent_count": 3,
+        "data_types": [
+          "int"
+        ]
+      },
+      "oat": {
+        "present_records": 13,
+        "coverage_percentage": 68.42,
+        "missing_or_absent_count": 6,
+        "data_types": [
+          "int"
+        ]
+      },
+      "r": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "str"
+        ]
+      },
+      "rc": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "int"
+        ]
+      },
+      "roll": {
+        "present_records": 15,
+        "coverage_percentage": 78.95,
+        "missing_or_absent_count": 4,
+        "data_types": [
+          "float"
+        ]
+      },
+      "rssi": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "float"
+        ]
+      },
+      "sda": {
+        "present_records": 14,
+        "coverage_percentage": 73.68,
+        "missing_or_absent_count": 5,
+        "data_types": [
+          "int"
+        ]
+      },
+      "seen": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "float"
+        ]
+      },
+      "seen_pos": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "float"
+        ]
+      },
+      "sil": {
+        "present_records": 18,
+        "coverage_percentage": 94.74,
+        "missing_or_absent_count": 1,
+        "data_types": [
+          "int"
+        ]
+      },
+      "sil_type": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "str"
+        ]
+      },
+      "spi": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "int"
+        ]
+      },
+      "squawk": {
+        "present_records": 18,
+        "coverage_percentage": 94.74,
+        "missing_or_absent_count": 1,
+        "data_types": [
+          "str"
+        ]
+      },
+      "t": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "str"
+        ]
+      },
+      "tas": {
+        "present_records": 15,
+        "coverage_percentage": 78.95,
+        "missing_or_absent_count": 4,
+        "data_types": [
+          "int"
+        ]
+      },
+      "tat": {
+        "present_records": 13,
+        "coverage_percentage": 68.42,
+        "missing_or_absent_count": 6,
+        "data_types": [
+          "int"
+        ]
+      },
+      "tisb": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "list"
+        ]
+      },
+      "track": {
+        "present_records": 18,
+        "coverage_percentage": 94.74,
+        "missing_or_absent_count": 1,
+        "data_types": [
+          "float"
+        ]
+      },
+      "track_rate": {
+        "present_records": 14,
+        "coverage_percentage": 73.68,
+        "missing_or_absent_count": 5,
+        "data_types": [
+          "float"
+        ]
+      },
+      "true_heading": {
+        "present_records": 17,
+        "coverage_percentage": 89.47,
+        "missing_or_absent_count": 2,
+        "data_types": [
+          "float"
+        ]
+      },
+      "type": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "str"
+        ]
+      },
+      "version": {
+        "present_records": 19,
+        "coverage_percentage": 100.0,
+        "missing_or_absent_count": 0,
+        "data_types": [
+          "int"
+        ]
+      },
+      "wd": {
+        "present_records": 14,
+        "coverage_percentage": 73.68,
+        "missing_or_absent_count": 5,
+        "data_types": [
+          "int"
+        ]
+      },
+      "ws": {
+        "present_records": 14,
+        "coverage_percentage": 73.68,
+        "missing_or_absent_count": 5,
+        "data_types": [
+          "int"
+        ]
+      }
+    }
+  },
+  "coordinates": {
+    "records_with_coordinates": 19,
+    "records_missing_coordinates": 0,
+    "records_with_invalid_coordinates": 0,
+    "invalid_coordinate_details": [],
+    "latitude_stats": {
+      "count": 19,
+      "min": 17.5255,
+      "max": 19.8329,
+      "mean": 18.7395
+    },
+    "longitude_stats": {
+      "count": 19,
+      "min": 71.8674,
+      "max": 74.2185,
+      "mean": 73.0642
+    },
+    "lat_in_wgs84_bounds": true,
+    "lon_in_wgs84_bounds": true
+  },
+  "altitudes": {
+    "alt_baro_numeric_stats": {
+      "count": 18,
+      "min": 1025.0,
+      "max": 35000.0,
+      "mean": 18305.5556
+    },
+    "on_ground_count": 1,
+    "alt_baro_null_count": 0,
+    "alt_geom_numeric_stats": {
+      "count": 18,
+      "min": 875.0,
+      "max": 37100.0,
+      "mean": 19316.6667
+    }
+  },
+  "speeds_ground_knots": {
+    "speed_stats": {
+      "count": 19,
+      "min": 11.8,
+      "max": 491.4,
+      "mean": 324.0684
+    },
+    "speed_null_count": 0
+  },
+  "headings_true_degrees": {
+    "heading_stats": {
+      "count": 18,
+      "min": 1.8,
+      "max": 354.14,
+      "mean": 189.3544
+    },
+    "heading_null_count": 1,
+    "all_within_0_360": true
+  },
+  "timestamps_and_age": {
+    "seen_seconds_stats": {
+      "count": 19,
+      "min": 0.0,
+      "max": 33.6,
+      "mean": 5.8684
+    },
+    "seen_pos_seconds_stats": {
+      "count": 19,
+      "min": 0.0,
+      "max": 57.079,
+      "mean": 9.5058
+    }
+  },
+  "unusual_and_flags": {
+    "emergency_squawks": [],
+    "emergency_flags": [],
+    "emitter_categories": {
+      "A5": 2,
+      "A3": 16,
+      "A0": 1
+    }
+  }
+}

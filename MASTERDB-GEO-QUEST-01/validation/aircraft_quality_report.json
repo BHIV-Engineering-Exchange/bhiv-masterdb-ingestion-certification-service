@@ -1,0 +1,197 @@
+{
+  "execution_utc": "2026-10-03T08:27:40.563194+00:00",
+  "script_version": "1.0.0",
+  "live_data_validation": "EXECUTED_ON_LIVE_DATA",
+  "overall_status": "PASS",
+  "record_counts": {
+    "raw_record_count": 19,
+    "cleaned_record_count": 19,
+    "quarantined_record_count": 0,
+    "duplicate_count": 0
+  },
+  "coordinate_validation": {
+    "status": "PASS",
+    "lat_bounds": [
+      -90.0,
+      90.0
+    ],
+    "lon_bounds": [
+      -180.0,
+      180.0
+    ],
+    "records_evaluated": 19,
+    "missing_coordinates": 0
+  },
+  "numeric_validation": {
+    "status": "PASS",
+    "invalid_speed_count": 0,
+    "invalid_track_count": 0,
+    "invalid_altitude_count": 0
+  },
+  "timestamp_validation": {
+    "status": "PASS",
+    "invalid_age_count": 0
+  },
+  "missing_value_statistics": {
+    "aircraft_hex_id": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "callsign": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "registration": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "aircraft_type_icao": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "squawk_code": {
+      "present_count": 18,
+      "missing_count": 1,
+      "missing_percentage": 5.26
+    },
+    "emitter_category": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "latitude": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "longitude": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "altitude_baro_ft": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "altitude_geom_ft": {
+      "present_count": 18,
+      "missing_count": 1,
+      "missing_percentage": 5.26
+    },
+    "is_on_ground": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "ground_speed_kts": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "true_track_deg": {
+      "present_count": 18,
+      "missing_count": 1,
+      "missing_percentage": 5.26
+    },
+    "vertical_rate_fpm": {
+      "present_count": 18,
+      "missing_count": 1,
+      "missing_percentage": 5.26
+    },
+    "position_age_seconds": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "last_seen_seconds": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "distance_from_center_nm": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "bearing_from_center_deg": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "signal_rssi_db": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    },
+    "provenance": {
+      "present_count": 19,
+      "missing_count": 0,
+      "missing_percentage": 0.0
+    }
+  },
+  "executed_checks": [
+    {
+      "check_id": "CHK_01_RECORD_CONSERVATION",
+      "name": "Raw record count equals cleaned plus quarantined count",
+      "status": "PASS",
+      "details": {
+        "raw_count": 19,
+        "cleaned_count": 19,
+        "quarantined_count": 0,
+        "sum_cleaned_quarantine": 19
+      }
+    },
+    {
+      "check_id": "CHK_02_IDENTIFIER_UNIQUENESS",
+      "name": "Zero duplicate aircraft hex identifiers in cleaned set",
+      "status": "PASS",
+      "details": {
+        "total_cleaned_identifiers": 19,
+        "unique_identifiers": 19,
+        "duplicate_count": 0
+      }
+    },
+    {
+      "check_id": "CHK_03_COORDINATE_VALIDITY",
+      "name": "All cleaned records possess valid WGS84 latitude and longitude coordinates",
+      "status": "PASS",
+      "details": {
+        "records_evaluated": 19,
+        "missing_coordinates": 0,
+        "invalid_latitudes": 0,
+        "invalid_longitudes": 0
+      }
+    },
+    {
+      "check_id": "CHK_04_NUMERIC_RANGE_VALIDITY",
+      "name": "Ground speeds, tracks, and altitudes within physically realistic aviation envelopes",
+      "status": "PASS",
+      "details": {
+        "invalid_speed_count": 0,
+        "invalid_track_count": 0,
+        "invalid_altitude_count": 0
+      }
+    },
+    {
+      "check_id": "CHK_05_TIMESTAMP_AGE_INTEGRITY",
+      "name": "Observation age and sensor latency values are non-negative",
+      "status": "PASS",
+      "details": {
+        "invalid_sensor_age_count": 0
+      }
+    },
+    {
+      "check_id": "CHK_06_PROVENANCE_COMPLETENESS",
+      "name": "Every cleaned record maintains complete source lineage and audit provenance",
+      "status": "PASS",
+      "details": {
+        "missing_provenance_count": 0
+      }
+    }
+  ]
+}

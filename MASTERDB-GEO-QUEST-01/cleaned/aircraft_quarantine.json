@@ -1,0 +1,10 @@
+{
+  "quarantine_metadata": {
+    "dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT-QUARANTINE",
+    "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+    "evaluation_timestamp_utc": "2026-10-03T08:27:30.723779+00:00",
+    "total_quarantined_records": 0,
+    "quarantine_reasons_summary": {}
+  },
+  "quarantined_records": []
+}
