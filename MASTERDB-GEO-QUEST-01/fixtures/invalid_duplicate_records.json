@@ -1,0 +1,37 @@
+{
+  "scenario_id": "SCENARIO_DUPLICATE_RECORDS",
+  "description": "Dataset containing duplicated aircraft hex identifiers within the same surveillance observation batch.",
+  "expected_rule_violations": ["RULE-GEO-002"],
+  "records": [
+    {
+      "aircraft_hex_id": "8005A6",
+      "callsign": "AIC606",
+      "registration": "VT-EXF",
+      "latitude": 19.088,
+      "longitude": 72.867,
+      "altitude_baro_ft": 6000,
+      "is_on_ground": false,
+      "ground_speed_kts": 240.0,
+      "provenance": {
+        "source_system": "adsb.lol",
+        "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+        "raw_acquisition_utc": "2026-10-15T09:45:00Z"
+      }
+    },
+    {
+      "aircraft_hex_id": "8005A6",
+      "callsign": "AIC606_DUP",
+      "registration": "VT-EXF",
+      "latitude": 19.095,
+      "longitude": 72.872,
+      "altitude_baro_ft": 6100,
+      "is_on_ground": false,
+      "ground_speed_kts": 242.0,
+      "provenance": {
+        "source_system": "adsb.lol",
+        "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+        "raw_acquisition_utc": "2026-10-15T09:45:00Z"
+      }
+    }
+  ]
+}

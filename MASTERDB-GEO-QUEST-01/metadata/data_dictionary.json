@@ -1,0 +1,211 @@
+{
+  "dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+  "dataset_name": "BHIV vNEXT Normalized Aircraft Observation Dataset",
+  "schema_version": "1.0.0",
+  "dataset_version": "1.0.0-candidate",
+  "crs": "EPSG:4326",
+  "licence": "Open Data Commons Open Database License (ODbL) v1.0",
+  "attribution": "adsb.lol and its contributors",
+  "total_fields": 20,
+  "fields": [
+    {
+      "name": "aircraft_hex_id",
+      "type": "string",
+      "nullable": false,
+      "source_key": "hex",
+      "regex": "^[0-9A-F]{1,6}$",
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Unique 24-bit ICAO aircraft transponder hexadecimal address normalized to uppercase."
+    },
+    {
+      "name": "callsign",
+      "type": "string",
+      "nullable": true,
+      "source_key": "flight",
+      "regex": "^[A-Z0-9]{1,8}$",
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Flight identification callsign (whitespace stripped, uppercase)."
+    },
+    {
+      "name": "registration",
+      "type": "string",
+      "nullable": true,
+      "source_key": "r",
+      "regex": "^[A-Z0-9\\-]{1,12}$",
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Airframe tail registration number (whitespace stripped, uppercase)."
+    },
+    {
+      "name": "aircraft_type_icao",
+      "type": "string",
+      "nullable": true,
+      "source_key": "t",
+      "regex": "^[A-Z0-9]{2,4}$",
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "ICAO 4-character aircraft type designator (e.g. B77L, A20N)."
+    },
+    {
+      "name": "squawk_code",
+      "type": "string",
+      "nullable": true,
+      "source_key": "squawk",
+      "regex": "^[0-7]{4}$",
+      "baseline_missing_count": 1,
+      "baseline_missing_pct": 5.26,
+      "description": "4-digit octal Secondary Surveillance Radar (SSR) transponder code."
+    },
+    {
+      "name": "emitter_category",
+      "type": "string",
+      "nullable": true,
+      "source_key": "category",
+      "regex": "^[A-C][0-7]$",
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "ADS-B wake-turbulence emitter category."
+    },
+    {
+      "name": "latitude",
+      "type": "float",
+      "nullable": false,
+      "source_key": "lat",
+      "range": [-90.0, 90.0],
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "WGS84 latitude coordinate rounded to 6 decimal places."
+    },
+    {
+      "name": "longitude",
+      "type": "float",
+      "nullable": false,
+      "source_key": "lon",
+      "range": [-180.0, 180.0],
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "WGS84 longitude coordinate rounded to 6 decimal places."
+    },
+    {
+      "name": "altitude_baro_ft",
+      "type": "integer",
+      "nullable": true,
+      "source_key": "alt_baro",
+      "range": [-2000, 85000],
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Barometric pressure altitude in feet (0 if on ground)."
+    },
+    {
+      "name": "altitude_geom_ft",
+      "type": "integer",
+      "nullable": true,
+      "source_key": "alt_geom",
+      "range": [-2000, 85000],
+      "baseline_missing_count": 1,
+      "baseline_missing_pct": 5.26,
+      "description": "Geometric altitude in feet above WGS84 ellipsoid."
+    },
+    {
+      "name": "is_on_ground",
+      "type": "boolean",
+      "nullable": false,
+      "source_key": "alt_baro",
+      "allowed_values": [true, false],
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Surface state flag: true if on ground, false if airborne."
+    },
+    {
+      "name": "ground_speed_kts",
+      "type": "float",
+      "nullable": true,
+      "source_key": "gs",
+      "range": [0.0, 1500.0],
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Speed over ground in knots rounded to 1 decimal place."
+    },
+    {
+      "name": "true_track_deg",
+      "type": "float",
+      "nullable": true,
+      "source_key": "track",
+      "range": [0.0, 360.0],
+      "baseline_missing_count": 1,
+      "baseline_missing_pct": 5.26,
+      "description": "Course over ground in degrees clockwise from true north."
+    },
+    {
+      "name": "vertical_rate_fpm",
+      "type": "integer",
+      "nullable": true,
+      "source_key": "baro_rate",
+      "range": [-15000, 15000],
+      "baseline_missing_count": 1,
+      "baseline_missing_pct": 5.26,
+      "description": "Rate of climb or descent in barometric feet per minute."
+    },
+    {
+      "name": "position_age_seconds",
+      "type": "float",
+      "nullable": true,
+      "source_key": "seen_pos",
+      "range": [0.0, 86400.0],
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Latency in seconds since last position report."
+    },
+    {
+      "name": "last_seen_seconds",
+      "type": "float",
+      "nullable": true,
+      "source_key": "seen",
+      "range": [0.0, 86400.0],
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Latency in seconds since last transmission message received."
+    },
+    {
+      "name": "distance_from_center_nm",
+      "type": "float",
+      "nullable": true,
+      "source_key": "derived",
+      "range": [0.0, 250.0],
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Great-circle distance from query reference point in nautical miles."
+    },
+    {
+      "name": "bearing_from_center_deg",
+      "type": "float",
+      "nullable": true,
+      "source_key": "derived",
+      "range": [0.0, 360.0],
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Azimuth bearing angle from query reference point in degrees."
+    },
+    {
+      "name": "signal_rssi_db",
+      "type": "float",
+      "nullable": true,
+      "source_key": "rssi",
+      "range": [-50.0, 10.0],
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Received signal strength indicator in dBFS."
+    },
+    {
+      "name": "provenance",
+      "type": "object",
+      "nullable": false,
+      "source_key": "audit_engine",
+      "baseline_missing_count": 0,
+      "baseline_missing_pct": 0.0,
+      "description": "Lineage object with source system, URL, coordinates, and UTC timestamps."
+    }
+  ]
+}

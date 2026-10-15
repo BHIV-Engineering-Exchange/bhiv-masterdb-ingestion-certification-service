@@ -29,6 +29,11 @@ tokens/
 *.cert
 *.id_rsa
 
+# Transient runtime & test stores
+source_store/
+geo_quest_candidate_store/
+candidate_store/
+
 # IDE & OS Artifacts
 .DS_Store
 Thumbs.db

@@ -1,0 +1,120 @@
+{
+  "execution_utc": "2026-10-15T10:23:20.400932+00:00",
+  "total_scenarios_evaluated": 7,
+  "all_defects_captured": true,
+  "zero_silent_deletions": true,
+  "scenarios": [
+    {
+      "scenario_id": "SCENARIO_BASELINE_CLEANED",
+      "scenario_name": "Candidate Cleaned Dataset Baseline",
+      "fixture_path": "cleaned/aircraft_cleaned.json",
+      "input_record_count": 19,
+      "cleaned_record_count": 19,
+      "quarantined_record_count": 0,
+      "hard_failures": 0,
+      "warnings": 0,
+      "status": "PASS",
+      "verified_outcome": "PASS - Zero defects in cleaned candidate dataset"
+    },
+    {
+      "scenario_id": "SCENARIO_MISSING_PROVENANCE",
+      "scenario_name": "Missing Provenance Lineage",
+      "fixture_path": "fixtures/invalid_missing_provenance.json",
+      "input_record_count": 2,
+      "cleaned_record_count": 0,
+      "quarantined_record_count": 2,
+      "hard_failures": 4,
+      "warnings": 0,
+      "triggered_rules": [
+        "RULE-GEO-007",
+        "RULE-GEO-006"
+      ],
+      "status": "DETECTED_AND_QUARANTINED",
+      "rule_verification": "PASS",
+      "conservation_verified": true
+    },
+    {
+      "scenario_id": "SCENARIO_DUPLICATE_RECORDS",
+      "scenario_name": "Duplicate Aircraft Hex Identifiers",
+      "fixture_path": "fixtures/invalid_duplicate_records.json",
+      "input_record_count": 2,
+      "cleaned_record_count": 1,
+      "quarantined_record_count": 1,
+      "hard_failures": 1,
+      "warnings": 0,
+      "triggered_rules": [
+        "RULE-GEO-002"
+      ],
+      "status": "DETECTED_AND_QUARANTINED",
+      "rule_verification": "PASS",
+      "conservation_verified": true
+    },
+    {
+      "scenario_id": "SCENARIO_MALFORMED_FIELD_TYPES",
+      "scenario_name": "Malformed Primitive Field Types",
+      "fixture_path": "fixtures/invalid_malformed_field_types.json",
+      "input_record_count": 1,
+      "cleaned_record_count": 0,
+      "quarantined_record_count": 1,
+      "hard_failures": 4,
+      "warnings": 0,
+      "triggered_rules": [
+        "RULE-GEO-003",
+        "RULE-GEO-002",
+        "RULE-GEO-004"
+      ],
+      "status": "DETECTED_AND_QUARANTINED",
+      "rule_verification": "PASS",
+      "conservation_verified": true
+    },
+    {
+      "scenario_id": "SCENARIO_SCHEMA_MISMATCH",
+      "scenario_name": "Schema Mismatch / Null Mandatory Fields",
+      "fixture_path": "fixtures/invalid_schema_mismatch.json",
+      "input_record_count": 2,
+      "cleaned_record_count": 0,
+      "quarantined_record_count": 2,
+      "hard_failures": 4,
+      "warnings": 0,
+      "triggered_rules": [
+        "RULE-GEO-007"
+      ],
+      "status": "DETECTED_AND_QUARANTINED",
+      "rule_verification": "PASS",
+      "conservation_verified": true
+    },
+    {
+      "scenario_id": "SCENARIO_STALE_DATA",
+      "scenario_name": "Stale Latency & Negative Timing",
+      "fixture_path": "fixtures/invalid_stale_data.json",
+      "input_record_count": 2,
+      "cleaned_record_count": 1,
+      "quarantined_record_count": 1,
+      "hard_failures": 2,
+      "warnings": 2,
+      "triggered_rules": [
+        "RULE-GEO-005"
+      ],
+      "status": "DETECTED_AND_QUARANTINED",
+      "rule_verification": "PASS",
+      "conservation_verified": true
+    },
+    {
+      "scenario_id": "SCENARIO_INCONSISTENT_MEASUREMENTS",
+      "scenario_name": "Inconsistent Kinematic Measurements",
+      "fixture_path": "fixtures/invalid_inconsistent_measurements.json",
+      "input_record_count": 2,
+      "cleaned_record_count": 0,
+      "quarantined_record_count": 2,
+      "hard_failures": 3,
+      "warnings": 0,
+      "triggered_rules": [
+        "RULE-GEO-004",
+        "RULE-GEO-008"
+      ],
+      "status": "DETECTED_AND_QUARANTINED",
+      "rule_verification": "PASS",
+      "conservation_verified": true
+    }
+  ]
+}

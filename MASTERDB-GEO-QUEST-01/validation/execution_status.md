@@ -118,7 +118,7 @@
 
 To re-execute and audit the entire pipeline from scratch:
 ```powershell
-cd C:\Users\Microsoft\.gemini\antigravity-ide\scratch\MASTERDB-GEO-QUEST-01
+cd C:\Users\Microsoft\week\bhiv-masterdb-ingestion-certification-service\MASTERDB-GEO-QUEST-01
 
 # 1. Fetch live ADS-B data
 python scripts/collect_aircraft.py

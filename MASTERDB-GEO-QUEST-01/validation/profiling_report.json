@@ -1,7 +1,7 @@
 {
-  "profiling_utc": "2026-10-03T08:26:49.744520+00:00",
+  "profiling_utc": "2026-10-15T10:23:20.176313+00:00",
   "live_data_status": "PROFILED",
-  "raw_source_file": "C:\\Users\\Microsoft\\.gemini\\antigravity-ide\\scratch\\MASTERDB-GEO-QUEST-01\\raw\\aircraft_raw.json",
+  "raw_source_file": "C:\\Users\\Microsoft\\week\\bhiv-masterdb-ingestion-certification-service\\MASTERDB-GEO-QUEST-01\\raw\\aircraft_raw.json",
   "api_metadata": {
     "now_epoch": 1791016059501,
     "msg": "No error",

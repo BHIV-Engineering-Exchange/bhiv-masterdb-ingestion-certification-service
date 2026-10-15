@@ -1,0 +1,37 @@
+{
+  "scenario_id": "SCENARIO_INCONSISTENT_MEASUREMENTS",
+  "description": "Records with conflicting kinematic measurements such as cruising altitude while on ground, or supersonic ground speed on taxiway.",
+  "expected_rule_violations": ["RULE-GEO-004", "RULE-GEO-008"],
+  "records": [
+    {
+      "aircraft_hex_id": "8005A9",
+      "callsign": "CONFLICT1",
+      "registration": "VT-CF1",
+      "latitude": 19.088,
+      "longitude": 72.867,
+      "altitude_baro_ft": 35000,
+      "is_on_ground": true,
+      "ground_speed_kts": 450.0,
+      "provenance": {
+        "source_system": "adsb.lol",
+        "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+        "raw_acquisition_utc": "2026-10-15T09:45:00Z"
+      }
+    },
+    {
+      "aircraft_hex_id": "8005AA",
+      "callsign": "CONFLICT2",
+      "registration": "VT-CF2",
+      "latitude": 19.120,
+      "longitude": 72.890,
+      "altitude_baro_ft": 100,
+      "is_on_ground": false,
+      "ground_speed_kts": 2500.0,
+      "provenance": {
+        "source_system": "adsb.lol",
+        "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+        "raw_acquisition_utc": "2026-10-15T09:45:00Z"
+      }
+    }
+  ]
+}

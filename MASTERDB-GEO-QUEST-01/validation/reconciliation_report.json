@@ -1,0 +1,48 @@
+{
+  "report_id": "RECON-GEO-QUEST-001",
+  "timestamp_utc": "2026-10-15T10:23:21.990352+00:00",
+  "dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+  "capability_id": "gev.aircraft_tracking",
+  "schema_version": "1.0.0",
+  "dataset_version": "1.0.0-candidate",
+  "counts": {
+    "raw_api_captured": 19,
+    "cleaned_submitted": 19,
+    "quarantined_segregated": 0,
+    "candidate_registered": 19,
+    "candidate_retrieved_unfiltered": 19,
+    "candidate_retrieved_filtered": 1,
+    "target_filtered_hex": "ABE5A2",
+    "target_filtered_callsign": "FDX8",
+    "conservation_equation": "Raw (19) = Cleaned (19) + Quarantined (0) = Registered (19) = Retrieved (19)",
+    "conservation_verified": true
+  },
+  "provenance_reconciliation": {
+    "total_records_checked": 19,
+    "records_with_complete_provenance": 19,
+    "completeness_percentage": 100.0,
+    "source_reference": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+    "licence_declared": "Open Data Commons Open Database License (ODbL) v1.0",
+    "status": "PASS"
+  },
+  "authorization_security_reconciliation": {
+    "unauthorized_register_status": 403,
+    "unauthorized_register_rejection": "PASS (403 Forbidden)",
+    "unauthorized_retrieve_status": 403,
+    "unauthorized_retrieve_rejection": "PASS (403 Forbidden)",
+    "admin_register_status": 200,
+    "admin_retrieve_status": 200
+  },
+  "tamper_detection_reconciliation": {
+    "tampered_record_caught": true,
+    "status": "PASS"
+  },
+  "governance_boundary_status": {
+    "candidate_staging": "VERIFIED_LOCAL_CANDIDATE_STAGED",
+    "registration_status": "PENDING_AUTHORIZATION",
+    "canonical_status": "NOT CANONICAL (CANDIDATE ONLY)",
+    "discoverable": false,
+    "real_platform_write_performed": false,
+    "real_platform_blocker": "Canonical write authority requires explicit governance sign-off from appointed Data Steward (Harsha Pawar / Kavy Changela)."
+  }
+}

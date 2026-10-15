@@ -1,0 +1,107 @@
+{
+  "catalogue_version": "1.0.0",
+  "dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+  "capability_id": "gev.aircraft_tracking",
+  "rules": [
+    {
+      "rule_id": "RULE-GEO-001",
+      "rule_name": "Record Conservation Accounting",
+      "target_fields": ["entire_batch"],
+      "severity": "HARD_FAILURE",
+      "predicate": "len(raw) == len(cleaned) + len(quarantined)",
+      "disposition": "REJECT_BATCH",
+      "expected_result": "Strict mathematical equality",
+      "justification": "Ingestion pipelines must account for 100% of input records to avoid silent data loss."
+    },
+    {
+      "rule_id": "RULE-GEO-002",
+      "rule_name": "Entity Identifier Uniqueness",
+      "target_fields": ["aircraft_hex_id"],
+      "severity": "HARD_FAILURE",
+      "predicate": "count(hex) == 1 in batch",
+      "disposition": "QUARANTINE_DUPLICATE",
+      "expected_result": "Zero duplicate aircraft hex addresses",
+      "justification": "Mode S hex addresses are unique 24-bit identifiers; duplicate records indicate multi-path interference or feed errors."
+    },
+    {
+      "rule_id": "RULE-GEO-003",
+      "rule_name": "Geographic Coordinate Spatial Envelope",
+      "target_fields": ["latitude", "longitude"],
+      "severity": "HARD_FAILURE",
+      "predicate": "-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0 and lat is not None and lon is not None",
+      "disposition": "QUARANTINE_RECORD",
+      "expected_result": "Coordinates strictly within EPSG:4326 bounds",
+      "justification": "Spatial queries and indexing fail on invalid or missing coordinates."
+    },
+    {
+      "rule_id": "RULE-GEO-004",
+      "rule_name": "Kinematic Range Aviation Envelopes",
+      "target_fields": ["ground_speed_kts", "altitude_baro_ft", "true_track_deg"],
+      "severity": "HARD_FAILURE",
+      "predicate": "0.0 <= gs <= 1500.0 and -2000 <= alt <= 85000 and 0.0 <= track <= 360.0",
+      "disposition": "QUARANTINE_RECORD",
+      "expected_result": "Values within realistic physical flight bounds",
+      "justification": "Unrealistic kinematic parameters indicate telemetry sensor faults or corrupt frames."
+    },
+    {
+      "rule_id": "RULE-GEO-005",
+      "rule_name": "Temporal Latency & Freshness",
+      "target_fields": ["last_seen_seconds", "position_age_seconds"],
+      "severity": "HARD_FAILURE_OR_WARNING",
+      "predicate": "seen >= 0.0 and seen_pos >= 0.0; warning if seen > 300.0",
+      "disposition": "QUARANTINE_IF_NEGATIVE_OR_WARN_AND_FLAG_STALE",
+      "expected_result": "Non-negative sensor latencies; stale telemetry flagged",
+      "justification": "Negative latencies violate causality; high latency indicates stale position."
+    },
+    {
+      "rule_id": "RULE-GEO-006",
+      "rule_name": "Audit Lineage & Provenance Completeness",
+      "target_fields": ["provenance"],
+      "severity": "HARD_FAILURE",
+      "predicate": "provenance is not None and provenance.source_url and provenance.raw_acquisition_utc",
+      "disposition": "REJECT_RECORD",
+      "expected_result": "100% of records embed source lineage",
+      "justification": "Governed data assets must preserve immutable audit provenance."
+    },
+    {
+      "rule_id": "RULE-GEO-007",
+      "rule_name": "Mandatory Schema Conformance & Type Safety",
+      "target_fields": ["aircraft_hex_id", "latitude", "longitude", "is_on_ground", "provenance"],
+      "severity": "HARD_FAILURE",
+      "predicate": "all mandatory fields present and strictly conformant to data dictionary types",
+      "disposition": "QUARANTINE_RECORD",
+      "expected_result": "Zero schema mismatch or malformed types",
+      "justification": "Malformed types crash downstream analytical engines and serialization endpoints."
+    },
+    {
+      "rule_id": "RULE-GEO-008",
+      "rule_name": "Surface State Measurement Decoupling",
+      "target_fields": ["is_on_ground", "altitude_baro_ft", "ground_speed_kts"],
+      "severity": "HARD_FAILURE",
+      "predicate": "not (is_on_ground and (altitude_baro_ft > 500 or ground_speed_kts > 200))",
+      "disposition": "QUARANTINE_RECORD",
+      "expected_result": "Physical consistency between surface state flag and kinematic values",
+      "justification": "Transponder reporting surface state while cruising at 35,000 ft indicates corrupt telemetry."
+    },
+    {
+      "rule_id": "RULE-GEO-009",
+      "rule_name": "Dataset Identity vs Schema Disambiguation",
+      "target_fields": ["dataset_id", "version", "schema"],
+      "severity": "HARD_FAILURE",
+      "predicate": "dataset_id != schema_version and semantic versioning followed",
+      "disposition": "REJECT_PAYLOAD",
+      "expected_result": "Unambiguous separation between dataset asset and schema definition",
+      "justification": "Prevents catastrophic confusion between specific dataset releases and schema contracts."
+    },
+    {
+      "rule_id": "RULE-GEO-010",
+      "rule_name": "Open Database License Compliance",
+      "target_fields": ["licence", "attribution"],
+      "severity": "HARD_FAILURE",
+      "predicate": "licence == 'Open Data Commons Open Database License (ODbL) v1.0' and attribution statement present",
+      "disposition": "REJECT_ASSET",
+      "expected_result": "Compliance with ODbL §4.3 and §4.4",
+      "justification": "Prevents copyright and licensing violations during downstream data reuse."
+    }
+  ]
+}
