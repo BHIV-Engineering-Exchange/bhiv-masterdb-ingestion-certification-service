@@ -445,6 +445,25 @@ Execute test suites from the repository root using the virtual environment:
 - **Pravah Bucket (`PRAVAH_BHIV_BUCKET`):** When unset, `/bucket/*` and `/evidence/*` fail closed with HTTP 503 rather than silently mocking storage.
 - **InsightBridge (`PRAVAH_BHIV_INSIGHT_FLOW_BRIDGE`):** When unset, observability push reports `pushed: false` gracefully.
 
+## Dataset Contracts
+
+Consumer-facing contracts are published in `datasets/dataset_contracts.json`
+and validated against `datasets/dataset_contract.schema.json`. Internal source
+paths are kept separately in `datasets/internal_dataset_registry.json`; never
+return that internal registry from a consumer-facing API. Contracts use unique
+capability IDs, machine-readable consumer identities, domain/visibility/
+sensitivity policies, and references to shared schemas. Failure fixtures are
+marked internal. Three synthetic demo datasets cover mangrove monitoring,
+maritime vessel analytics, and financial market analytics.
+
+Validation checks contract shape, capability-ID uniqueness, shared schema
+references and schema validity, internal source mappings, and synthetic
+dataset records:
+
+```bash
+python scripts/validate_dataset_contracts.py
+```
+
 ## Project Structure
 
 ```text
@@ -452,7 +471,9 @@ config/                 Validation schema and rule configuration
 database_targets/       MASTERDB database routing / controlled ingestion
                         attachment (8 target databases, RBAC, contract) —
                         see DATABASE_TARGETS_ARCHITECTURE.md
-datasets/               Sample valid and invalid dataset packages
+datasets/               Sample datasets, consumer contracts, and internal
+                        source registry; see dataset_contracts.json and
+                        internal_dataset_registry.json
 engines/                Scoring, risk, classification, recommendation engines
 profiling/              Dataset profiling
 shared_data/            Phase 1 — canonical Shared Data Service Registry (Task 4)

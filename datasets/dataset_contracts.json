@@ -1,0 +1,1029 @@
+{
+  "contracts": [
+    {
+      "dataset_id": "MASTERDB-CUSTOMER-SAMPLE",
+      "name": "Customer Validation Sample Dataset",
+      "capability_id": "masterdb.customer.sample_validation",
+      "version": "1.0",
+      "description": "Customer-shaped sample data used to exercise CSV ingestion and validation, including rows with missing or invalid values.",
+      "status": "sample",
+      "visibility": "internal",
+      "sensitivity": "moderate",
+      "domain": "customer_data",
+      "allowed_domains": [
+        "customer_data",
+        "masterdb"
+      ],
+      "contract_kind": "dataset",
+      "schema": {
+        "$ref": "#/shared_schemas/customer_sample_v1"
+      },
+      "allowed_purposes": [
+        "data_validation",
+        "certification_testing"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "masterdb.dataset_validation_tests",
+          "name": "MASTERDB Dataset Validation Tests",
+          "domain": "masterdb"
+        }
+      ],
+      "provenance": {
+        "origin": "Repository-provided synthetic/sample data",
+        "note": "Test data; not asserted to be a production customer export."
+      }
+    },
+    {
+      "dataset_id": "MASTERDB-CERTIFIABLE-SAMPLE",
+      "name": "Certifiable Customer Sample Dataset",
+      "capability_id": "masterdb.customer.certifiable_sample",
+      "version": "1.0",
+      "description": "Small customer-shaped CSV fixture used to exercise successful dataset validation and certification.",
+      "status": "sample",
+      "visibility": "internal",
+      "sensitivity": "moderate",
+      "domain": "customer_data",
+      "allowed_domains": [
+        "customer_data",
+        "masterdb"
+      ],
+      "contract_kind": "dataset",
+      "schema": {
+        "$ref": "#/shared_schemas/customer_sample_v1"
+      },
+      "allowed_purposes": [
+        "data_validation",
+        "certification_testing"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "masterdb.certification_tests",
+          "name": "MASTERDB Certification Tests",
+          "domain": "masterdb"
+        }
+      ],
+      "provenance": {
+        "origin": "Repository-provided synthetic/sample data",
+        "note": "Test data; not asserted to be a production customer export."
+      }
+    },
+    {
+      "dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT-RAW",
+      "name": "Mumbai FIR Raw Aircraft Observation Dataset",
+      "capability_id": "gev.aircraft.raw_observations",
+      "version": "1.0.0-candidate",
+      "description": "Unmodified ADS-B aircraft observation response acquired for the Mumbai FIR candidate dataset.",
+      "status": "candidate",
+      "visibility": "public",
+      "sensitivity": "low",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "aviation",
+        "geospatial"
+      ],
+      "contract_kind": "dataset",
+      "schema": {
+        "$ref": "#/shared_schemas/aircraft_raw_response_v1"
+      },
+      "allowed_purposes": [
+        "aviation_situational_awareness",
+        "aviation_research",
+        "data_quality_validation"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "bhiv.geospatial_query_engine",
+          "name": "BHIV Geospatial MasterDB Query Engine",
+          "domain": "geospatial"
+        },
+        {
+          "consumer_id": "bhiv.airspace_awareness",
+          "name": "Airspace Situational Awareness Service",
+          "domain": "aviation"
+        }
+      ],
+      "provenance": {
+        "source": "adsb.lol",
+        "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+        "license": "ODbL v1.0",
+        "registration_status": "Candidate only; not canonical or production-authorized."
+      }
+    },
+    {
+      "dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+      "name": "BHIV vNEXT Normalized Aircraft Observation Dataset",
+      "capability_id": "gev.aircraft.normalized_observations",
+      "version": "1.0.0-candidate",
+      "description": "Schema-conformant, quality-validated ADS-B snapshot of aircraft observations in Mumbai FIR.",
+      "status": "candidate",
+      "visibility": "public",
+      "sensitivity": "low",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "aviation",
+        "geospatial"
+      ],
+      "contract_kind": "dataset",
+      "schema": {
+        "$ref": "#/shared_schemas/aircraft_observation_v1"
+      },
+      "allowed_purposes": [
+        "aviation_situational_awareness",
+        "aviation_research",
+        "data_quality_validation"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "bhiv.geospatial_query_engine",
+          "name": "BHIV Geospatial MasterDB Query Engine",
+          "domain": "geospatial"
+        },
+        {
+          "consumer_id": "bhiv.airspace_awareness",
+          "name": "Airspace Situational Awareness Service",
+          "domain": "aviation"
+        },
+        {
+          "consumer_id": "bhiv.spatial_anomaly_detection",
+          "name": "Spatial Anomaly Detection Pipeline",
+          "domain": "geospatial"
+        },
+        {
+          "consumer_id": "bhiv.trajectory_prediction",
+          "name": "Trajectory Prediction and Conflict Detection Agents",
+          "domain": "aviation"
+        }
+      ],
+      "provenance": {
+        "source": "adsb.lol",
+        "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+        "license": "ODbL v1.0",
+        "registration_status": "Candidate only; not canonical or production-authorized."
+      }
+    },
+    {
+      "dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT-QUARANTINE",
+      "name": "Aircraft Observation Quarantine Dataset",
+      "capability_id": "gev.aircraft.quarantine_review",
+      "version": "1.0.0-candidate",
+      "description": "Aircraft records rejected by quality validation, retained with quarantine diagnostics for review.",
+      "status": "internal",
+      "visibility": "internal",
+      "sensitivity": "moderate",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "geospatial",
+        "masterdb"
+      ],
+      "contract_kind": "dataset",
+      "schema": {
+        "$ref": "#/shared_schemas/aircraft_quarantine_v1"
+      },
+      "allowed_purposes": [
+        "data_quality_validation",
+        "quarantine_review"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "masterdb.data_quality_reviewers",
+          "name": "MASTERDB Data Quality Reviewers",
+          "domain": "masterdb"
+        },
+        {
+          "consumer_id": "gev.aircraft_validation_pipeline",
+          "name": "Aircraft Validation Pipeline",
+          "domain": "geospatial"
+        }
+      ],
+      "provenance": {
+        "source_dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+        "origin": "Quality validation quarantine output"
+      }
+    },
+    {
+      "dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT-SYNTHETIC",
+      "name": "Valid Synthetic Aircraft Test Dataset",
+      "capability_id": "gev.aircraft.synthetic_test",
+      "version": "1.0.0-synthetic",
+      "description": "Deterministic synthetic aircraft observations used to test valid normalized-record handling.",
+      "status": "synthetic",
+      "visibility": "internal",
+      "sensitivity": "low",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "geospatial"
+      ],
+      "contract_kind": "synthetic_dataset",
+      "schema": {
+        "$ref": "#/shared_schemas/aircraft_synthetic_batch_v1"
+      },
+      "allowed_purposes": [
+        "testing",
+        "data_quality_validation"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "gev.aircraft_test_suite",
+          "name": "Aircraft Validation and Test Suites",
+          "domain": "geospatial"
+        }
+      ],
+      "provenance": {
+        "origin": "Synthetic fixture authored for repository testing",
+        "synthetic": true
+      }
+    },
+    {
+      "dataset_id": "GEO-QUEST-FIXTURE-DUPLICATE-RECORDS",
+      "name": "Duplicate Aircraft Identifier Failure Fixture",
+      "capability_id": "gev.aircraft.fixture.duplicate_records",
+      "version": "1.0.0-test",
+      "description": "Invalid aircraft fixture with duplicate ICAO identifiers for uniqueness-rule testing.",
+      "status": "internal",
+      "visibility": "internal",
+      "sensitivity": "low",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "geospatial"
+      ],
+      "contract_kind": "failure_fixture",
+      "schema": {
+        "$ref": "#/shared_schemas/geoquest_failure_fixture_v1"
+      },
+      "allowed_purposes": [
+        "testing",
+        "data_quality_validation"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "gev.aircraft_test_suite",
+          "name": "Aircraft Validation and Test Suites",
+          "domain": "geospatial"
+        }
+      ],
+      "provenance": {
+        "origin": "Synthetic failure fixture authored for repository testing",
+        "synthetic": true
+      }
+    },
+    {
+      "dataset_id": "GEO-QUEST-FIXTURE-INCONSISTENT-MEASUREMENTS",
+      "name": "Inconsistent Aircraft Measurement Failure Fixture",
+      "capability_id": "gev.aircraft.fixture.inconsistent_measurements",
+      "version": "1.0.0-test",
+      "description": "Invalid aircraft fixture with contradictory ground status and kinematic measurements.",
+      "status": "internal",
+      "visibility": "internal",
+      "sensitivity": "low",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "geospatial"
+      ],
+      "contract_kind": "failure_fixture",
+      "schema": {
+        "$ref": "#/shared_schemas/geoquest_failure_fixture_v1"
+      },
+      "allowed_purposes": [
+        "testing",
+        "data_quality_validation"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "gev.aircraft_test_suite",
+          "name": "Aircraft Validation and Test Suites",
+          "domain": "geospatial"
+        }
+      ],
+      "provenance": {
+        "origin": "Synthetic failure fixture authored for repository testing",
+        "synthetic": true
+      }
+    },
+    {
+      "dataset_id": "GEO-QUEST-FIXTURE-MALFORMED-FIELD-TYPES",
+      "name": "Malformed Aircraft Field Type Failure Fixture",
+      "capability_id": "gev.aircraft.fixture.malformed_field_types",
+      "version": "1.0.0-test",
+      "description": "Invalid aircraft fixture with malformed values and primitive types for field-validation testing.",
+      "status": "internal",
+      "visibility": "internal",
+      "sensitivity": "low",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "geospatial"
+      ],
+      "contract_kind": "failure_fixture",
+      "schema": {
+        "$ref": "#/shared_schemas/geoquest_failure_fixture_v1"
+      },
+      "allowed_purposes": [
+        "testing",
+        "data_quality_validation"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "gev.aircraft_test_suite",
+          "name": "Aircraft Validation and Test Suites",
+          "domain": "geospatial"
+        }
+      ],
+      "provenance": {
+        "origin": "Synthetic failure fixture authored for repository testing",
+        "synthetic": true
+      }
+    },
+    {
+      "dataset_id": "GEO-QUEST-FIXTURE-MISSING-PROVENANCE",
+      "name": "Missing Aircraft Provenance Failure Fixture",
+      "capability_id": "gev.aircraft.fixture.missing_provenance",
+      "version": "1.0.0-test",
+      "description": "Invalid aircraft fixture with missing or incomplete record-level provenance.",
+      "status": "internal",
+      "visibility": "internal",
+      "sensitivity": "low",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "geospatial"
+      ],
+      "contract_kind": "failure_fixture",
+      "schema": {
+        "$ref": "#/shared_schemas/geoquest_failure_fixture_v1"
+      },
+      "allowed_purposes": [
+        "testing",
+        "data_quality_validation"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "gev.aircraft_test_suite",
+          "name": "Aircraft Validation and Test Suites",
+          "domain": "geospatial"
+        }
+      ],
+      "provenance": {
+        "origin": "Synthetic failure fixture authored for repository testing",
+        "synthetic": true
+      }
+    },
+    {
+      "dataset_id": "GEO-QUEST-FIXTURE-SCHEMA-MISMATCH",
+      "name": "Aircraft Schema Mismatch Failure Fixture",
+      "capability_id": "gev.aircraft.fixture.schema_mismatch",
+      "version": "1.0.0-test",
+      "description": "Invalid aircraft fixture missing required fields or containing null values in non-nullable fields.",
+      "status": "internal",
+      "visibility": "internal",
+      "sensitivity": "low",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "geospatial"
+      ],
+      "contract_kind": "failure_fixture",
+      "schema": {
+        "$ref": "#/shared_schemas/geoquest_failure_fixture_v1"
+      },
+      "allowed_purposes": [
+        "testing",
+        "data_quality_validation"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "gev.aircraft_test_suite",
+          "name": "Aircraft Validation and Test Suites",
+          "domain": "geospatial"
+        }
+      ],
+      "provenance": {
+        "origin": "Synthetic failure fixture authored for repository testing",
+        "synthetic": true
+      }
+    },
+    {
+      "dataset_id": "GEO-QUEST-FIXTURE-STALE-DATA",
+      "name": "Stale Aircraft Observation Failure Fixture",
+      "capability_id": "gev.aircraft.fixture.stale_data",
+      "version": "1.0.0-test",
+      "description": "Invalid aircraft fixture with negative or excessive observation-age values for freshness validation.",
+      "status": "internal",
+      "visibility": "internal",
+      "sensitivity": "low",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "geospatial"
+      ],
+      "contract_kind": "failure_fixture",
+      "schema": {
+        "$ref": "#/shared_schemas/geoquest_failure_fixture_v1"
+      },
+      "allowed_purposes": [
+        "testing",
+        "data_quality_validation"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "gev.aircraft_test_suite",
+          "name": "Aircraft Validation and Test Suites",
+          "domain": "geospatial"
+        }
+      ],
+      "provenance": {
+        "origin": "Synthetic failure fixture authored for repository testing",
+        "synthetic": true
+      }
+    },
+    {
+      "dataset_id": "ds-mangrove-001",
+      "name": "Synthetic Mangrove Ecosystem Monitoring Dataset",
+      "capability_id": "cap-mangrove-monitoring",
+      "version": "1.0.0-demo",
+      "description": "Synthetic mangrove site observations containing canopy density and biomass indicators for environmental monitoring demonstrations.",
+      "status": "synthetic",
+      "visibility": "public",
+      "sensitivity": "low",
+      "domain": "geospatial",
+      "allowed_domains": [
+        "environment",
+        "geospatial",
+        "infrastructure",
+        "maritime"
+      ],
+      "contract_kind": "synthetic_dataset",
+      "schema": {
+        "$ref": "#/shared_schemas/mangrove_observation_v1"
+      },
+      "allowed_purposes": [
+        "environmental_monitoring"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "bharat_mala_demo",
+          "name": "Bharat Mala Demo",
+          "domain": "infrastructure"
+        },
+        {
+          "consumer_id": "vana_fin_demo",
+          "name": "VANA/FIN Demo",
+          "domain": "environment"
+        },
+        {
+          "consumer_id": "marine_intelligence_demo",
+          "name": "Marine Intelligence Demo",
+          "domain": "maritime"
+        }
+      ],
+      "provenance": {
+        "origin": "Synthetic demonstration data; not live satellite or ground-truth measurements",
+        "source_reference": "ISRO/EO-Sat-Mangrove-Constellation demo fixture",
+        "certification_reference": "MASTERDB-CERT-GEO-001-DEMO"
+      }
+    },
+    {
+      "dataset_id": "ds-maritime-001",
+      "name": "Synthetic Maritime Vessel and Port Analytics Dataset",
+      "capability_id": "cap-maritime-cargo",
+      "version": "1.0.0-demo",
+      "description": "Synthetic vessel positions, speeds, destination ports, and port congestion indicators for maritime logistics demonstrations.",
+      "status": "synthetic",
+      "visibility": "public",
+      "sensitivity": "low",
+      "domain": "maritime",
+      "allowed_domains": [
+        "ecosystem",
+        "infrastructure",
+        "maritime"
+      ],
+      "contract_kind": "synthetic_dataset",
+      "schema": {
+        "$ref": "#/shared_schemas/maritime_vessel_observation_v1"
+      },
+      "allowed_purposes": [
+        "maritime_logistics"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "marine_demo",
+          "name": "Marine Demo",
+          "domain": "maritime"
+        },
+        {
+          "consumer_id": "tantra",
+          "name": "TANTRA",
+          "domain": "ecosystem"
+        },
+        {
+          "consumer_id": "bharat_mala_demo",
+          "name": "Bharat Mala Demo",
+          "domain": "infrastructure"
+        }
+      ],
+      "provenance": {
+        "origin": "Synthetic demonstration data; not a live AIS feed",
+        "source_reference": "National Maritime Data Gateway demo fixture",
+        "certification_reference": "MASTERDB-CERT-MAR-002-DEMO"
+      }
+    },
+    {
+      "dataset_id": "ds-fin-001",
+      "name": "Synthetic Financial Market and Credit Risk Dataset",
+      "capability_id": "cap-fin-market-analytics",
+      "version": "1.0.0-demo",
+      "description": "Synthetic market-index and credit-risk indicators for finance analytics demonstrations; contains no live market observations or customer accounts.",
+      "status": "synthetic",
+      "visibility": "public",
+      "sensitivity": "low",
+      "domain": "finance",
+      "allowed_domains": [
+        "ecosystem",
+        "finance"
+      ],
+      "contract_kind": "synthetic_dataset",
+      "schema": {
+        "$ref": "#/shared_schemas/financial_market_observation_v1"
+      },
+      "allowed_purposes": [
+        "financial_analysis"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "fin_demo",
+          "name": "FIN Demo",
+          "domain": "finance"
+        },
+        {
+          "consumer_id": "vana_fin_demo",
+          "name": "VANA/FIN Demo",
+          "domain": "finance"
+        },
+        {
+          "consumer_id": "tantra",
+          "name": "TANTRA",
+          "domain": "ecosystem"
+        }
+      ],
+      "provenance": {
+        "origin": "Synthetic demonstration data; not live market or financial information",
+        "source_reference": "Reserve Financial Network Gateway demo fixture",
+        "certification_reference": "MASTERDB-CERT-FIN-003-DEMO"
+      }
+    }
+  ],
+  "shared_schemas": {
+    "customer_sample_v1": {
+      "title": "Customer sample CSV rows",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "age": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "salary": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "aircraft_raw_response_v1": {
+      "title": "Raw ADS-B API response envelope",
+      "type": "object",
+      "properties": {
+        "now": {
+          "type": "integer"
+        },
+        "ac": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "ac"
+      ],
+      "additionalProperties": true
+    },
+    "aircraft_observation_v1": {
+      "title": "Normalized aircraft observation records",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "aircraft_hex_id": {
+            "type": "string"
+          },
+          "callsign": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registration": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "aircraft_type_icao": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "squawk_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "emitter_category": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "altitude_baro_ft": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "altitude_geom_ft": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "is_on_ground": {
+            "type": "boolean"
+          },
+          "ground_speed_kts": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "true_track_deg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "vertical_rate_fpm": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "position_age_seconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "last_seen_seconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "distance_from_center_nm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "bearing_from_center_deg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "signal_rssi_db": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "provenance": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "aircraft_hex_id",
+          "latitude",
+          "longitude",
+          "is_on_ground",
+          "provenance"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "aircraft_quarantine_v1": {
+      "title": "Aircraft quarantine result envelope",
+      "type": "object",
+      "properties": {
+        "quarantine_metadata": {
+          "type": "object"
+        },
+        "quarantined_records": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "quarantine_metadata",
+        "quarantined_records"
+      ],
+      "additionalProperties": false
+    },
+    "aircraft_synthetic_batch_v1": {
+      "title": "Synthetic aircraft test batch envelope",
+      "type": "object",
+      "properties": {
+        "dataset_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "generated_at_utc": {
+          "type": "string"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "dataset_id",
+        "version",
+        "records"
+      ],
+      "additionalProperties": true
+    },
+    "geoquest_failure_fixture_v1": {
+      "title": "GEO-QUEST failure test fixture envelope",
+      "type": "object",
+      "properties": {
+        "scenario_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "expected_rule_violations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "scenario_id",
+        "records"
+      ],
+      "additionalProperties": true
+    },
+    "mangrove_observation_v1": {
+      "title": "Synthetic mangrove monitoring dataset",
+      "type": "object",
+      "properties": {
+        "dataset_id": {
+          "const": "ds-mangrove-001"
+        },
+        "version": {
+          "type": "string"
+        },
+        "synthetic": {
+          "const": true
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "site_id": {
+                "type": "string"
+              },
+              "observation_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              },
+              "canopy_density_pct": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "biomass_index": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "site_id",
+              "observation_date",
+              "latitude",
+              "longitude",
+              "canopy_density_pct",
+              "biomass_index"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "provenance": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "dataset_id",
+        "version",
+        "synthetic",
+        "records",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "maritime_vessel_observation_v1": {
+      "title": "Synthetic maritime vessel and port observation dataset",
+      "type": "object",
+      "properties": {
+        "dataset_id": {
+          "const": "ds-maritime-001"
+        },
+        "version": {
+          "type": "string"
+        },
+        "synthetic": {
+          "const": true
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "vessel_id": {
+                "type": "string"
+              },
+              "observed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              },
+              "speed_knots": {
+                "type": "number",
+                "minimum": 0
+              },
+              "destination_port": {
+                "type": "string"
+              },
+              "port_congestion_index": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "vessel_id",
+              "observed_at",
+              "latitude",
+              "longitude",
+              "speed_knots",
+              "destination_port",
+              "port_congestion_index"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "provenance": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "dataset_id",
+        "version",
+        "synthetic",
+        "records",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "financial_market_observation_v1": {
+      "title": "Synthetic financial market and credit risk observations",
+      "type": "object",
+      "properties": {
+        "dataset_id": {
+          "const": "ds-fin-001"
+        },
+        "version": {
+          "type": "string"
+        },
+        "synthetic": {
+          "const": true
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "symbol": {
+                "type": "string"
+              },
+              "observed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "market_index": {
+                "type": "number"
+              },
+              "credit_risk_index": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "currency": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "symbol",
+              "observed_at",
+              "market_index",
+              "credit_risk_index",
+              "currency"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "provenance": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "dataset_id",
+        "version",
+        "synthetic",
+        "records",
+        "provenance"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

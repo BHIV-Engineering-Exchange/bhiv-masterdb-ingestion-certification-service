@@ -1,0 +1,28 @@
+{
+  "dataset_id": "ds-mangrove-001",
+  "version": "1.0.0-demo",
+  "synthetic": true,
+  "records": [
+    {
+      "site_id": "MNG-001",
+      "observation_date": "2026-10-01",
+      "latitude": 19.076,
+      "longitude": 72.8777,
+      "canopy_density_pct": 82.4,
+      "biomass_index": 14.7
+    },
+    {
+      "site_id": "MNG-002",
+      "observation_date": "2026-10-01",
+      "latitude": 18.921,
+      "longitude": 72.811,
+      "canopy_density_pct": 67.2,
+      "biomass_index": 11.3
+    }
+  ],
+  "provenance": {
+    "origin": "Synthetic demonstration data",
+    "source_reference": "ISRO/EO-Sat-Mangrove-Constellation demo fixture",
+    "certification_reference": "MASTERDB-CERT-GEO-001-DEMO"
+  }
+}

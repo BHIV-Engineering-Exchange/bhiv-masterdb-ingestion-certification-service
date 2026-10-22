@@ -41,6 +41,19 @@ def generate_metadata(
     metadata_doc = {
         "dataset_name": "BHIV vNEXT MASTERDB-GEO-QUEST-01 Aircraft Observation Dataset",
         "dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+        "capability_id": "gev.aircraft_tracking",
+        "description": "Normalized snapshot of ADS-B aircraft observations in Mumbai FIR, collected from adsb.lol and prepared for governed geospatial ingestion, validation, and airspace situational-awareness research.",
+        "allowed_purposes": [
+            "aviation_situational_awareness",
+            "aviation_research",
+            "data_quality_validation"
+        ],
+        "allowed_consumers": [
+            "BHIV Geospatial MasterDB Query Engine",
+            "Airspace Situational Awareness Service",
+            "Spatial Anomaly Detection Pipeline",
+            "Trajectory Prediction and Conflict Detection Agents"
+        ],
         "source": "adsb.lol (God's Eye View community ADS-B aggregation feed)",
         "source_url": source_url,
         "acquisition_method": "Real-time HTTP GET query to REST v2 geographic bounding circle endpoint",

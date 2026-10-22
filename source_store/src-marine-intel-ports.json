@@ -1,0 +1,23 @@
+{
+    "source_id": "src-marine-intel-ports",
+    "name": "Marine Intelligence - Indian Ports & Harbours Infrastructure",
+    "authority": "Ministry of Ports, Shipping and Waterways / Sagarmala",
+    "source_type": "MARITIME_PORT_REGISTRY",
+    "licence": "PUBLIC_GOVERNMENT_DATA",
+    "access_method": "REST_API",
+    "geographic_coverage": "INDIA_COASTAL_AND_MAJOR_PORTS",
+    "update_characteristics": "MONTHLY_REGISTRY_UPDATE",
+    "reliability_limitations": "SUBJECT_TO_PORT_AUTHORITY_REPORTING_CYCLES",
+    "attribution": "shipmin.gov.in, sagarmala.gov.in, mmb.gov.in",
+    "connector": "marine_intelligence_connector",
+    "last_validation": "2026-10-19T12:53:57.855187+00:00",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "Ministry of Ports, Shipping and Waterways",
+        "repository": "https://github.com/shravani2207-tech/marine-intelligence-task",
+        "commit": "03af9e32eeba275592a8e19041d7b51d6139dad7"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-19T12:53:57.855187+00:00",
+    "updated_at": "2026-10-19T12:53:57.855187+00:00"
+}

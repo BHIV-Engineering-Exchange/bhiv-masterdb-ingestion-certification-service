@@ -1,0 +1,26 @@
+{
+  "dataset_id": "ds-fin-001",
+  "version": "1.0.0-demo",
+  "synthetic": true,
+  "records": [
+    {
+      "symbol": "SYNX",
+      "observed_at": "2026-10-01T09:30:00Z",
+      "market_index": 104.25,
+      "credit_risk_index": 0.18,
+      "currency": "INR"
+    },
+    {
+      "symbol": "SYNQ",
+      "observed_at": "2026-10-01T09:30:00Z",
+      "market_index": 98.7,
+      "credit_risk_index": 0.31,
+      "currency": "INR"
+    }
+  ],
+  "provenance": {
+    "origin": "Synthetic demonstration data; not live market or financial information",
+    "source_reference": "Reserve Financial Network Gateway demo fixture",
+    "certification_reference": "MASTERDB-CERT-FIN-003-DEMO"
+  }
+}
