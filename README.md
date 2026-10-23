@@ -4,6 +4,10 @@ Backend service for MASTERDB: deterministic dataset validation/certification
 **plus** the Knowledge Package Lifecycle, Provenance/Lineage, and Retrieval
 Readiness runtime that turns certification into a usable knowledge platform.
 
+USGS earthquake observation fetching, persistence, API retrieval, the map,
+and the MDU write-contract status are documented in
+`EARTHQUAKE_INGESTION.md`.
+
 
 This repository started as a CSV integrity checker, became a validation and
 certification boundary, then owned package identity, lifecycle state,

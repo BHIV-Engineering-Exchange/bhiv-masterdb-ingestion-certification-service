@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from middleware.rate_limit_middleware import RateLimitMiddleware
 from middleware.rate_limiter import SlidingWindowRateLimiter
@@ -63,6 +63,11 @@ from services.source_registry_service import (
     SourceAlreadyExistsError,
 )
 from integrations.geospatial_connector import GeospatialConnectorAdapter
+from integrations.usgs_earthquake_connector import fetch_earthquakes
+from services.earthquake_observation_service import (
+    EarthquakeObservationService,
+    EarthquakeObservationValidationError,
+)
 
 from services.knowledge_object_service import (
     KnowledgeObjectService,
@@ -407,6 +412,12 @@ def _sql_store(subdir: str):
     if not _DATABASE_URL:
         return None
     return SqlArtifactStore(_DATABASE_URL, store_name=subdir)
+
+
+earthquake_observation_service = EarthquakeObservationService(
+    store=_sql_store("earthquake_observations"),
+    store_dir=_persist_path("earthquake_observations") or "earthquake_observation_store",
+)
 
 
 geo_quest_candidate_service = GeoQuestCandidateService(
@@ -2336,6 +2347,38 @@ def geospatial_connector_ingest(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/earthquakes/usgs/ingest")
+def ingest_usgs_earthquakes(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch the live USGS daily feed and idempotently persist its observations."""
+    try:
+        result = earthquake_observation_service.ingest(fetch_earthquakes())
+        result["source"] = "USGS"
+        result["capability_id"] = "cap-gev-earthquake-monitoring"
+        return result
+    except EarthquakeObservationValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("USGS earthquake ingestion failed")
+        raise HTTPException(status_code=502, detail="USGS earthquake ingestion failed") from exc
+
+
+@app.get("/earthquakes/usgs/observations")
+def list_usgs_earthquakes(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    records = earthquake_observation_service.list(limit=limit, offset=offset)
+    return {"dataset_id": "ds-gev-seismic-events", "capability_id": "cap-gev-earthquake-monitoring", "count": len(records), "limit": limit, "offset": offset, "observations": records}
+
+
+@app.get("/earthquakes/map", include_in_schema=False)
+def earthquake_map() -> FileResponse:
+    return FileResponse(os.path.join(os.path.dirname(__file__), "frontend", "earthquake-map.html"), media_type="text/html")
 
 
 @app.post("/geo-quest/candidates/gev.aircraft_tracking/register")
