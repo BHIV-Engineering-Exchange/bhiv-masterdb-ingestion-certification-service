@@ -5,10 +5,11 @@ Owns MASTERDB Capability registration, discovery, machine-readable contract reso
 and authorization/access evaluation for TANTRA runtime integration.
 """
 import hashlib
+import json
 import logging
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from models import (
@@ -19,6 +20,8 @@ from models import (
     CapabilityRetrieveRequest,
     CapabilityRetrieveResponse,
     CapabilityStatus,
+    PackageStatus,
+    RetrievalStatus,
 )
 from services.artifact_store import ArtifactStore
 from services.crypto_audit_emitter import CryptoAuditEmitter
@@ -54,12 +57,16 @@ class CapabilityRegistryService:
         package_registry: Optional[PackageRegistryService] = None,
         retrieval_service: Optional[DatasetRetrievalService] = None,
         audit_emitter: Optional[CryptoAuditEmitter] = None,
+        grant_store: Optional[Any] = None,
+        sql_store: Optional[Any] = None,
     ) -> None:
         self.store = ArtifactStore(reports_dir=store_dir)
         self.version_store = ArtifactStore(reports_dir=os.path.join(store_dir, "versions"))
         self.package_registry = package_registry or PackageRegistryService()
         self.retrieval_service = retrieval_service or DatasetRetrievalService(registry=self.package_registry)
         self.audit_emitter = audit_emitter or CryptoAuditEmitter()
+        self.grant_store = grant_store or ArtifactStore(reports_dir=os.path.join(store_dir, "access_grants"))
+        self.sql_store = sql_store
         self._access_contracts: Dict[str, AccessContract] = {}
         self._access_contract_actors: Dict[str, str] = {}
         self._seed_default_capabilities_if_empty()
@@ -675,6 +682,7 @@ class CapabilityRegistryService:
             )
             raise CapabilityAccessDeniedError(reason)
 
+        expires_at = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
         access_contract = AccessContract(
             request_id=req_id,
             application_id=request_data.application_id,
@@ -685,11 +693,26 @@ class CapabilityRegistryService:
             authorized=True,
             access_scope=capability.supported_access_methods,
             reason="Access authorized based on authenticated application identity, role, and matching purpose.",
+            expires_at=expires_at,
         )
 
         self._access_contracts[access_contract.request_id] = access_contract
         self._access_contracts[access_contract.access_token] = access_contract
         self._access_contract_actors[access_contract.access_token] = actor
+
+        # Persist to durable grant store
+        if self.grant_store is not None:
+            try:
+                grant_record = {
+                    "contract": access_contract.model_dump(mode="json"),
+                    "actor": actor,
+                    "revoked": False,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+                self.grant_store.save(access_contract.access_token, grant_record)
+                self.grant_store.save(access_contract.request_id, grant_record)
+            except Exception as exc:
+                logger.warning("Failed to persist access contract to grant store: %s", exc)
 
         self._emit_audit(
             request_id=req_id,
@@ -703,6 +726,52 @@ class CapabilityRegistryService:
 
         return access_contract
 
+    def get_access_contract(self, request_id_or_token: str) -> Optional[AccessContract]:
+        contract = self._access_contracts.get(request_id_or_token)
+        if contract is not None:
+            return contract
+        if self.grant_store is not None:
+            try:
+                data = self.grant_store.load(request_id_or_token)
+                if data and not data.get("revoked", False):
+                    contract = AccessContract.model_validate(data["contract"])
+                    self._access_contracts[contract.request_id] = contract
+                    self._access_contracts[contract.access_token] = contract
+                    self._access_contract_actors[contract.access_token] = data.get("actor", "")
+                    return contract
+            except Exception as exc:
+                logger.warning("Failed to load access grant from store: %s", exc)
+        return None
+
+    def revoke_access_contract(self, request_id_or_token: str, actor: str, reason: str = "") -> bool:
+        contract = self.get_access_contract(request_id_or_token)
+        if not contract:
+            return False
+        if self.grant_store is not None:
+            try:
+                data = self.grant_store.load(contract.access_token) or {}
+                data["revoked"] = True
+                data["revoked_at"] = datetime.now(timezone.utc).isoformat()
+                data["revoked_by"] = actor
+                data["revocation_reason"] = reason
+                self.grant_store.save(contract.access_token, data)
+                self.grant_store.save(contract.request_id, data)
+            except Exception as exc:
+                logger.warning("Failed to persist revocation to grant store: %s", exc)
+        self._access_contracts.pop(contract.access_token, None)
+        self._access_contracts.pop(contract.request_id, None)
+        self._access_contract_actors.pop(contract.access_token, None)
+        self._emit_audit(
+            request_id=contract.request_id,
+            actor=actor,
+            application_id=contract.application_id,
+            capability_id=contract.capability_id,
+            action="ACCESS_REVOKED",
+            result="REVOKED",
+            reason=reason or "Access contract revoked by administrator.",
+        )
+        return True
+
     def retrieve(
         self,
         actor: str,
@@ -713,12 +782,30 @@ class CapabilityRegistryService:
         capability = self.get_capability(capability_id)
         req_id = retrieve_req.request_id or f"req-ret-{uuid.uuid4().hex[:10]}"
 
-        # Validate access token or existing contract
+        # Validate access token or existing contract from memory or durable store
         contract: Optional[AccessContract] = None
         if retrieve_req.access_token:
-            contract = self._access_contracts.get(retrieve_req.access_token)
+            contract = self.get_access_contract(retrieve_req.access_token)
         elif retrieve_req.request_id:
-            contract = self._access_contracts.get(retrieve_req.request_id)
+            contract = self.get_access_contract(retrieve_req.request_id)
+
+        # Check if grant has been revoked in durable store
+        if self.grant_store is not None and retrieve_req.access_token:
+            stored_grant = self.grant_store.load(retrieve_req.access_token)
+            if stored_grant and stored_grant.get("revoked", False):
+                reason = "Access contract has been revoked."
+                self._emit_audit(
+                    request_id=req_id,
+                    actor=actor,
+                    application_id=retrieve_req.application_id or (contract.application_id if contract else ""),
+                    capability_id=capability_id,
+                    action="DATA_RETRIEVAL",
+                    result="DENIED",
+                    reason=reason,
+                    trace_id=retrieve_req.trace_id,
+                    execution_id=retrieve_req.execution_id,
+                )
+                raise CapabilityAccessDeniedError(reason)
 
         # If no prior token, verify roles/actor on the fly
         if contract is None:
@@ -751,17 +838,90 @@ class CapabilityRegistryService:
                 action="DATA_RETRIEVAL",
                 result="DENIED",
                 reason=reason,
+                trace_id=retrieve_req.trace_id,
+                execution_id=retrieve_req.execution_id,
             )
             raise CapabilityAccessDeniedError(reason)
 
-        # Execute data retrieval via DatasetRetrievalService / underlying governed dataset
+        # Check grant expiry
+        if contract.expires_at:
+            try:
+                exp_dt = datetime.fromisoformat(contract.expires_at)
+                if exp_dt.tzinfo is None:
+                    exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) >= exp_dt:
+                    reason = f"Access contract '{contract.request_id}' has expired."
+                    self._emit_audit(
+                        request_id=contract.request_id,
+                        actor=actor,
+                        application_id=retrieve_req.application_id or contract.application_id,
+                        capability_id=capability_id,
+                        action="DATA_RETRIEVAL",
+                        result="DENIED",
+                        reason=reason,
+                        trace_id=retrieve_req.trace_id,
+                        execution_id=retrieve_req.execution_id,
+                    )
+                    raise CapabilityAccessDeniedError(reason)
+            except (ValueError, TypeError) as exc:
+                logger.warning("Could not parse expires_at timestamp: %s", exc)
+
+
+        # Execute data retrieval via DatasetRetrievalService & SQL store
         provenance = self.retrieval_service.get_dataset_provenance(capability.dataset_id)
         
-        # Build canonical payload dependent on domain
-        sample_payload = self._generate_canonical_domain_payload(capability, retrieve_req.query_params)
+        # Check retrieval readiness if package exists in package registry
+        packages = self.package_registry.list_all()
+        package = next((p for p in packages if p.dataset_id == capability.dataset_id), None)
+        if package:
+            is_demo_fixture = "[DEMO]" in capability.capability_name or "Demo" in capability.description
+            is_registry_seeded_stub = (
+                package.status == PackageStatus.REGISTERED
+                and bool(package.history and package.history[0].actor == "capability_registry")
+                and capability.status != CapabilityStatus.CERTIFIED
+            )
+            # Evaluate readiness for production/lifecycle-managed packages or deprecated packages
+            if (not is_demo_fixture and not is_registry_seeded_stub) or package.status in (PackageStatus.DEPRECATED, PackageStatus.ARCHIVED):
+                readiness = self.retrieval_service.retrieval_readiness_service.assess(package.package_id)
+                if readiness.status == RetrievalStatus.NOT_RETRIEVABLE:
+                    reason = f"Dataset '{capability.dataset_id}' for capability '{capability_id}' is NOT_RETRIEVABLE: {readiness.corrective_actions}"
+                    self._emit_audit(
+                        request_id=contract.request_id,
+                        actor=actor,
+                        application_id=contract.application_id,
+                        capability_id=capability_id,
+                        action="DATA_RETRIEVAL",
+                        result="DENIED",
+                        reason=reason,
+                        trace_id=retrieve_req.trace_id,
+                        execution_id=retrieve_req.execution_id,
+                    )
+                    raise CapabilityAccessDeniedError(reason)
+
+        # Retrieve real data from SQL store if available
+        is_synthetic = False
+        payload_data = None
+        if self.sql_store is not None:
+            try:
+                records = self.sql_store.list_target_records(target_database="relational_db", dataset_id=capability.dataset_id, limit=100)
+                if not records:
+                    for db_name in ("analytics_db", "document_db", "metadata_db"):
+                        records = self.sql_store.list_target_records(target_database=db_name, dataset_id=capability.dataset_id, limit=100)
+                        if records:
+                            break
+                if records:
+                    payload_data = {"records": records, "record_count": len(records), "dataset_id": capability.dataset_id}
+            except Exception as exc:
+                logger.warning("Could not query sql_store for target records: %s", exc)
+
+        if payload_data is None:
+            is_synthetic = True
+            payload_data = self._generate_canonical_domain_payload(capability, retrieve_req.query_params)
+
+        content_digest = hashlib.sha256(json.dumps(payload_data, sort_keys=True).encode()).hexdigest()
 
         response = CapabilityRetrieveResponse(
-            data=sample_payload,
+            data=payload_data,
             capability={
                 "capability_id": capability.capability_id,
                 "capability_name": capability.capability_name,
@@ -775,6 +935,8 @@ class CapabilityRegistryService:
                 "capability_id": capability.capability_id,
                 "version": capability.capability_version,
                 "retrieval_timestamp": datetime.now(timezone.utc).isoformat(),
+                "content_digest_sha256": content_digest,
+                "is_synthetic": is_synthetic,
                 "masterdb_lineage": provenance.get("masterdb_lineage"),
                 "mdu_provenance": provenance.get("mdu_provenance"),
                 "source": capability.provenance.get("source", "MASTERDB Canonical Data Layer"),
@@ -782,7 +944,10 @@ class CapabilityRegistryService:
                 "commit": capability.provenance.get("commit"),
                 "certification": capability.provenance.get("certification"),
             },
+            content_digest_sha256=content_digest,
             request_id=contract.request_id,
+            trace_id=retrieve_req.trace_id,
+            execution_id=retrieve_req.execution_id,
             access_metadata={
                 "application_id": contract.application_id,
                 "purpose": contract.purpose,
@@ -799,13 +964,12 @@ class CapabilityRegistryService:
             capability_id=capability.capability_id,
             action="DATA_RETRIEVAL",
             result="SUCCESS",
-            reason="Data retrieved successfully via TANTRA access contract boundary.",
+            reason=f"Data retrieved successfully via TANTRA access contract boundary (synthetic={is_synthetic}).",
+            trace_id=retrieve_req.trace_id,
+            execution_id=retrieve_req.execution_id,
         )
 
         return response
-
-    def get_access_contract(self, request_id_or_token: str) -> Optional[AccessContract]:
-        return self._access_contracts.get(request_id_or_token)
 
     def _generate_canonical_domain_payload(self, capability: Capability, params: Dict[str, Any]) -> Dict[str, Any]:
         """Generate domain payload proving generic capability model works for any domain."""
@@ -867,6 +1031,8 @@ class CapabilityRegistryService:
         action: str,
         result: str,
         reason: str,
+        trace_id: Optional[str] = None,
+        execution_id: Optional[str] = None,
     ) -> None:
         payload = {
             "request_id": request_id,
@@ -877,5 +1043,12 @@ class CapabilityRegistryService:
             "reason": reason,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+        if trace_id:
+            payload["trace_id"] = trace_id
+        if execution_id:
+            payload["execution_id"] = execution_id
         self.audit_emitter.emit(event_type=f"capability_{action.lower()}", actor=actor, payload=payload)
-        logger.info("capability_audit event=%s actor=%s app=%s cap=%s result=%s", action, actor, application_id, capability_id, result)
+        logger.info(
+            "capability_audit event=%s actor=%s app=%s cap=%s result=%s trace=%s exec=%s",
+            action, actor, application_id, capability_id, result, trace_id, execution_id
+        )

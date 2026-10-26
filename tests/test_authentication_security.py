@@ -294,3 +294,227 @@ def test_rate_limiting_works_for_legitimate_authenticated_requests(client):
     finally:
         main.rate_limiter.max_requests = original_max
         main.rate_limiter.reset()
+
+
+# ---------------------------------------------------------------------------
+# 11. Option A: RS256 Asymmetric Token Authentication (Sarathi Option A)
+# ---------------------------------------------------------------------------
+def test_rs256_asymmetric_token_verification_success():
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+    from auth.service import AuthService
+
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+
+    auth_svc = AuthService(secret_key="test-secret", public_key_pem=public_pem)
+    payload = {
+        "sub": "tantra-execution-worker",
+        "roles": ["ecosystem-reader", "operator"],
+        "iss": "tantra-sarathi",
+        "aud": "tantra-bridge",
+        "jti": "jti-12345",
+        "exp": int(time.time()) + 3600,
+        "iat": int(time.time()),
+        "trace_id": "trace-uuid-1",
+        "execution_id": "exec-uuid-1",
+    }
+    token = jwt.encode(payload, private_pem, algorithm="RS256")
+    identity = auth_svc.decode_token(token)
+
+    assert identity.actor == "tantra-execution-worker"
+    assert "ecosystem-reader" in identity.roles
+    assert "operator" in identity.roles
+
+
+def test_rs256_asymmetric_token_invalid_signature_rejected():
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+    from auth.service import AuthService, AuthTokenError
+
+    key1 = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    key2 = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+    public_pem = key1.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    other_private_pem = key2.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+
+    auth_svc = AuthService(secret_key="test-secret", public_key_pem=public_pem)
+    payload = {
+        "sub": "tantra-execution-worker",
+        "iss": "tantra-sarathi",
+        "aud": "masterdb",
+        "exp": int(time.time()) + 3600,
+    }
+    forged_token = jwt.encode(payload, other_private_pem, algorithm="RS256")
+
+    with pytest.raises(AuthTokenError, match="invalid or badly signed"):
+        auth_svc.decode_token(forged_token)
+
+
+def test_rs256_asymmetric_token_untrusted_issuer_rejected():
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+    from auth.service import AuthService, AuthTokenError
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_pem = key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    private_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+
+    auth_svc = AuthService(secret_key="test-secret", public_key_pem=public_pem)
+    payload = {
+        "sub": "unauthorized-actor",
+        "iss": "evil-untrusted-issuer",
+        "aud": "masterdb",
+        "exp": int(time.time()) + 3600,
+    }
+    token = jwt.encode(payload, private_pem, algorithm="RS256")
+
+    with pytest.raises(AuthTokenError, match="Untrusted or missing token issuer"):
+        auth_svc.decode_token(token)
+
+
+def test_rs256_asymmetric_token_untrusted_audience_rejected():
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+    from auth.service import AuthService, AuthTokenError
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_pem = key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    private_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+
+    auth_svc = AuthService(secret_key="test-secret", public_key_pem=public_pem)
+    payload = {
+        "sub": "tantra-execution-worker",
+        "iss": "tantra-sarathi",
+        "aud": "unauthorized-audience",
+        "exp": int(time.time()) + 3600,
+    }
+    token = jwt.encode(payload, private_pem, algorithm="RS256")
+
+    with pytest.raises(AuthTokenError, match="Untrusted or invalid token audience"):
+        auth_svc.decode_token(token)
+
+
+def test_rs256_asymmetric_token_missing_audience_rejected():
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+    from auth.service import AuthService, AuthTokenError
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_pem = key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    private_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+
+    auth_svc = AuthService(secret_key="test-secret", public_key_pem=public_pem)
+    payload = {
+        "sub": "tantra-execution-worker",
+        "iss": "tantra-sarathi",
+        "exp": int(time.time()) + 3600,
+    }
+    token = jwt.encode(payload, private_pem, algorithm="RS256")
+
+    with pytest.raises(AuthTokenError, match="Token is missing required audience claim"):
+        auth_svc.decode_token(token)
+
+
+def test_rs256_asymmetric_token_missing_issuer_rejected():
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+    from auth.service import AuthService, AuthTokenError
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_pem = key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    private_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+
+    auth_svc = AuthService(secret_key="test-secret", public_key_pem=public_pem)
+    payload = {
+        "sub": "tantra-execution-worker",
+        "aud": "masterdb",
+        "exp": int(time.time()) + 3600,
+    }
+    token = jwt.encode(payload, private_pem, algorithm="RS256")
+
+    with pytest.raises(AuthTokenError, match="Untrusted or missing token issuer"):
+        auth_svc.decode_token(token)
+
+
+def test_rs256_asymmetric_token_expired_rejected():
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+    from auth.service import AuthService, AuthTokenError
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_pem = key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    private_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+
+    auth_svc = AuthService(secret_key="test-secret", public_key_pem=public_pem)
+    payload = {
+        "sub": "tantra-execution-worker",
+        "iss": "tantra-sarathi",
+        "aud": "masterdb",
+        "exp": int(time.time()) - 60,
+    }
+    token = jwt.encode(payload, private_pem, algorithm="RS256")
+
+    with pytest.raises(AuthTokenError, match="Token has expired"):
+        auth_svc.decode_token(token)
+
+
+def test_unsupported_algorithm_rejected():
+    from auth.service import AuthService, AuthTokenError
+    auth_svc = AuthService(secret_key="test-secret")
+    # Fabricate a token with an unsupported alg header
+    payload = {"sub": "attacker", "exp": int(time.time()) + 3600}
+    token = jwt.encode(payload, "key", algorithm="HS512")
+    with pytest.raises(AuthTokenError, match="Unsupported algorithm"):
+        auth_svc.decode_token(token)
+

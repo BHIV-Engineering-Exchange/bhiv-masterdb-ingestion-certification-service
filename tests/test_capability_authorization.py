@@ -93,3 +93,29 @@ def test_request_access_rejects_unregistered_capability_version():
     }
     res = client.post("/access/request", json=payload, headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 403
+
+
+def test_durable_grant_persistence_across_instances(tmp_path):
+    from services.capability_registry_service import CapabilityRegistryService
+    from services.artifact_store import ArtifactStore
+    from models import CapabilityAccessRequest
+
+    store_dir = str(tmp_path / "persist_test_cap_store")
+    grant_store = ArtifactStore(reports_dir=str(tmp_path / "persist_test_grants"))
+
+    svc1 = CapabilityRegistryService(store_dir=store_dir, grant_store=grant_store)
+    access_req = CapabilityAccessRequest(
+        application_id="PERSIST_APP",
+        capability_id="cap-mangrove-monitoring",
+        purpose="environmental_monitoring",
+    )
+    grant1 = svc1.request_access(actor="persist-tester", roles=["ecosystem-reader"], request_data=access_req)
+    assert grant1.authorized is True
+
+    # Fresh instance without memory cache
+    svc2 = CapabilityRegistryService(store_dir=store_dir, grant_store=grant_store)
+    loaded_grant = svc2.get_access_contract(grant1.access_token)
+    assert loaded_grant is not None
+    assert loaded_grant.request_id == grant1.request_id
+    assert loaded_grant.application_id == "PERSIST_APP"
+    assert loaded_grant.capability_id == "cap-mangrove-monitoring"
