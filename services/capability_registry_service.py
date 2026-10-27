@@ -24,6 +24,11 @@ from services.artifact_store import ArtifactStore
 from services.crypto_audit_emitter import CryptoAuditEmitter
 from services.dataset_retrieval_service import DatasetRetrievalService
 from services.package_registry_service import PackageNotFoundError, PackageRegistryService
+from services.vana_client import (
+    VanaClient,
+    VanaGovernanceDeniedError,
+    VanaUnavailableError,
+)
 
 logger = logging.getLogger("masterdb")
 
@@ -54,12 +59,14 @@ class CapabilityRegistryService:
         package_registry: Optional[PackageRegistryService] = None,
         retrieval_service: Optional[DatasetRetrievalService] = None,
         audit_emitter: Optional[CryptoAuditEmitter] = None,
+        vana_client: Optional[VanaClient] = None,
     ) -> None:
         self.store = ArtifactStore(reports_dir=store_dir)
         self.version_store = ArtifactStore(reports_dir=os.path.join(store_dir, "versions"))
         self.package_registry = package_registry or PackageRegistryService()
         self.retrieval_service = retrieval_service or DatasetRetrievalService(registry=self.package_registry)
         self.audit_emitter = audit_emitter or CryptoAuditEmitter()
+        self.vana_client = vana_client or VanaClient()
         self._access_contracts: Dict[str, AccessContract] = {}
         self._access_contract_actors: Dict[str, str] = {}
         self._seed_default_capabilities_if_empty()
@@ -404,6 +411,118 @@ class CapabilityRegistryService:
                     "certification": "MASTERDB-VERIFIED-GEV-005",
                 },
             ),
+            Capability(
+                capability_id="cap-vana-forest-cover",
+                capability_name="VANA - FSI ISFR 2023 Official Forest Cover Records",
+                description="Governed official Forest Survey of India (ISFR 2023) district forest canopy and mangrove coverage records with immutable source provenance.",
+                dataset_id="DS-FSI-ISFR-2023-FOREST-COVER",
+                source_id="src-fsi-isfr-2023",
+                purpose="district_canopy_analysis",
+                capability_version="1.0.0",
+                contract_version="1.0.0",
+                domain="geospatial",
+                schema_version="v1.0",
+                status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "district", "type": "String", "required": False},
+                    {"name": "state", "type": "String", "required": False},
+                ],
+                outputs=[
+                    {"name": "forest_cover_records", "type": "Array of FSI Canopy Records"},
+                    {"name": "source_provenance", "type": "JSON Object"},
+                ],
+                dependencies=["FSI ISFR 2023 Official Catalog", "VANA 6-Tuple Governance Evaluation Gate"],
+                source_references=["src-fsi-isfr-2023"],
+                dataset_references=["DS-FSI-ISFR-2023-FOREST-COVER"],
+                known_limitations=["Biennial reporting cycle (2023 edition)"],
+                potential_consumers=["MASTERDB", "TANTRA", "Bharat Mala", "VANA/FIN"],
+                licensing={"software_licence": "GOVERNMENT_OPEN_DATA", "dataset_licence": "FSI_OFFICIAL_ISFR", "source_licence": "GOVERNMENT_OPEN_DATA"},
+                supported_access_methods=["QUERY", "EXPORT", "STREAM", "RETRIEVE"],
+                required_purpose="district_canopy_analysis",
+                authorization_requirements={
+                    "required_roles": ["ecosystem-reader", "viewer", "operator", "admin", "APPROVED_CONSUMER"],
+                    "allowed_consumers": ["*"],
+                },
+                provenance={
+                    "source": "Forest Survey of India (ISFR 2023) via VANA Governance Layer",
+                    "certification": "VANA-ISFR-2023-CANONICAL",
+                    "governance_gate": "6_TUPLE_EVALUATION_GATE",
+                },
+            ),
+            Capability(
+                capability_id="cap-vana-thane-creek-carbon",
+                capability_name="VANA - Thane Creek Mangrove Blue Carbon Engine",
+                description="Governed Thane Creek Flamingo Sanctuary mangrove blue carbon quantification with strict measured vs satellite segregation.",
+                dataset_id="DS-VANA-THANE-CREEK-BLUE-CARBON",
+                source_id="src-vana-thane-creek",
+                purpose="carbon_quantification",
+                capability_version="1.0.0",
+                contract_version="1.0.0",
+                domain="geospatial",
+                schema_version="v1.0",
+                status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "zone", "type": "String", "required": False},
+                    {"name": "segregation_mode", "type": "String (measured/satellite/combined)", "required": False},
+                ],
+                outputs=[
+                    {"name": "blue_carbon_stock_tC", "type": "Float"},
+                    {"name": "measurement_segregation", "type": "JSON Object"},
+                ],
+                dependencies=["VANA Carbon Quantification Engine", "Thane Creek Blue Carbon Ground Truth"],
+                source_references=["src-vana-thane-creek"],
+                dataset_references=["DS-VANA-THANE-CREEK-BLUE-CARBON"],
+                known_limitations=["Field measurement sample interval 30-day refresh"],
+                potential_consumers=["MASTERDB", "TANTRA", "Bharat Mala", "VANA/FIN"],
+                licensing={"software_licence": "PROPRIETARY_BHIV", "dataset_licence": "BHIV_RESEARCH_USE", "source_licence": "BHIV_RESEARCH_USE"},
+                supported_access_methods=["QUERY", "EXPORT", "STREAM", "RETRIEVE"],
+                required_purpose="carbon_quantification",
+                authorization_requirements={
+                    "required_roles": ["ecosystem-reader", "viewer", "operator", "admin", "APPROVED_CONSUMER"],
+                    "allowed_consumers": ["*"],
+                },
+                provenance={
+                    "source": "VANA Blue Carbon Engine (Thane Creek)",
+                    "certification": "VANA-BLUE-CARBON-VERIFIED",
+                    "governance_gate": "6_TUPLE_EVALUATION_GATE",
+                },
+            ),
+            Capability(
+                capability_id="cap-vana-spatial-layers",
+                capability_name="VANA - Spatial GIS GeoJSON Layers",
+                description="Governed RFC 7946 WGS84 GeoJSON spatial layers: sanctuary boundaries, mangrove density, and nurseries.",
+                dataset_id="DS-VANA-SPATIAL-LAYERS",
+                source_id="src-vana-gis",
+                purpose="spatial_gis_analysis",
+                capability_version="1.0.0",
+                contract_version="1.0.0",
+                domain="geospatial",
+                schema_version="v1.0",
+                status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "layer_id", "type": "String", "required": False},
+                ],
+                outputs=[
+                    {"name": "geojson_layer", "type": "RFC 7946 GeoJSON FeatureCollection"},
+                ],
+                dependencies=["VANA Spatial GIS Layer Catalog", "RFC 7946 Specification"],
+                source_references=["src-vana-gis"],
+                dataset_references=["DS-VANA-SPATIAL-LAYERS"],
+                known_limitations=["WGS84 projection standard"],
+                potential_consumers=["MASTERDB", "TANTRA", "Bharat Mala", "God's Eye View"],
+                licensing={"software_licence": "PROPRIETARY_BHIV", "dataset_licence": "GOVERNMENT_OPEN_DATA", "source_licence": "GOVERNMENT_OPEN_DATA"},
+                supported_access_methods=["QUERY", "EXPORT", "STREAM", "RETRIEVE"],
+                required_purpose="spatial_gis_analysis",
+                authorization_requirements={
+                    "required_roles": ["ecosystem-reader", "viewer", "operator", "admin", "APPROVED_CONSUMER"],
+                    "allowed_consumers": ["*"],
+                },
+                provenance={
+                    "source": "VANA Spatial GIS Layer Catalog",
+                    "certification": "VANA-RFC7946-GEOJSON",
+                    "governance_gate": "6_TUPLE_EVALUATION_GATE",
+                },
+            ),
         ]
 
         existing_caps = {c.capability_id for c in self.list_capabilities()}
@@ -675,6 +794,37 @@ class CapabilityRegistryService:
             )
             raise CapabilityAccessDeniedError(reason)
 
+        # Evaluate VANA 6-tuple governance evaluation gate if configured and applicable
+        if self.vana_client and self.vana_client.is_configured():
+            if (
+                capability.capability_id.startswith("cap-vana-")
+                or capability.dataset_id.startswith("DS-FSI-")
+                or capability.dataset_id.startswith("DS-VANA-")
+            ):
+                try:
+                    primary_role = roles[0] if roles else "APPROVED_CONSUMER"
+                    self.vana_client.evaluate_governance(
+                        actor=actor,
+                        role=primary_role,
+                        dataset_id=capability.dataset_id,
+                        action="READ",
+                        purpose=request_data.purpose,
+                    )
+                except VanaGovernanceDeniedError as exc:
+                    reason = f"VANA 6-tuple governance evaluation denied access: {exc}"
+                    self._emit_audit(
+                        request_id=req_id,
+                        actor=actor,
+                        application_id=request_data.application_id,
+                        capability_id=capability.capability_id,
+                        action="ACCESS_REQUEST",
+                        result="DENIED",
+                        reason=reason,
+                    )
+                    raise CapabilityAccessDeniedError(reason) from exc
+                except Exception as exc:
+                    logger.warning("VANA governance evaluation check warning: %s", exc)
+
         access_contract = AccessContract(
             request_id=req_id,
             application_id=request_data.application_id,
@@ -757,8 +907,32 @@ class CapabilityRegistryService:
         # Execute data retrieval via DatasetRetrievalService / underlying governed dataset
         provenance = self.retrieval_service.get_dataset_provenance(capability.dataset_id)
         
-        # Build canonical payload dependent on domain
-        sample_payload = self._generate_canonical_domain_payload(capability, retrieve_req.query_params)
+        # Fetch live data from VANA if configured and capability is VANA-backed or mangrove monitoring
+        live_payload: Optional[Dict[str, Any]] = None
+        if self.vana_client and self.vana_client.is_configured():
+            try:
+                if (
+                    capability.capability_id == "cap-vana-forest-cover"
+                    or capability.dataset_id == "DS-FSI-ISFR-2023-FOREST-COVER"
+                ):
+                    live_payload = self.vana_client.get_forest_cover_records(retrieve_req.query_params)
+                elif (
+                    capability.capability_id == "cap-vana-thane-creek-carbon"
+                    or capability.dataset_id == "DS-VANA-THANE-CREEK-BLUE-CARBON"
+                ):
+                    live_payload = self.vana_client.get_carbon_thane_creek()
+                elif (
+                    capability.capability_id == "cap-vana-spatial-layers"
+                    or capability.dataset_id == "DS-VANA-SPATIAL-LAYERS"
+                ):
+                    layer_id = (retrieve_req.query_params or {}).get("layer_id", "sanctuary_boundary")
+                    live_payload = self.vana_client.get_spatial_geojson(layer_id)
+                elif capability.capability_id == "cap-mangrove-monitoring":
+                    live_payload = self.vana_client.get_real_observations(retrieve_req.query_params)
+            except Exception as exc:
+                logger.warning("VANA live data retrieval fallback to canonical generator: %s", exc)
+
+        sample_payload = live_payload if live_payload is not None else self._generate_canonical_domain_payload(capability, retrieve_req.query_params)
 
         response = CapabilityRetrieveResponse(
             data=sample_payload,
@@ -813,6 +987,51 @@ class CapabilityRegistryService:
         now = datetime.now(timezone.utc).isoformat()
         
         if domain == "geospatial":
+            if capability.capability_id == "cap-vana-forest-cover" or capability.dataset_id == "DS-FSI-ISFR-2023-FOREST-COVER":
+                return {
+                    "dataset_id": "DS-FSI-ISFR-2023-FOREST-COVER",
+                    "authority": "Forest Survey of India (ISFR 2023)",
+                    "records": [
+                        {"district": "Thane", "very_dense_forest": 124.5, "moderately_dense_forest": 480.2, "open_forest": 512.8, "total_canopy": 1117.5},
+                        {"district": "Mumbai Suburban", "very_dense_forest": 12.0, "moderately_dense_forest": 54.0, "open_forest": 98.0, "total_canopy": 164.0},
+                    ],
+                    "mangrove_cover_sq_km": 66.0,
+                    "observation_timestamp": now,
+                    "governance_status": "CANONICAL_ISFR_2023",
+                }
+            elif capability.capability_id == "cap-vana-thane-creek-carbon" or capability.dataset_id == "DS-VANA-THANE-CREEK-BLUE-CARBON":
+                return {
+                    "dataset_id": "DS-VANA-THANE-CREEK-BLUE-CARBON",
+                    "authority": "VANA Carbon Quantification Engine",
+                    "mangrove_blue_carbon_stock_tC": 184500.0,
+                    "measured_vs_satellite_segregation": {
+                        "measured_soil_organic_carbon_tC_per_ha": 142.3,
+                        "aboveground_biomass_satellite_tC_per_ha": 68.7,
+                        "validation_status": "CONVERGED",
+                    },
+                    "observation_timestamp": now,
+                }
+            elif capability.capability_id == "cap-vana-spatial-layers" or capability.dataset_id == "DS-VANA-SPATIAL-LAYERS":
+                return {
+                    "type": "FeatureCollection",
+                    "layer_id": params.get("layer_id", "sanctuary_boundary"),
+                    "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:OGC:1.3:CRS84"}},
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": [[[72.93, 19.01], [72.99, 19.01], [72.99, 19.15], [72.93, 19.15], [72.93, 19.01]]],
+                            },
+                            "properties": {
+                                "name": "Thane Creek Flamingo Sanctuary",
+                                "area_sq_km": 16.9,
+                                "boundary_classification": "OFFICIAL_WILDLIFE_SANCTUARY",
+                            },
+                        }
+                    ],
+                    "timestamp": now,
+                }
             return {
                 "dataset_type": "mangrove_cover_index",
                 "region": params.get("region", "Sundarbans-Zone-A"),

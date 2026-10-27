@@ -71,6 +71,7 @@ from services.knowledge_object_service import (
 )
 from services.mdu_client import MDUUnavailableError
 from services.mdu_contract_adapter import MDUContractAdapter
+from services.vana_client import VanaClient, VanaUnavailableError, VanaGovernanceDeniedError
 from services.package_registry_service import (
     InvalidTransitionError,
     PackageNotFoundError,
@@ -323,8 +324,9 @@ dataset_retrieval_service = DatasetRetrievalService(
 )
 bucket_client = BucketClient()
 
-# --- Ecosystem integration surfaces: MDU (Nupur), TANTRA, Runtime Discovery --
+# --- Ecosystem integration surfaces: MDU (Nupur), TANTRA, VANA, Runtime Discovery --
 mdu_contract_adapter = MDUContractAdapter()
+vana_client = VanaClient()
 runtime_discovery_service = RuntimeDiscoveryService(registry=package_registry_service)
 source_registry_service = SourceRegistryService(
     audit_emitter=production_audit_emitter,
@@ -333,6 +335,7 @@ capability_registry_service = CapabilityRegistryService(
     package_registry=package_registry_service,
     retrieval_service=dataset_retrieval_service,
     audit_emitter=production_audit_emitter,
+    vana_client=vana_client,
 )
 geospatial_connector = GeospatialConnectorAdapter(
     source_registry=source_registry_service,

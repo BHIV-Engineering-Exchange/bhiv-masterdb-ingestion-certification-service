@@ -1,0 +1,31 @@
+{
+    "package_id": "pkg-132ede2b7420",
+    "status": "NOT_RETRIEVABLE",
+    "rules": [
+        {
+            "rule": "PACKAGE_CERTIFIED",
+            "passed": false,
+            "detail": "Package status is REGISTERED; CERTIFIED or RETRIEVAL_READY is required."
+        },
+        {
+            "rule": "NOT_DEPRECATED_OR_ARCHIVED",
+            "passed": true,
+            "detail": "Package is active."
+        },
+        {
+            "rule": "METADATA_COMPLETE",
+            "passed": true,
+            "detail": "All required package metadata fields are present."
+        },
+        {
+            "rule": "LINEAGE_REGISTERED",
+            "passed": false,
+            "detail": "No knowledge object with a source_reference is registered for this package."
+        }
+    ],
+    "corrective_actions": [
+        "Promote the package through VERIFIED -> CERTIFIED before requesting retrieval readiness.",
+        "Register a Knowledge Object with a source_reference for this package via the Knowledge Object & Provenance Engine."
+    ],
+    "generated_at": "2026-10-17T10:49:26.675813+00:00"
+}
