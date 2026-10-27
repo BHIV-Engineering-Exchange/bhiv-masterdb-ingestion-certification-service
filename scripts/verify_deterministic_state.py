@@ -8,6 +8,7 @@ state hashes are identical.
 import asyncio
 import sys
 from pathlib import Path
+from typing import Any, Dict, List
 
 # Ensure workspace root is in sys.path
 _ROOT = Path(__file__).resolve().parent.parent
