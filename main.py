@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
@@ -8,7 +9,7 @@ if "PYTEST_CURRENT_TEST" not in os.environ:
     load_dotenv()
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 
 from middleware.rate_limit_middleware import RateLimitMiddleware
 from middleware.rate_limiter import SlidingWindowRateLimiter
@@ -64,6 +65,75 @@ from services.source_registry_service import (
     SourceAlreadyExistsError,
 )
 from integrations.geospatial_connector import GeospatialConnectorAdapter
+from integrations.usgs_earthquake_connector import fetch_earthquakes
+from integrations.gods_eye_view_dams_connector import DamsSourceUnavailable, fetch_dams
+from integrations.natural_earth_connector import NaturalEarthSourceUnavailable, load_natural_earth_source
+from integrations.gods_eye_view_photoreal_tiles_connector import (
+    safe_manifest as photoreal_tiles_safe_manifest,
+    verify_photoreal_tiles,
+)
+from integrations.gods_eye_view_satellite_imagery_connector import (
+    safe_manifest as satellite_imagery_safe_manifest,
+    verify_satellite_imagery,
+)
+from integrations.gods_eye_view_terrain_connector import (
+    safe_manifest as world_terrain_safe_manifest,
+    verify_world_terrain,
+)
+from integrations.gods_eye_view_vector_basemap_connector import (
+    safe_manifest as vector_basemap_safe_manifest,
+    verify_vector_basemap,
+)
+from integrations.gods_eye_view_bhote_koshi_connector import BhoteKoshiSourceUnavailable, fetch_bhote_koshi_event
+from integrations.firms_active_fire_connector import (
+    FIRMSConfigurationError,
+    FIRMSUpstreamError,
+    fetch_active_fires,
+)
+from integrations.aisstream_connector import (
+    AISStreamConfigurationError,
+    AISStreamConnectionError,
+    fetch_aisstream_positions,
+)
+from services.ais_observation_service import AISObservationService, AISObservationValidationError
+from integrations.adsb_military_connector import (
+    AircraftUpstreamError,
+    AircraftUpstreamRateLimitError,
+    fetch_military_aircraft,
+)
+from services.aircraft_observation_service import AircraftObservationService, AircraftObservationValidationError
+from services.earthquake_observation_service import (
+    EarthquakeObservationService,
+    EarthquakeObservationValidationError,
+)
+from services.dam_feature_service import DamFeatureService, DamFeatureValidationError
+from services.natural_earth_feature_service import NaturalEarthFeatureService, NaturalEarthValidationError
+from services.bhote_koshi_event_service import BhoteKoshiEventService, BhoteKoshiValidationError
+from services.fire_observation_service import FireObservationService
+from integrations.tomtom_traffic_connector import (
+    MAX_TILES as TOMTOM_MAX_TILES,
+    TomTomConfigurationError,
+    TomTomUpstreamError,
+    fetch_flow_tiles,
+    validate_tile_coord,
+)
+from services.traffic_observation_service import TrafficObservationService
+from integrations.weather_connector import (
+    WeatherConfigurationError, WeatherUpstreamError,
+    fetch_open_meteo_current, fetch_wind_forecasts,
+)
+from services.weather_observation_service import WeatherObservationService
+from integrations.noaa_cyclone_connector import (
+    CycloneConfigurationError, CycloneUpstreamError, CycloneValidationError,
+    DATASETS as CYCLONE_DATASETS, SOURCE_IDS as CYCLONE_SOURCE_IDS,
+    fetch_current_cyclones,
+)
+from services.cyclone_observation_service import CycloneObservationService, CycloneObservationValidationError
+from integrations.noaa_radar_connector import (
+    PRODUCT_LAYERS as WEATHER_IMAGERY_LAYERS,
+    RadarRequestError, RadarUpstreamError, fetch_radar_image, fetch_radar_manifest,
+    fetch_radar_tile, fetch_weather_image, fetch_weather_manifest, fetch_weather_tile,
+)
 
 from services.knowledge_object_service import (
     KnowledgeObjectService,
@@ -438,6 +508,326 @@ def _sql_store(subdir: str):
     if not _DATABASE_URL:
         return None
     return SqlArtifactStore(_DATABASE_URL, store_name=subdir)
+
+
+earthquake_observation_service = EarthquakeObservationService(
+    store=_sql_store("earthquake_observations"),
+    store_dir=_persist_path("earthquake_observations") or "earthquake_observation_store",
+)
+dam_feature_service = DamFeatureService(
+    attribute_store=_sql_store("dam_attributes"),
+    geometry_store=_sql_store("dam_geometries"),
+    store_dir=_persist_path("dam_features") or "dam_feature_store",
+)
+natural_earth_feature_service = NaturalEarthFeatureService(
+    store_dir=_persist_path("natural_earth_features") or "natural_earth_feature_store",
+)
+natural_earth_last_verified_at: Dict[str, Optional[str]] = {"regions": None, "marine": None}
+natural_earth_dataset_status: Dict[str, str] = {"regions": "UNVERIFIED", "marine": "UNVERIFIED"}
+for _natural_earth_key, _natural_earth_source_id in (
+    ("regions", "src-gev-natural-earth-regions"),
+    ("marine", "src-gev-natural-earth-marine"),
+):
+    try:
+        _natural_earth_record = source_registry_service.get_source(_natural_earth_source_id)
+        _natural_earth_status = _natural_earth_record.provenance_reference.get("last_fetch_status", "UNVERIFIED")
+        if _natural_earth_status == "STATIC_VERIFIED":
+            _natural_earth_counts = natural_earth_feature_service.readback_counts(_natural_earth_key)
+            _natural_earth_saved = _natural_earth_record.provenance_reference.get("last_verification", {})
+            if (_natural_earth_counts["attributes"] == _natural_earth_saved.get("attribute_records")
+                    and _natural_earth_counts["geometries"] == _natural_earth_saved.get("geometry_records")):
+                natural_earth_last_verified_at[_natural_earth_key] = _natural_earth_record.last_validation
+                natural_earth_dataset_status[_natural_earth_key] = "STATIC_VERIFIED"
+            else:
+                natural_earth_dataset_status[_natural_earth_key] = "UNAVAILABLE"
+        elif _natural_earth_status in ("STATIC_PARTIAL", "UNAVAILABLE"):
+            natural_earth_dataset_status[_natural_earth_key] = _natural_earth_status
+    except SourceNotFoundError:
+        pass
+dam_snapshot_last_verified_at: Optional[str] = None
+try:
+    _dam_source_record = source_registry_service.get_source("src-gev-openinframap-dams")
+    if _dam_source_record.provenance_reference.get("last_fetch_status") == "STATIC_VERIFIED":
+        dam_snapshot_last_verified_at = _dam_source_record.last_validation
+except SourceNotFoundError:
+    pass
+photoreal_tiles_last_verification: Dict[str, Any] = {}
+satellite_imagery_last_verification: Dict[str, Any] = {}
+world_terrain_last_verification: Dict[str, Any] = {}
+vector_basemap_last_verification: Dict[str, Any] = {}
+try:
+    _photoreal_source_record = source_registry_service.get_source("src-gev-google-photoreal-tiles")
+    _photoreal_source_record.attribution = "Google Maps Platform per-tile credits must remain visible; Cesium ion attribution applies on the hosted asset route"
+    _photoreal_source_record.updated_at = datetime.now(timezone.utc).isoformat()
+    source_registry_service.store.save(
+        _photoreal_source_record.source_id,
+        _photoreal_source_record.model_dump(mode="json"),
+    )
+    _photoreal_saved_verification = _photoreal_source_record.provenance_reference.get("last_verification")
+    if isinstance(_photoreal_saved_verification, dict):
+        photoreal_tiles_last_verification = dict(_photoreal_saved_verification)
+    elif _photoreal_source_record.provenance_reference.get("last_fetch_status") == "UNAVAILABLE":
+        photoreal_tiles_last_verification = {
+            "status": "UNAVAILABLE",
+            "credential_configured": photoreal_tiles_safe_manifest({})["credential_configured"],
+            "tiles_loaded": False,
+            "reason": _photoreal_source_record.provenance_reference.get("last_error", "provider_tiles_unavailable_or_invalid"),
+        }
+except SourceNotFoundError:
+    pass
+try:
+    _satellite_source_record = source_registry_service.get_source("src-gev-world-satellite-imagery")
+    _satellite_saved_verification = _satellite_source_record.provenance_reference.get("last_verification")
+    if isinstance(_satellite_saved_verification, dict):
+        satellite_imagery_last_verification = dict(_satellite_saved_verification)
+    elif _satellite_source_record.provenance_reference.get("last_fetch_status") == "UNAVAILABLE":
+        satellite_imagery_last_verification = {
+            "status": "UNAVAILABLE",
+            "tiles_loaded": False,
+            "reason": _satellite_source_record.provenance_reference.get("last_error", "all_provider_tiles_unavailable"),
+        }
+except SourceNotFoundError:
+    pass
+try:
+    _terrain_source_record = source_registry_service.get_source("src-gev-world-3d-terrain")
+    _terrain_saved_verification = _terrain_source_record.provenance_reference.get("last_verification")
+    if isinstance(_terrain_saved_verification, dict):
+        world_terrain_last_verification = dict(_terrain_saved_verification)
+    elif _terrain_source_record.provenance_reference.get("last_fetch_status") == "UNAVAILABLE":
+        world_terrain_last_verification = {
+            "status": "UNAVAILABLE", "tiles_loaded": False,
+            "reason": _terrain_source_record.provenance_reference.get("last_error", "provider_unreachable"),
+        }
+except SourceNotFoundError:
+    pass
+try:
+    _vector_basemap_source_record = source_registry_service.get_source("src-gev-openfreemap-vector-basemap")
+    _vector_basemap_saved_verification = _vector_basemap_source_record.provenance_reference.get("last_verification")
+    if isinstance(_vector_basemap_saved_verification, dict):
+        vector_basemap_last_verification = dict(_vector_basemap_saved_verification)
+    elif _vector_basemap_source_record.provenance_reference.get("last_fetch_status") == "UNAVAILABLE":
+        vector_basemap_last_verification = {
+            "status": "UNAVAILABLE", "tiles_loaded": False,
+            "reason": _vector_basemap_source_record.provenance_reference.get("last_error", "provider_unreachable"),
+        }
+except SourceNotFoundError:
+    pass
+bhote_koshi_event_service = BhoteKoshiEventService(
+    event_store=_sql_store("bhote_koshi_events"),
+    geometry_store=_sql_store("bhote_koshi_geometries"),
+    media_store=_sql_store("bhote_koshi_media"),
+    store_dir=_persist_path("bhote_koshi_event") or "bhote_koshi_event_store",
+)
+bhote_koshi_last_verified_at: Optional[str] = None
+try:
+    _bhote_koshi_source_record = source_registry_service.get_source("src-gev-bhote-koshi-flood")
+    if _bhote_koshi_source_record.provenance_reference.get("last_fetch_status") == "STATIC_VERIFIED":
+        bhote_koshi_last_verified_at = _bhote_koshi_source_record.last_validation
+except SourceNotFoundError:
+    pass
+ais_observation_service = AISObservationService(
+    store=_sql_store("ais_observations"),
+    store_dir=_persist_path("ais_observations") or "ais_observation_store",
+)
+aircraft_observation_service = AircraftObservationService(
+    store=_sql_store("aircraft_observations"),
+    store_dir=_persist_path("aircraft_observations") or "aircraft_observation_store",
+)
+
+OBSERVATION_FEED_SOURCE_IDS = {
+    "usgs": "src-gev-usgs-seismic",
+    "aisstream": "src-gev-aisstream-vessels",
+    "adsb_military": "src-gev-adsb-military",
+}
+observation_feed_state: Dict[str, Dict[str, Any]] = {}
+
+
+def _observation_dataset_count(service: Any) -> int:
+    return len(service.list(limit=1_000_000))
+
+
+def _restore_observation_feed_state(key: str, service: Any) -> Dict[str, Any]:
+    """Restore LIVE_VERIFIED only when persisted success evidence matches storage."""
+    source_id = OBSERVATION_FEED_SOURCE_IDS[key]
+    try:
+        source = source_registry_service.get_source(source_id)
+    except SourceNotFoundError:
+        return {"status": "PENDING", "last_verified_at_utc": None}
+    metadata = source.provenance_reference or {}
+    verification = metadata.get("last_verification") or {}
+    stored_count = _observation_dataset_count(service)
+    verified = (
+        metadata.get("last_fetch_status") == "LIVE_VERIFIED"
+        and verification.get("status") == "LIVE_VERIFIED"
+        and verification.get("readback_records", 0) > 0
+        and verification.get("stored_dataset_records") == stored_count
+    )
+    if verified:
+        return {"status": "LIVE_VERIFIED", "last_verified_at_utc": verification.get("verified_at_utc"), "last_verification": verification}
+    status = "UNAVAILABLE" if metadata.get("last_fetch_status") == "UNAVAILABLE" else "PENDING"
+    if not verification and source.last_validation != "NOT VERIFIED":
+        source.last_validation = "NOT VERIFIED"
+        source_registry_service.store.save(source_id, source.model_dump(mode="json"))
+    if metadata.get("last_fetch_status") != status:
+        source_registry_service.mark_fetch_status(source_id, status, {
+            "last_error": "successful_fetch_and_storage_readback_not_confirmed",
+            "last_verification": {"status": status, "stored_dataset_records": stored_count},
+        })
+    return {"status": status, "last_verified_at_utc": None, "last_verification": verification}
+
+
+observation_feed_state = {
+    "usgs": _restore_observation_feed_state("usgs", earthquake_observation_service),
+    "aisstream": _restore_observation_feed_state("aisstream", ais_observation_service),
+    "adsb_military": _restore_observation_feed_state("adsb_military", aircraft_observation_service),
+}
+
+
+def _mark_observation_feed_unavailable(key: str, reason: str) -> None:
+    source_id = OBSERVATION_FEED_SOURCE_IDS[key]
+    try:
+        source_registry_service.mark_fetch_status(source_id, "UNAVAILABLE", {
+            "last_error": reason,
+            "last_verification": {"status": "UNAVAILABLE", "reason": reason},
+        })
+    finally:
+        observation_feed_state[key] = {"status": "UNAVAILABLE", "last_verified_at_utc": None}
+
+
+def _verify_observation_ingestion(
+    key: str, service: Any, ingest_result: Dict[str, Any], record_ids: List[str],
+) -> Dict[str, Any]:
+    """Persist LIVE_VERIFIED only after record and source-registry read-back."""
+    source_id = OBSERVATION_FEED_SOURCE_IDS[key]
+    unique_ids = list(dict.fromkeys(record_ids))
+    stored_count = _observation_dataset_count(service)
+    read_back = [service.get(record_id) for record_id in unique_ids]
+    readback_count = sum(row is not None for row in read_back)
+    if not unique_ids:
+        verified_at = datetime.now(timezone.utc).isoformat()
+        verification = {
+            "status": "PENDING", "reason": "empty_feed_no_observations",
+            "fetched_records": ingest_result.get("fetched", 0), "readback_records": 0,
+            "stored_dataset_records": stored_count, "verified_at_utc": verified_at,
+        }
+        source_registry_service.mark_fetch_status(source_id, "PENDING", {"last_verification": verification})
+        registry_record = source_registry_service.get_source(source_id)
+        registry_ok = registry_record.provenance_reference.get("last_verification") == verification
+        observation_feed_state[key] = {"status": "PENDING", "last_verified_at_utc": None, "last_verification": verification}
+        return {**verification, "registry_readback": registry_ok}
+    if readback_count != len(unique_ids):
+        _mark_observation_feed_unavailable(key, "observation_storage_readback_failed")
+        raise RuntimeError("Observation storage read-back failed")
+
+    verified_at = datetime.now(timezone.utc).isoformat()
+    verification = {
+        "status": "LIVE_VERIFIED", "fetched_records": ingest_result.get("fetched", 0),
+        "unique_source_records": len(unique_ids), "readback_records": readback_count,
+        "stored_dataset_records": stored_count, "verified_at_utc": verified_at,
+    }
+    source_registry_service.mark_validated(source_id, verified_at, {
+        "last_fetch_status": "LIVE_VERIFIED", "last_verification": verification,
+    })
+    registry_record = source_registry_service.get_source(source_id)
+    saved = registry_record.provenance_reference.get("last_verification", {})
+    if (registry_record.provenance_reference.get("last_fetch_status") != "LIVE_VERIFIED"
+            or saved.get("status") != "LIVE_VERIFIED"
+            or saved.get("verified_at_utc") != verified_at
+            or saved.get("readback_records") != readback_count
+            or saved.get("stored_dataset_records") != stored_count):
+        _mark_observation_feed_unavailable(key, "source_registry_readback_failed")
+        raise RuntimeError("Source registry read-back failed")
+    observation_feed_state[key] = {
+        "status": "LIVE_VERIFIED", "last_verified_at_utc": verified_at,
+        "last_verification": verification,
+    }
+    return {**verification, "registry_readback": True}
+
+fire_observation_service = FireObservationService(
+    store=_sql_store("fire_observations"),
+    store_dir=_persist_path("fire_observations") or "fire_observation_store",
+)
+traffic_observation_service = TrafficObservationService(
+    store=_sql_store("traffic_observations"),
+    store_dir=_persist_path("traffic_observations") or "traffic_observation_store",
+)
+weather_observation_service = WeatherObservationService(
+    store=_sql_store("weather_observations"),
+    store_dir=_persist_path("weather_observations") or "weather_observation_store",
+)
+cyclone_observation_service = CycloneObservationService(
+    store=_sql_store("cyclone_observations"),
+    store_dir=_persist_path("cyclone_observations") or "cyclone_observation_store",
+)
+cyclone_source_state: Dict[str, Dict[str, Any]] = {}
+for _cyclone_kind, _cyclone_source_id in CYCLONE_SOURCE_IDS.items():
+    try:
+        _cyclone_source = source_registry_service.get_source(_cyclone_source_id)
+        _cyclone_status = _cyclone_source.provenance_reference.get("last_fetch_status", "CONFIGURED")
+        cyclone_source_state[_cyclone_kind] = {
+            "last_verified_at_utc": _cyclone_source.last_validation if _cyclone_status == "LIVE_VERIFIED" else None,
+            "last_fetch_status": _cyclone_status,
+            "last_metadata": _cyclone_source.provenance_reference,
+        }
+    except SourceNotFoundError:
+        cyclone_source_state[_cyclone_kind] = {"last_verified_at_utc": None, "last_fetch_status": "CONFIGURED", "last_metadata": {}}
+weather_source_state: Dict[str, Dict[str, Any]] = {}
+for _weather_source_id in ("src-gev-gfs-wind", "src-gev-ecmwf-wind", "src-open-meteo-current-weather"):
+    try:
+        _source = source_registry_service.get_source(_weather_source_id)
+        _fetch_status = _source.provenance_reference.get("last_fetch_status", "CONFIGURED")
+        weather_source_state[_weather_source_id] = {
+            "last_verified_at_utc": _source.last_validation if _fetch_status == "LIVE_VERIFIED" else None,
+            "last_fetch_status": _fetch_status,
+            "verified_coordinates": _source.provenance_reference.get("verified_coordinates", []),
+        }
+    except SourceNotFoundError:
+        weather_source_state[_weather_source_id] = {"last_verified_at_utc": None, "last_fetch_status": "UNAVAILABLE", "verified_coordinates": []}
+try:
+    _radar_source = source_registry_service.get_source("src-gev-noaa-nowcoast-radar")
+    _radar_provenance = _radar_source.provenance_reference
+    radar_source_state: Dict[str, Any] = {
+        "last_verified_at_utc": _radar_source.last_validation if _radar_provenance.get("last_fetch_status") == "LIVE_VERIFIED" else None,
+        "last_fetch_status": _radar_provenance.get("last_fetch_status", "CONFIGURED"),
+        "metadata": _radar_provenance.get("radar_metadata"),
+        "last_image_retrieval": _radar_provenance.get("last_image_retrieval"),
+    }
+except SourceNotFoundError:
+    radar_source_state = {"last_verified_at_utc": None, "last_fetch_status": "UNAVAILABLE", "metadata": None, "last_image_retrieval": None}
+SATELLITE_CLOUD_PRODUCTS = {
+    "clouds": {"source_id": "src-gev-noaa-nowcoast-clouds-global", "dataset_id": "noaa_nowcoast_global_satellite_cloud_imagery"},
+    "clouds-regional": {"source_id": "src-gev-noaa-nowcoast-clouds-regional", "dataset_id": "noaa_nowcoast_goes_regional_satellite_cloud_imagery"},
+}
+NOAA_WEATHER_IMAGERY_PRODUCTS = {
+    **SATELLITE_CLOUD_PRODUCTS,
+    "lightning": {"source_id": "src-gev-noaa-nowcoast-lightning", "dataset_id": "noaa_nowcoast_lightning_strike_density_imagery"},
+}
+satellite_cloud_state: Dict[str, Dict[str, Any]] = {}
+for _cloud_product, _cloud_ids in NOAA_WEATHER_IMAGERY_PRODUCTS.items():
+    try:
+        _cloud_source = source_registry_service.get_source(_cloud_ids["source_id"])
+        _cloud_fetch_status = _cloud_source.provenance_reference.get("last_fetch_status", "CONFIGURED")
+        satellite_cloud_state[_cloud_product] = {
+            "last_verified_at_utc": _cloud_source.last_validation if _cloud_fetch_status == "LIVE_VERIFIED" else None,
+            "last_fetch_status": _cloud_fetch_status,
+            "metadata": _cloud_source.provenance_reference.get("satellite_metadata"),
+            "last_image_retrieval": _cloud_source.provenance_reference.get("last_image_retrieval"),
+        }
+    except SourceNotFoundError:
+        satellite_cloud_state[_cloud_product] = {"last_verified_at_utc": None, "last_fetch_status": "UNAVAILABLE", "metadata": None, "last_image_retrieval": None}
+try:
+    _firms_validation = source_registry_service.get_source("src-gev-nifc-firms").last_validation
+    firms_last_verified_at: Optional[str] = _firms_validation if _firms_validation != "NOT VERIFIED" else None
+except SourceNotFoundError:
+    firms_last_verified_at = None
+try:
+    _traffic_source = source_registry_service.get_source("src-gev-tomtom-traffic")
+    _traffic_verified = _traffic_source.last_validation
+    traffic_last_verified_at: Optional[str] = _traffic_verified if _traffic_verified != "NOT VERIFIED" else None
+    traffic_verified_tiles: List[Dict[str, int]] = _traffic_source.provenance_reference.get("last_verified_tiles", [])
+    traffic_last_fetch_error = _traffic_source.provenance_reference.get("last_fetch_status") == "UNAVAILABLE"
+except SourceNotFoundError:
+    traffic_last_verified_at, traffic_verified_tiles, traffic_last_fetch_error = None, [], False
 
 
 geo_quest_candidate_service = GeoQuestCandidateService(
@@ -2367,6 +2757,1615 @@ def geospatial_connector_ingest(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/earthquakes/usgs/ingest")
+def ingest_usgs_earthquakes(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch the live USGS daily feed and idempotently persist its observations."""
+    try:
+        feed = fetch_earthquakes()
+        result = earthquake_observation_service.ingest(feed)
+        result["source"] = "USGS"
+        result["capability_id"] = "cap-gev-earthquake-monitoring"
+        verification = _verify_observation_ingestion(
+            "usgs", earthquake_observation_service, result,
+            [row["event_id"] for row in feed["observations"]],
+        )
+        result.update(verification)
+        if verification["status"] == "PENDING" and not verification["registry_readback"]:
+            raise RuntimeError("Source registry read-back failed")
+        return result
+    except EarthquakeObservationValidationError as exc:
+        _mark_observation_feed_unavailable("usgs", "upstream_observation_validation_failed")
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        _mark_observation_feed_unavailable("usgs", "storage_or_registry_readback_failed")
+        raise HTTPException(status_code=503, detail="USGS storage verification failed") from exc
+    except Exception as exc:
+        if observation_feed_state["usgs"]["status"] != "UNAVAILABLE":
+            _mark_observation_feed_unavailable("usgs", "fetch_or_readback_failed")
+        logger.warning("USGS earthquake ingestion failed (%s)", type(exc).__name__)
+        raise HTTPException(status_code=502, detail="USGS earthquake ingestion failed") from exc
+
+
+@app.get("/earthquakes/usgs/observations")
+def list_usgs_earthquakes(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    records = earthquake_observation_service.list(limit=limit, offset=offset)
+    return {"dataset_id": "ds-gev-seismic-events", "capability_id": "cap-gev-earthquake-monitoring", "count": len(records), "limit": limit, "offset": offset, "observations": records}
+
+
+@app.get("/earthquakes/map", include_in_schema=False)
+def earthquake_map() -> FileResponse:
+    return FileResponse(os.path.join(os.path.dirname(__file__), "frontend", "earthquake-map.html"), media_type="text/html")
+
+
+@app.post("/aisstream/ingest")
+def ingest_aisstream_positions(
+    payload: Dict[str, Any],
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch a bounded server-side AISStream position batch and persist vessel updates."""
+    bounding_boxes = payload.get("bounding_boxes")
+    max_messages = payload.get("max_messages", 25)
+    timeout_seconds = payload.get("timeout_seconds", 15)
+    if not isinstance(max_messages, int) or isinstance(max_messages, bool) or not 1 <= max_messages <= 100:
+        raise HTTPException(status_code=422, detail="max_messages must be an integer between 1 and 100")
+    if not isinstance(timeout_seconds, (int, float)) or isinstance(timeout_seconds, bool) or not 1 <= timeout_seconds <= 60:
+        raise HTTPException(status_code=422, detail="timeout_seconds must be between 1 and 60")
+    try:
+        feed = fetch_aisstream_positions(
+            bounding_boxes=bounding_boxes,
+            max_messages=max_messages,
+            timeout_seconds=timeout_seconds,
+        )
+        result = ais_observation_service.ingest(feed)
+        result["source"] = "AISStream"
+        result["connection_errors"] = feed["connection_errors"]
+        verification = _verify_observation_ingestion(
+            "aisstream", ais_observation_service, result,
+            [row["vessel_id"] for row in feed["observations"]],
+        )
+        result.update(verification)
+        if verification["status"] == "PENDING" and not verification["registry_readback"]:
+            raise RuntimeError("Source registry read-back failed")
+        return result
+    except AISStreamConfigurationError as exc:
+        _mark_observation_feed_unavailable("aisstream", "provider_credentials_or_subscription_not_configured")
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except AISStreamConnectionError as exc:
+        _mark_observation_feed_unavailable("aisstream", "upstream_connection_failed")
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except AISObservationValidationError as exc:
+        _mark_observation_feed_unavailable("aisstream", "upstream_observation_validation_failed")
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        if observation_feed_state["aisstream"]["status"] != "UNAVAILABLE":
+            _mark_observation_feed_unavailable("aisstream", "storage_or_registry_readback_failed")
+        raise HTTPException(status_code=503, detail="AISStream storage verification failed") from exc
+
+
+@app.get("/aisstream/observations")
+def list_aisstream_positions(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    records = ais_observation_service.list(limit=limit, offset=offset)
+    return {"dataset_id": AISObservationService.DATASET_ID, "count": len(records), "limit": limit, "offset": offset, "observations": records}
+
+
+@app.post("/aircraft/adsb/military/ingest")
+def ingest_military_aircraft(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch publicly broadcast ADS-B military-feed observations and persist them."""
+    try:
+        feed = fetch_military_aircraft()
+        result = aircraft_observation_service.ingest(feed)
+        result["source"] = "adsb.lol"
+        verification = _verify_observation_ingestion(
+            "adsb_military", aircraft_observation_service, result,
+            [aircraft_observation_service._record_id(row) for row in feed["observations"]],
+        )
+        result.update(verification)
+        if verification["status"] == "PENDING" and not verification["registry_readback"]:
+            raise RuntimeError("Source registry read-back failed")
+        return result
+    except AircraftUpstreamRateLimitError as exc:
+        _mark_observation_feed_unavailable("adsb_military", "upstream_rate_limited")
+        raise HTTPException(status_code=429, detail="Aircraft feed is rate-limited; retry later") from exc
+    except AircraftUpstreamError as exc:
+        _mark_observation_feed_unavailable("adsb_military", "upstream_fetch_failed")
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except AircraftObservationValidationError as exc:
+        _mark_observation_feed_unavailable("adsb_military", "upstream_observation_validation_failed")
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        if observation_feed_state["adsb_military"]["status"] != "UNAVAILABLE":
+            _mark_observation_feed_unavailable("adsb_military", "storage_or_registry_readback_failed")
+        raise HTTPException(status_code=503, detail="ADS-B storage verification failed") from exc
+
+
+@app.get("/aircraft/adsb/military/observations")
+def list_military_aircraft(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    records = aircraft_observation_service.list(limit=limit, offset=offset)
+    return {"dataset_id": AircraftObservationService.DATASET_ID, "count": len(records), "limit": limit, "offset": offset, "observations": records}
+
+
+@app.post("/wildfires/firms/ingest")
+def ingest_firms_active_fires(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    """Fetch NASA FIRMS near-real-time VIIRS detections and persist valid rows."""
+    global firms_last_verified_at
+    try:
+        feed = fetch_active_fires()
+        result = fire_observation_service.ingest(feed)
+        result["source"] = "NASA FIRMS"
+        result["upstream_count"] = feed["record_count"]
+        firms_last_verified_at = datetime.now(timezone.utc).isoformat()
+        source_registry_service.mark_validated("src-gev-nifc-firms", firms_last_verified_at)
+        result["last_verified_at_utc"] = firms_last_verified_at
+        return result
+    except FIRMSConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except FIRMSUpstreamError as exc:
+        logger.exception("NASA FIRMS ingestion failed")
+        raise HTTPException(status_code=502, detail="NASA FIRMS active-fire ingestion failed") from exc
+
+
+@app.get("/wildfires/firms/observations")
+def list_firms_active_fires(
+    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    records = fire_observation_service.list(limit=limit, offset=offset)
+    return {"dataset_id": FireObservationService.DATASET_ID, "count": len(records), "limit": limit, "offset": offset, "observations": records}
+
+
+@app.post("/traffic/tomtom/ingest")
+def ingest_tomtom_traffic(
+    payload: Dict[str, Any], identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch bounded real TomTom flow tiles and persist decoded road segments."""
+    global traffic_last_verified_at, traffic_verified_tiles, traffic_last_fetch_error
+    tiles = payload.get("tiles")
+    if not isinstance(tiles, list) or not 1 <= len(tiles) <= TOMTOM_MAX_TILES:
+        raise HTTPException(status_code=422, detail=f"tiles must contain 1 to {TOMTOM_MAX_TILES} tile coordinates")
+    try:
+        for tile in tiles:
+            validate_tile_coord(tile)
+        feed = fetch_flow_tiles(tiles)
+        result = traffic_observation_service.ingest(feed)
+        traffic_last_verified_at = datetime.now(timezone.utc).isoformat()
+        traffic_verified_tiles = [{"z": t["z"], "x": t["x"], "y": t["y"]} for t in feed["tiles"]]
+        traffic_last_fetch_error = False
+        source_registry_service.mark_validated(
+            "src-gev-tomtom-traffic", traffic_last_verified_at,
+            {"last_verified_tiles": traffic_verified_tiles, "last_verified_segment_count": feed["record_count"], "last_fetch_status": "LIVE_VERIFIED"},
+        )
+        result.update({"source": feed["source"], "tile_count": feed["tile_count"], "tiles": feed["tiles"], "last_verified_at_utc": traffic_last_verified_at, "traffic_style": "relative"})
+        return result
+    except TomTomConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except TomTomUpstreamError as exc:
+        traffic_last_fetch_error = True
+        source_registry_service.mark_fetch_status("src-gev-tomtom-traffic", "UNAVAILABLE", {"last_http_status": int(str(exc).rsplit(" ", 1)[-1]) if str(exc).rsplit(" ", 1)[-1].isdigit() else None})
+        logger.warning("TomTom traffic ingestion unavailable: %s", str(exc))
+        raise HTTPException(status_code=502, detail="TomTom traffic-flow ingestion failed") from None
+
+
+@app.get("/traffic/tomtom/observations")
+def list_tomtom_traffic(
+    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+    z: Optional[int] = Query(default=None, ge=8, le=16),
+    x: Optional[int] = Query(default=None, ge=0), y: Optional[int] = Query(default=None, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    tile = None
+    if any(value is not None for value in (z, x, y)):
+        if any(value is None for value in (z, x, y)) or x >= 2 ** z or y >= 2 ** z:
+            raise HTTPException(status_code=422, detail="Provide a valid complete z, x, y tile coordinate")
+        tile = {"z": z, "x": x, "y": y}
+    records = traffic_observation_service.list(limit=limit, offset=offset, tile=tile)
+    return {"dataset_id": TrafficObservationService.DATASET_ID, "count": len(records), "limit": limit, "offset": offset, "tile": tile, "observations": records}
+
+
+@app.post("/weather/wind/{model}/ingest")
+def ingest_wind_forecast(
+    model: str, payload: Dict[str, Any], identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch GFS/ECMWF grids through GEV, sample points, then store point forecasts."""
+    model_key = model.lower()
+    if model_key not in ("gfs", "ecmwf"):
+        raise HTTPException(status_code=422, detail="model must be gfs or ecmwf")
+    locations = payload.get("locations")
+    source_id = "src-gev-gfs-wind" if model_key == "gfs" else "src-gev-ecmwf-wind"
+    try:
+        feed = fetch_wind_forecasts(model_key, locations)
+        result = weather_observation_service.ingest(feed, forecast=True)
+        read_back = [weather_observation_service.get(record_id) for record_id in result["record_ids"]]
+        if len(read_back) != len(result["record_ids"]) or any(row is None for row in read_back):
+            raise RuntimeError("Weather forecast persistence read-back failed")
+        verified_at = datetime.now(timezone.utc).isoformat()
+        coords = [{"latitude": row["latitude"], "longitude": row["longitude"]} for row in read_back]
+        weather_source_state[source_id] = {"last_verified_at_utc": verified_at, "last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords}
+        source_registry_service.mark_validated(source_id, verified_at, {"last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords, "last_readback_count": len(read_back), "forecast_cycle": feed["cycle"]})
+        result.update({"source": feed["source"], "model": feed["model"], "record_type": "FORECAST", "readback_count": len(read_back), "forecast_cycle": feed["cycle"], "last_verified_at_utc": verified_at})
+        return result
+    except (WeatherConfigurationError, WeatherUpstreamError) as exc:
+        weather_source_state[source_id]["last_fetch_status"] = "UNAVAILABLE"
+        source_registry_service.mark_fetch_status(source_id, "UNAVAILABLE", {"last_error": str(exc)[:200]})
+        raise HTTPException(status_code=502, detail="Wind forecast ingestion is currently unavailable") from None
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        weather_source_state[source_id]["last_fetch_status"] = "UNAVAILABLE"
+        source_registry_service.mark_fetch_status(source_id, "UNAVAILABLE", {"last_error": "storage read-back failed"})
+        raise HTTPException(status_code=503, detail="Wind forecast storage verification failed") from exc
+
+
+@app.get("/weather/wind/forecasts")
+def list_wind_forecasts(
+    model: str = Query(..., regex="^(gfs|ecmwf)$"),
+    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    model_key = model.lower()
+    dataset = WeatherObservationService.WIND_DATASETS[model_key.upper()]
+    records = weather_observation_service.list(dataset, limit=limit, offset=offset)
+    return {"dataset_id": dataset, "model": model_key.upper(), "record_type": "FORECAST", "count": len(records), "limit": limit, "offset": offset, "observations": records}
+
+
+@app.post("/weather/open-meteo/ingest")
+def ingest_open_meteo_current(
+    payload: Dict[str, Any], identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch Open-Meteo model-derived current surface conditions for points."""
+    source_id = "src-open-meteo-current-weather"
+    try:
+        feed = fetch_open_meteo_current(payload.get("locations"))
+        result = weather_observation_service.ingest(feed, forecast=False)
+        read_back = [weather_observation_service.get(record_id) for record_id in result["record_ids"]]
+        if len(read_back) != len(result["record_ids"]) or any(row is None for row in read_back):
+            raise RuntimeError("Current weather persistence read-back failed")
+        verified_at = datetime.now(timezone.utc).isoformat()
+        coords = [{"latitude": row["latitude"], "longitude": row["longitude"]} for row in read_back]
+        weather_source_state[source_id] = {"last_verified_at_utc": verified_at, "last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords}
+        source_registry_service.mark_validated(source_id, verified_at, {"last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords, "last_readback_count": len(read_back)})
+        result.update({"source": feed["source"], "record_type": "CURRENT_CONDITIONS", "is_forecast": False, "readback_count": len(read_back), "last_verified_at_utc": verified_at})
+        return result
+    except WeatherUpstreamError as exc:
+        weather_source_state[source_id]["last_fetch_status"] = "UNAVAILABLE"
+        source_registry_service.mark_fetch_status(source_id, "UNAVAILABLE", {"last_error": str(exc)[:200]})
+        raise HTTPException(status_code=502, detail="Open-Meteo current-weather ingestion failed") from None
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        weather_source_state[source_id]["last_fetch_status"] = "UNAVAILABLE"
+        source_registry_service.mark_fetch_status(source_id, "UNAVAILABLE", {"last_error": "storage read-back failed"})
+        raise HTTPException(status_code=503, detail="Current weather storage verification failed") from exc
+
+
+@app.get("/weather/open-meteo/current")
+def list_open_meteo_current(
+    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    records = weather_observation_service.list(WeatherObservationService.CURRENT_DATASET, limit=limit, offset=offset)
+    return {"dataset_id": WeatherObservationService.CURRENT_DATASET, "record_type": "CURRENT_CONDITIONS", "count": len(records), "limit": limit, "offset": offset, "observations": records}
+
+
+RADAR_SOURCE_ID = "src-gev-noaa-nowcoast-radar"
+
+
+def _fetch_store_radar_manifest() -> tuple[dict[str, Any], dict[str, Any]]:
+    manifest = fetch_radar_manifest()
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+    snapshot = {
+        "product": manifest["product"], "title": manifest.get("title"),
+        "source": manifest.get("source"), "attribution": manifest.get("attribution"),
+        "coverage": manifest.get("coverage"), "bounds": manifest["bounds"],
+        "available_radar_timestamps": manifest["times"], "latest_radar_timestamp": manifest["latest"],
+        "provider_fetched_at_utc": manifest.get("fetchedAt"), "retrieved_at_utc": retrieved_at,
+        "stale": manifest.get("stale", False), "layer": "conus_base_reflectivity_mosaic",
+        "description": manifest.get("description"),
+    }
+    status = "LIVE_VERIFIED" if radar_source_state.get("last_fetch_status") == "LIVE_VERIFIED" else "CONFIGURED"
+    source_registry_service.mark_fetch_status(RADAR_SOURCE_ID, status, {"radar_metadata": snapshot})
+    radar_source_state.update({"metadata": snapshot, "last_metadata_retrieval_at_utc": retrieved_at, "last_fetch_status": status})
+    return manifest, snapshot
+
+
+def _mark_radar_imagery_verified(snapshot: dict[str, Any], image_info: dict[str, Any]) -> str:
+    verified_at = datetime.now(timezone.utc).isoformat()
+    image_retrieval = {**image_info, "retrieved_at_utc": verified_at}
+    metadata = {"radar_metadata": snapshot, "last_image_retrieval": image_retrieval}
+    # Persist and read back all upstream metadata before changing status to LIVE_VERIFIED.
+    source_registry_service.mark_fetch_status(RADAR_SOURCE_ID, "CONFIGURED", metadata)
+    saved = source_registry_service.get_source(RADAR_SOURCE_ID)
+    saved_metadata = saved.provenance_reference.get("radar_metadata")
+    saved_image = saved.provenance_reference.get("last_image_retrieval")
+    if not saved_metadata or not saved_image or saved_metadata.get("latest_radar_timestamp") != snapshot.get("latest_radar_timestamp"):
+        raise RuntimeError("Radar metadata registry read-back failed")
+    source_registry_service.mark_validated(RADAR_SOURCE_ID, verified_at, {**metadata, "last_fetch_status": "LIVE_VERIFIED"})
+    radar_source_state.update({"last_verified_at_utc": verified_at, "last_fetch_status": "LIVE_VERIFIED", "metadata": saved_metadata, "last_image_retrieval": saved_image})
+    return verified_at
+
+
+def _radar_failure() -> None:
+    radar_source_state["last_fetch_status"] = "UNAVAILABLE"
+    source_registry_service.mark_fetch_status(RADAR_SOURCE_ID, "UNAVAILABLE", {"last_error": "NOAA nowCOAST radar request failed"})
+
+
+def _radar_manifest_response(manifest: dict[str, Any], snapshot: dict[str, Any]) -> dict[str, Any]:
+    result = dict(manifest)
+    result.update({
+        "dataset_id": "noaa_nowcoast_conus_base_reflectivity_radar",
+        "retrieved_at_utc": snapshot["retrieved_at_utc"],
+        "status": radar_source_state.get("last_fetch_status", "CONFIGURED"),
+        "imageUrl": "/weather/radar/image?time=" + str(manifest["latest"]),
+        "tileTemplate": "/weather/radar/tile?time={time}&z={z}&x={x}&y={y}",
+        "last_image_retrieval": radar_source_state.get("last_image_retrieval"),
+    })
+    return result
+
+
+@app.get("/weather/radar/manifest")
+def get_noaa_radar_manifest(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    """Return live nowCOAST radar capabilities and persist its metadata snapshot."""
+    try:
+        manifest, snapshot = _fetch_store_radar_manifest()
+        return _radar_manifest_response(manifest, snapshot)
+    except RadarUpstreamError:
+        _radar_failure()
+        raise HTTPException(status_code=502, detail="NOAA nowCOAST radar metadata is unavailable") from None
+
+
+@app.get("/weather/radar/image")
+def proxy_noaa_radar_image(
+    time: str, size: str = Query("4096x2048"), bbox: Optional[str] = Query(default=None),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Response:
+    """Proxy a bounded full-extent or detail-window PNG radar image."""
+    try:
+        manifest, snapshot = _fetch_store_radar_manifest()
+        if time not in manifest["times"]:
+            raise RadarRequestError("time must be one of the timestamps in the live radar manifest")
+        body, image_info = fetch_radar_image(time, size=size, bbox=bbox)
+        verified_at = _mark_radar_imagery_verified(snapshot, {**image_info, "mode": "image", "time": time, "size": size, "bbox": bbox})
+        return Response(body, media_type="image/png", headers={"Cache-Control": "public, max-age=300", "X-Radar-Observed-At": time, "X-Radar-Retrieved-At": verified_at, "X-Radar-Product": "conus_base_reflectivity_mosaic"})
+    except RadarRequestError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RadarUpstreamError:
+        _radar_failure()
+        raise HTTPException(status_code=502, detail="NOAA nowCOAST radar imagery is unavailable") from None
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Radar metadata read-back failed") from exc
+
+
+@app.get("/weather/radar/tile")
+def proxy_noaa_radar_tile(
+    time: str, z: int = Query(..., ge=0, le=6), x: int = Query(..., ge=0), y: int = Query(..., ge=0),
+    size: str = Query("256"), identity: AuthIdentity = Depends(get_identity),
+) -> Response:
+    """Proxy a single geographic NOAA radar tile; raster bytes are never row-stored."""
+    try:
+        manifest, snapshot = _fetch_store_radar_manifest()
+        if time not in manifest["times"]:
+            raise RadarRequestError("time must be one of the timestamps in the live radar manifest")
+        body, image_info = fetch_radar_tile(time, z, x, y, size=size)
+        verified_at = _mark_radar_imagery_verified(snapshot, {**image_info, "mode": "tile", "time": time, "z": z, "x": x, "y": y, "size": size})
+        return Response(body, media_type="image/png", headers={"Cache-Control": "public, max-age=300", "X-Radar-Observed-At": time, "X-Radar-Retrieved-At": verified_at, "X-Radar-Product": "conus_base_reflectivity_mosaic"})
+    except RadarRequestError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RadarUpstreamError:
+        _radar_failure()
+        raise HTTPException(status_code=502, detail="NOAA nowCOAST radar tile is unavailable") from None
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Radar metadata read-back failed") from exc
+
+
+@app.post("/weather/radar/verify")
+def verify_noaa_radar(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    """Fetch live capabilities and one in-coverage tile, then read back metadata."""
+    try:
+        manifest, snapshot = _fetch_store_radar_manifest()
+        bounds = manifest["bounds"]
+        center_lon = (bounds["west"] + bounds["east"]) / 2
+        center_lat = (bounds["south"] + bounds["north"]) / 2
+        z = 4
+        x = min(2 ** (z + 1) - 1, max(0, int((center_lon + 180) / (180 / (2 ** z)))))
+        y = min(2 ** z - 1, max(0, int((90 - center_lat) / (180 / (2 ** z)))))
+        observed_time = manifest["latest"]
+        _body, image_info = fetch_radar_tile(observed_time, z, x, y)
+        verified_at = _mark_radar_imagery_verified(snapshot, {**image_info, "mode": "tile", "time": observed_time, "z": z, "x": x, "y": y, "size": "256"})
+        return {"status": "LIVE_VERIFIED", "product": "radar", "layer": "conus_base_reflectivity_mosaic", "latest_radar_timestamp": observed_time, "retrieved_at_utc": snapshot["retrieved_at_utc"], "verified_at_utc": verified_at, "coverage": snapshot["coverage"], "bounds": bounds, "available_radar_timestamps": snapshot["available_radar_timestamps"], "verification_tile": {"z": z, "x": x, "y": y, **image_info}, "metadata_readback": True}
+    except RadarUpstreamError:
+        _radar_failure()
+        raise HTTPException(status_code=502, detail="NOAA nowCOAST radar live verification failed") from None
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Radar metadata read-back failed") from exc
+
+
+def _fetch_store_satellite_manifest(product: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    if product not in NOAA_WEATHER_IMAGERY_PRODUCTS:
+        raise RadarRequestError("product must be clouds, clouds-regional, or lightning")
+    manifest = fetch_weather_manifest(product)
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+    layer = WEATHER_IMAGERY_LAYERS[product]
+    snapshot = {
+        "product": product, "layer": layer, "title": manifest.get("title"),
+        "source": manifest.get("source"), "attribution": manifest.get("attribution"),
+        "coverage": manifest.get("coverage"), "bounds": manifest["bounds"],
+        "available_timestamps": manifest["times"], "latest_timestamp": manifest["latest"],
+        "provider_fetched_at_utc": manifest.get("fetchedAt"), "retrieved_at_utc": retrieved_at,
+        "stale": manifest.get("stale", False), "description": manifest.get("description"),
+        "image_size": manifest.get("imageSize"), "tile_size": manifest.get("tileSize"),
+        "max_level": manifest.get("maxLevel"), "tiling_scheme": manifest.get("tilingScheme"),
+    }
+    state = satellite_cloud_state[product]
+    status = "LIVE_VERIFIED" if state.get("last_fetch_status") == "LIVE_VERIFIED" else "CONFIGURED"
+    source_id = NOAA_WEATHER_IMAGERY_PRODUCTS[product]["source_id"]
+    source_registry_service.mark_fetch_status(source_id, status, {"satellite_metadata": snapshot})
+    state.update({"metadata": snapshot, "last_metadata_retrieval_at_utc": retrieved_at, "last_fetch_status": status})
+    return manifest, snapshot
+
+
+def _mark_satellite_image_verified(product: str, snapshot: dict[str, Any], image_info: dict[str, Any]) -> str:
+    source_id = NOAA_WEATHER_IMAGERY_PRODUCTS[product]["source_id"]
+    verified_at = datetime.now(timezone.utc).isoformat()
+    image_retrieval = {**image_info, "retrieved_at_utc": verified_at}
+    metadata = {"satellite_metadata": snapshot, "last_image_retrieval": image_retrieval}
+    source_registry_service.mark_fetch_status(source_id, "CONFIGURED", metadata)
+    saved = source_registry_service.get_source(source_id)
+    saved_metadata = saved.provenance_reference.get("satellite_metadata")
+    saved_image = saved.provenance_reference.get("last_image_retrieval")
+    if not saved_metadata or not saved_image or saved_metadata.get("latest_timestamp") != snapshot.get("latest_timestamp"):
+        raise RuntimeError("Satellite imagery metadata registry read-back failed")
+    source_registry_service.mark_validated(source_id, verified_at, {**metadata, "last_fetch_status": "LIVE_VERIFIED"})
+    state = satellite_cloud_state[product]
+    state.update({"last_verified_at_utc": verified_at, "last_fetch_status": "LIVE_VERIFIED", "metadata": saved_metadata, "last_image_retrieval": saved_image})
+    return verified_at
+
+
+def _satellite_cloud_failure(product: str) -> None:
+    source_id = NOAA_WEATHER_IMAGERY_PRODUCTS[product]["source_id"]
+    satellite_cloud_state[product]["last_fetch_status"] = "UNAVAILABLE"
+    source_registry_service.mark_fetch_status(source_id, "UNAVAILABLE", {"last_error": "NOAA nowCOAST satellite imagery request failed"})
+
+
+def _satellite_manifest_response(product: str, manifest: dict[str, Any], snapshot: dict[str, Any]) -> dict[str, Any]:
+    result = dict(manifest)
+    result.update({
+        "dataset_id": NOAA_WEATHER_IMAGERY_PRODUCTS[product]["dataset_id"],
+        "layer": WEATHER_IMAGERY_LAYERS[product],
+        "retrieved_at_utc": snapshot["retrieved_at_utc"],
+        "status": satellite_cloud_state[product]["last_fetch_status"],
+        "imageUrl": f"/weather/satellite/image?product={product}&time={manifest['latest']}",
+        "tileTemplate": f"/weather/satellite/tile?product={product}&time={{time}}&z={{z}}&x={{x}}&y={{y}}",
+        "last_image_retrieval": satellite_cloud_state[product].get("last_image_retrieval"),
+    })
+    return result
+
+
+@app.get("/weather/satellite/manifest")
+def get_satellite_cloud_manifest(
+    product: str = Query(..., pattern="^(clouds|clouds-regional|lightning)$"),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Return live capabilities for a supported nowCOAST satellite infrared product."""
+    try:
+        manifest, snapshot = _fetch_store_satellite_manifest(product)
+        return _satellite_manifest_response(product, manifest, snapshot)
+    except RadarRequestError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RadarUpstreamError:
+        _satellite_cloud_failure(product)
+        raise HTTPException(status_code=502, detail="NOAA nowCOAST satellite metadata is unavailable") from None
+
+
+@app.get("/weather/satellite/image")
+def proxy_satellite_cloud_image(
+    product: str = Query(..., pattern="^(clouds|clouds-regional|lightning)$"),
+    time: str = Query(...), size: Optional[str] = Query(default=None), bbox: Optional[str] = Query(default=None),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Response:
+    """Proxy a product-bounded whole image or detail-window PNG."""
+    try:
+        manifest, snapshot = _fetch_store_satellite_manifest(product)
+        if time not in manifest["times"]:
+            raise RadarRequestError("time must be one of the timestamps in this product's live manifest")
+        body, image_info = fetch_weather_image(product, time, size=size, bbox=bbox)
+        verified_at = _mark_satellite_image_verified(product, snapshot, {**image_info, "mode": "image", "product": product, "time": time, "size": size, "bbox": bbox})
+        return Response(body, media_type=image_info["content_type"], headers={"Cache-Control": "public, max-age=300", "X-Satellite-Product": product, "X-Satellite-Layer": WEATHER_IMAGERY_LAYERS[product], "X-Satellite-Observed-At": time, "X-Satellite-Retrieved-At": verified_at})
+    except RadarRequestError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RadarUpstreamError:
+        _satellite_cloud_failure(product)
+        raise HTTPException(status_code=502, detail="NOAA nowCOAST satellite imagery is unavailable") from None
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Satellite metadata registry read-back failed") from exc
+
+
+@app.get("/weather/lightning/manifest")
+def get_lightning_density_manifest(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    return get_satellite_cloud_manifest(product="lightning", identity=identity)
+
+
+@app.get("/weather/lightning/image")
+def proxy_lightning_density_image(
+    time: str, size: Optional[str] = Query(default=None), bbox: Optional[str] = Query(default=None),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Response:
+    return proxy_satellite_cloud_image(product="lightning", time=time, size=size, bbox=bbox, identity=identity)
+
+
+@app.get("/weather/lightning/tile")
+def proxy_lightning_density_tile(
+    time: str, z: int = Query(..., ge=0, le=6), x: int = Query(..., ge=0), y: int = Query(..., ge=0),
+    size: str = Query("256"), identity: AuthIdentity = Depends(get_identity),
+) -> Response:
+    return proxy_satellite_cloud_tile(product="lightning", time=time, z=z, x=x, y=y, size=size, identity=identity)
+
+
+@app.post("/weather/lightning/verify")
+def verify_lightning_density(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    return verify_satellite_cloud_product(product="lightning", identity=identity)
+
+
+@app.post("/cyclones/nhc/ingest")
+def ingest_noaa_cyclones(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    """Fetch current NOAA cyclone status and provider-attached GIS features."""
+    try:
+        feed = fetch_current_cyclones()
+        result = cyclone_observation_service.ingest(feed)
+        readback: Dict[str, int] = {}
+        for kind, record_ids in result["record_ids"].items():
+            saved = [cyclone_observation_service.get(record_id) for record_id in record_ids]
+            if any(record is None for record in saved) or len(saved) != result[kind]["record_count"]:
+                raise RuntimeError("Cyclone storage read-back failed")
+            readback[kind] = len(saved)
+        verified_at = datetime.now(timezone.utc).isoformat()
+        storm_metadata = {
+            "last_fetch_status": "LIVE_VERIFIED", "last_readback_count": readback["storms"],
+            "active_storm_count": result["fetched_storms"], "fetched_at_utc": feed["fetched_at_utc"],
+            "coverage": feed.get("coverage"), "attribution": feed.get("attribution"),
+        }
+        cyclone_source_state["storms"] = {"last_verified_at_utc": verified_at, "last_fetch_status": "LIVE_VERIFIED", "last_metadata": storm_metadata}
+        source_registry_service.mark_validated(CYCLONE_SOURCE_IDS["storms"], verified_at, storm_metadata)
+        geometry_statuses = {}
+        has_active_storms = bool(feed["storms"])
+        any_geometry_unavailable = any(storm.get("geometry_status") == "unavailable" for storm in feed["storms"])
+        for kind in ("points", "tracks", "cones"):
+            count = result[kind]["record_count"]
+            record_ids = result["record_ids"][kind]
+            metadata = {
+                "feature_count": count, "fetched_at_utc": feed["fetched_at_utc"],
+                "last_readback_count": readback[kind], "gis_layer_id": {"points": 5, "tracks": 6, "cones": 7}[kind],
+            }
+            if count and readback[kind] == count:
+                metadata["last_fetch_status"] = "LIVE_VERIFIED"
+                cyclone_source_state[kind] = {"last_verified_at_utc": verified_at, "last_fetch_status": "LIVE_VERIFIED", "last_metadata": metadata}
+                source_registry_service.mark_validated(CYCLONE_SOURCE_IDS[kind], verified_at, metadata)
+            else:
+                status = "UNAVAILABLE" if any_geometry_unavailable else ("NO_CURRENT_FEATURES" if has_active_storms else "NO_ACTIVE_STORMS")
+                metadata["last_fetch_status"] = status
+                cyclone_source_state[kind] = {"last_verified_at_utc": None, "last_fetch_status": status, "last_metadata": metadata}
+                source_registry_service.mark_fetch_status(CYCLONE_SOURCE_IDS[kind], status, metadata)
+            geometry_statuses[kind] = cyclone_source_state[kind]["last_fetch_status"]
+        result.update({
+            "source": feed["source"], "coverage": feed.get("coverage"), "attribution": feed.get("attribution"),
+            "verified_at_utc": verified_at, "readback_counts": readback,
+            "product_statuses": {"storms": "LIVE_VERIFIED", **geometry_statuses},
+        })
+        return result
+    except (CycloneConfigurationError, CycloneUpstreamError) as exc:
+        for kind, source_id in CYCLONE_SOURCE_IDS.items():
+            cyclone_source_state[kind]["last_fetch_status"] = "UNAVAILABLE"
+            source_registry_service.mark_fetch_status(source_id, "UNAVAILABLE", {"last_error": str(exc)[:200]})
+        raise HTTPException(status_code=502, detail="NOAA cyclone ingestion is unavailable") from None
+    except (CycloneValidationError, CycloneObservationValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        cyclone_source_state["storms"]["last_fetch_status"] = "UNAVAILABLE"
+        source_registry_service.mark_fetch_status(CYCLONE_SOURCE_IDS["storms"], "UNAVAILABLE", {"last_error": "Cyclone storage read-back failed"})
+        raise HTTPException(status_code=503, detail="Cyclone storage verification failed") from exc
+
+
+@app.get("/cyclones/nhc/storms")
+def list_noaa_cyclones(
+    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    records = cyclone_observation_service.list(CYCLONE_DATASETS["storms"], limit=limit, offset=offset)
+    return {"dataset_id": CYCLONE_DATASETS["storms"], "count": len(records), "limit": limit, "offset": offset, "observations": records}
+
+
+def _cyclone_feature_response(kind: str, limit: int, offset: int) -> Dict[str, Any]:
+    dataset_id = CYCLONE_DATASETS[kind]
+    rows = cyclone_observation_service.list(dataset_id, limit=limit, offset=offset)
+    features = [{
+        "type": "Feature", "id": row["record_id"], "geometry": row["geometry"],
+        "properties": {key: value for key, value in row.items() if key not in ("geometry", "record_id", "dataset_id", "ingested_at_utc")},
+    } for row in rows]
+    return {"type": "FeatureCollection", "dataset_id": dataset_id, "count": len(features), "limit": limit, "offset": offset, "features": features}
+
+
+@app.get("/cyclones/nhc/forecast-points")
+def list_noaa_cyclone_forecast_points(
+    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    return _cyclone_feature_response("points", limit, offset)
+
+
+@app.get("/cyclones/nhc/tracks")
+def list_noaa_cyclone_tracks(
+    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    return _cyclone_feature_response("tracks", limit, offset)
+
+
+@app.get("/cyclones/nhc/cones")
+def list_noaa_cyclone_forecast_cones(
+    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    return _cyclone_feature_response("cones", limit, offset)
+
+
+@app.get("/weather/satellite/tile")
+def proxy_satellite_cloud_tile(
+    product: str = Query(..., pattern="^(clouds|clouds-regional|lightning)$"), time: str = Query(...),
+    z: int = Query(..., ge=0, le=6), x: int = Query(..., ge=0), y: int = Query(..., ge=0),
+    size: str = Query("256"), identity: AuthIdentity = Depends(get_identity),
+) -> Response:
+    """Proxy a single geographic tile for either nowCOAST satellite product."""
+    try:
+        manifest, snapshot = _fetch_store_satellite_manifest(product)
+        if time not in manifest["times"]:
+            raise RadarRequestError("time must be one of the timestamps in this product's live manifest")
+        body, image_info = fetch_weather_tile(product, time, z, x, y, size=size)
+        verified_at = _mark_satellite_image_verified(product, snapshot, {**image_info, "mode": "tile", "product": product, "time": time, "z": z, "x": x, "y": y, "size": size})
+        return Response(body, media_type=image_info["content_type"], headers={"Cache-Control": "public, max-age=300", "X-Satellite-Product": product, "X-Satellite-Layer": WEATHER_IMAGERY_LAYERS[product], "X-Satellite-Observed-At": time, "X-Satellite-Retrieved-At": verified_at})
+    except RadarRequestError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RadarUpstreamError:
+        _satellite_cloud_failure(product)
+        raise HTTPException(status_code=502, detail="NOAA nowCOAST satellite tile is unavailable") from None
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Satellite metadata registry read-back failed") from exc
+
+
+@app.post("/weather/satellite/verify")
+def verify_satellite_cloud_product(
+    product: str = Query(..., pattern="^(clouds|clouds-regional|lightning)$"),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch real capabilities and one in-coverage tile, then confirm registry read-back."""
+    try:
+        manifest, snapshot = _fetch_store_satellite_manifest(product)
+        bounds = manifest["bounds"]
+        center_lon = (bounds["west"] + bounds["east"]) / 2
+        center_lat = (bounds["south"] + bounds["north"]) / 2
+        if product == "lightning":
+            # The WMS bounds include a near-global box; choose a tile in the
+            # provider's advertised Americas coverage for meaningful checks.
+            center_lon, center_lat = -90.0, 40.0
+        z = 4
+        x = min(2 ** (z + 1) - 1, max(0, int((center_lon + 180) / (180 / (2 ** z)))))
+        y = min(2 ** z - 1, max(0, int((90 - center_lat) / (180 / (2 ** z)))))
+        observed_time = manifest["latest"]
+        _body, image_info = fetch_weather_tile(product, observed_time, z, x, y)
+        verified_at = _mark_satellite_image_verified(product, snapshot, {**image_info, "mode": "tile", "product": product, "time": observed_time, "z": z, "x": x, "y": y, "size": "256"})
+        return {"status": "LIVE_VERIFIED", "product": product, "layer": WEATHER_IMAGERY_LAYERS[product], "dataset_id": NOAA_WEATHER_IMAGERY_PRODUCTS[product]["dataset_id"], "latest_timestamp": observed_time, "retrieved_at_utc": snapshot["retrieved_at_utc"], "verified_at_utc": verified_at, "coverage": snapshot["coverage"], "bounds": bounds, "available_timestamps": snapshot["available_timestamps"], "verification_tile": {"z": z, "x": x, "y": y, **image_info}, "metadata_readback": True}
+    except RadarUpstreamError:
+        _satellite_cloud_failure(product)
+        raise HTTPException(status_code=502, detail="NOAA nowCOAST satellite live verification failed") from None
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Satellite metadata registry read-back failed") from exc
+
+
+@app.post("/natural-earth/{dataset}/ingest")
+def ingest_natural_earth_dataset(dataset: str, identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    """Validate and persist a bundled Natural Earth static snapshot."""
+    if dataset not in NaturalEarthFeatureService.DATASETS:
+        raise HTTPException(status_code=404, detail="Unknown Natural Earth dataset")
+    source_id = f"src-gev-natural-earth-{dataset}"
+    try:
+        source = load_natural_earth_source(dataset)
+        result = natural_earth_feature_service.ingest(dataset, source)
+    except (NaturalEarthSourceUnavailable, NaturalEarthValidationError) as exc:
+        natural_earth_dataset_status[dataset] = "UNAVAILABLE"
+        source_registry_service.mark_fetch_status(source_id, "UNAVAILABLE", {"last_error": str(exc)})
+        raise HTTPException(status_code=503, detail="Natural Earth source is unavailable or invalid") from None
+    if result["rejected"]:
+        natural_earth_dataset_status[dataset] = "STATIC_PARTIAL"
+        source_registry_service.mark_fetch_status(source_id, "STATIC_PARTIAL", {"last_verification": result})
+        raise HTTPException(status_code=422, detail="Natural Earth validation rejected source features")
+    counts = natural_earth_feature_service.readback_counts(dataset)
+    attrs = natural_earth_feature_service.read_attributes(dataset, limit=result["source_feature_count"])
+    features = natural_earth_feature_service.read_features(dataset, limit=result["source_feature_count"])
+    if (counts["attributes"] != result["source_feature_count"]
+            or counts["geometries"] != result["source_feature_count"]
+            or attrs["total"] != result["source_feature_count"]
+            or features["total"] != result["source_feature_count"]):
+        natural_earth_dataset_status[dataset] = "UNAVAILABLE"
+        source_registry_service.mark_fetch_status(source_id, "UNAVAILABLE", {"last_error": "Stored/API read-back count mismatch"})
+        raise HTTPException(status_code=503, detail="Natural Earth storage read-back failed")
+    verified_at = datetime.now(timezone.utc).isoformat()
+    verification = {
+        "dataset_id": result["dataset_id"], "data_mode": "STATIC_SNAPSHOT",
+        "source_feature_count": result["source_feature_count"], "valid": result["valid"],
+        "rejected": result["rejected"], "attribute_records": counts["attributes"],
+        "geometry_records": counts["geometries"], "api_attribute_readback": attrs["total"],
+        "api_feature_readback": features["total"], "source_sha256": source["source_sha256"],
+        "geometry_types": result["expected_geometry_types"],
+        "closed_rings_added_for_geojson": result["closed_rings_added_for_geojson"],
+        "verified_at_utc": verified_at, "attribution": NaturalEarthFeatureService.ATTRIBUTION,
+    }
+    source_registry_service.mark_validated(source_id, metadata={
+        "last_fetch_status": "STATIC_VERIFIED", "last_verification": verification,
+        "source_sha256": source["source_sha256"], "attribution": NaturalEarthFeatureService.ATTRIBUTION,
+    })
+    registry_record = source_registry_service.get_source(source_id)
+    registry_metadata = registry_record.provenance_reference if registry_record else {}
+    registry_verification = registry_metadata.get("last_verification", {})
+    if (not registry_record or registry_record.provenance_reference.get("last_fetch_status") != "STATIC_VERIFIED"
+            or registry_metadata.get("source_sha256") != source["source_sha256"]
+            or registry_verification.get("attribute_records") != counts["attributes"]
+            or registry_verification.get("geometry_records") != counts["geometries"]):
+        natural_earth_dataset_status[dataset] = "UNAVAILABLE"
+        source_registry_service.mark_fetch_status(source_id, "UNAVAILABLE", {"last_error": "Registry read-back mismatch"})
+        raise HTTPException(status_code=503, detail="Natural Earth registry read-back failed")
+    natural_earth_dataset_status[dataset] = "STATIC_VERIFIED"
+    natural_earth_last_verified_at[dataset] = verified_at
+    return {"status": "STATIC_VERIFIED", **verification, "registry_readback": True}
+
+
+@app.get("/natural-earth/{dataset}/attributes")
+def read_natural_earth_attributes(dataset: str, limit: int = Query(100, ge=1, le=5000),
+                                  offset: int = Query(0, ge=0),
+                                  identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    if dataset not in NaturalEarthFeatureService.DATASETS:
+        raise HTTPException(status_code=404, detail="Unknown Natural Earth dataset")
+    return natural_earth_feature_service.read_attributes(dataset, limit, offset)
+
+
+@app.get("/natural-earth/{dataset}/features")
+def read_natural_earth_features(dataset: str, limit: int = Query(100, ge=1, le=5000),
+                                offset: int = Query(0, ge=0),
+                                identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    if dataset not in NaturalEarthFeatureService.DATASETS:
+        raise HTTPException(status_code=404, detail="Unknown Natural Earth dataset")
+    return natural_earth_feature_service.read_features(dataset, limit, offset)
+
+
+@app.post("/dams/ingest")
+def ingest_gods_eye_view_dams(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    """Import the real bundled GeoJSONL snapshot and verify persisted records."""
+    global dam_snapshot_last_verified_at
+    try:
+        feed = fetch_dams()
+        result = dam_feature_service.ingest(feed)
+        attributes = dam_feature_service.list_attributes(limit=1_000_000)
+        geometries = dam_feature_service.list_features(limit=1_000_000)
+        readback_ok = (
+            len(attributes) == len(geometries["features"])
+            and len(attributes) == result["valid"]
+            and all(dam_feature_service.geometry_store.load(row["record_id"]) is not None for row in attributes)
+        )
+        if not readback_ok:
+            source_registry_service.mark_fetch_status(
+                "src-gev-openinframap-dams", "UNAVAILABLE", {"last_error": "Stored record read-back mismatch"}
+            )
+            raise RuntimeError("Dam feature storage read-back failed")
+
+        verified_at = datetime.now(timezone.utc).isoformat()
+        result.update({
+            "source": feed["source"],
+            "source_format": feed["source_format"],
+            "data_mode": "STATIC_SNAPSHOT",
+            "source_path": feed["source_path"],
+            "license": feed["license"],
+            "attribution": feed["attribution"],
+            "readback_counts": {"attributes": len(attributes), "geometries": len(geometries["features"])},
+            "verified_at_utc": verified_at,
+        })
+        if result["rejected"] == 0 and result["valid"] == result["source_feature_count"]:
+            dam_snapshot_last_verified_at = verified_at
+            source_registry_service.mark_validated(
+                "src-gev-openinframap-dams",
+                verified_at,
+                {
+                    "last_fetch_status": "STATIC_VERIFIED",
+                    "data_mode": "STATIC_SNAPSHOT",
+                    "source_feature_count": result["source_feature_count"],
+                    "valid_feature_count": result["valid"],
+                    "rejected_feature_count": result["rejected"],
+                    "stored_attribute_count": len(attributes),
+                    "stored_geometry_count": len(geometries["features"]),
+                    "last_readback_at_utc": verified_at,
+                },
+            )
+            result["status"] = "STATIC_VERIFIED"
+        else:
+            result["status"] = "STATIC_PARTIAL"
+            source_registry_service.mark_fetch_status(
+                "src-gev-openinframap-dams",
+                "STATIC_PARTIAL",
+                {"valid_feature_count": result["valid"], "rejected_feature_count": result["rejected"]},
+            )
+        return result
+    except DamsSourceUnavailable:
+        source_registry_service.mark_fetch_status("src-gev-openinframap-dams", "UNAVAILABLE")
+        raise HTTPException(status_code=503, detail="God's Eye View dams snapshot is unavailable") from None
+    except DamFeatureValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Dam feature storage verification failed") from exc
+    except Exception:
+        logger.exception("God's Eye View dams ingestion failed")
+        raise HTTPException(status_code=502, detail="God's Eye View dams ingestion failed") from None
+
+
+@app.get("/dams/attributes")
+def list_gods_eye_view_dam_attributes(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    records = dam_feature_service.list_attributes(limit=limit, offset=offset)
+    return {
+        "dataset_id": DamFeatureService.ATTRIBUTE_DATASET_ID,
+        "source_dataset_id": DamFeatureService.DATASET_ID,
+        "count": len(records), "limit": limit, "offset": offset,
+        "data_mode": "STATIC_SNAPSHOT", "attributes": records,
+    }
+
+
+@app.get("/dams/features")
+def list_gods_eye_view_dam_features(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    return dam_feature_service.list_features(limit=limit, offset=offset)
+
+
+@app.post("/events/bhote-koshi/ingest")
+def ingest_bhote_koshi_event(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    """Ingest the static historical event pack and verify each persisted collection."""
+    global bhote_koshi_last_verified_at
+    try:
+        feed = fetch_bhote_koshi_event()
+        result = bhote_koshi_event_service.ingest(feed)
+        event_record = bhote_koshi_event_service.get_event()
+        features = bhote_koshi_event_service.list_features(limit=1000)
+        media = bhote_koshi_event_service.list_media(limit=1000)
+        readback_counts = {
+            "events": int(event_record is not None),
+            "geometries": features["total"],
+            "media_references": len(media),
+        }
+        expected = result["valid_counts"]
+        readback_ok = (
+            readback_counts["events"] == expected["events"]
+            and readback_counts["geometries"] == expected["geometries"]
+            and readback_counts["media_references"] == expected["media"]
+        )
+        if not readback_ok:
+            source_registry_service.mark_fetch_status(
+                "src-gev-bhote-koshi-flood", "UNAVAILABLE", {"last_error": "Stored record read-back mismatch"}
+            )
+            raise RuntimeError("Bhote Koshi storage read-back failed")
+
+        verified_at = datetime.now(timezone.utc).isoformat()
+        result["readback_counts"] = readback_counts
+        result["verified_at_utc"] = verified_at
+        if result["rejected_record_count"] == 0 and readback_ok:
+            bhote_koshi_last_verified_at = verified_at
+            result["status"] = "STATIC_VERIFIED"
+            source_registry_service.mark_validated(
+                "src-gev-bhote-koshi-flood",
+                verified_at,
+                {
+                    "last_fetch_status": "STATIC_VERIFIED",
+                    "data_mode": "STATIC_HISTORICAL_RECONSTRUCTION",
+                    "source_event_count": result["source_event_count"],
+                    "valid_counts": expected,
+                    "rejected_counts": result["rejected_counts"],
+                    "stored_counts": readback_counts,
+                    "verified_at_utc": verified_at,
+                    "source_files": result["source_provenance"]["files"],
+                    "media_mode": "EXTERNAL_LINK_METADATA_ONLY",
+                },
+            )
+        else:
+            result["status"] = "STATIC_PARTIAL"
+            source_registry_service.mark_fetch_status(
+                "src-gev-bhote-koshi-flood", "STATIC_PARTIAL",
+                {"valid_counts": expected, "rejected_counts": result["rejected_counts"]},
+            )
+        return result
+    except BhoteKoshiSourceUnavailable:
+        source_registry_service.mark_fetch_status("src-gev-bhote-koshi-flood", "UNAVAILABLE")
+        raise HTTPException(status_code=503, detail="God's Eye View Bhote Koshi source is unavailable") from None
+    except BhoteKoshiValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Bhote Koshi storage verification failed") from exc
+    except Exception:
+        logger.exception("God's Eye View Bhote Koshi ingestion failed")
+        raise HTTPException(status_code=502, detail="God's Eye View Bhote Koshi ingestion failed") from None
+
+
+@app.get("/events/bhote-koshi")
+def get_bhote_koshi_event(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+    record = bhote_koshi_event_service.get_event()
+    if record is None:
+        raise HTTPException(status_code=404, detail="Bhote Koshi event has not been ingested")
+    return record
+
+
+@app.get("/events/bhote-koshi/features")
+def get_bhote_koshi_features(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    return bhote_koshi_event_service.list_features(limit=limit, offset=offset)
+
+
+@app.get("/events/bhote-koshi/media")
+def get_bhote_koshi_media_references(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    records = bhote_koshi_event_service.list_media(limit=limit, offset=offset)
+    return {
+        "dataset_id": BhoteKoshiEventService.MEDIA_DATASET_ID,
+        "source_dataset_id": BhoteKoshiEventService.DATASET_ID,
+        "media_mode": "EXTERNAL_LINK_METADATA_ONLY",
+        "count": len(records), "limit": limit, "offset": offset,
+        "media_references": records,
+    }
+
+
+@app.get("/geospatial/3d-tiles/photorealistic/manifest")
+def get_photorealistic_tiles_manifest(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Return safe service metadata; never return browser/provider credentials."""
+    manifest = photoreal_tiles_safe_manifest(photoreal_tiles_last_verification)
+    try:
+        source = source_registry_service.get_source("src-gev-google-photoreal-tiles")
+        manifest["source_id"] = source.source_id
+        manifest["last_validation"] = source.last_validation
+    except SourceNotFoundError:
+        manifest["source_id"] = "src-gev-google-photoreal-tiles"
+    return manifest
+
+
+@app.post("/geospatial/3d-tiles/photorealistic/verify")
+def verify_photorealistic_tiles(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch the provider's actual tileset root and a tile without storing it."""
+    global photoreal_tiles_last_verification
+    result = verify_photoreal_tiles()
+    result["dataset_id"] = "google_cesium_photorealistic_3d_tiles"
+    if result.get("status") == "LIVE_VERIFIED" and result.get("tiles_loaded") is True:
+        verified_at = datetime.now(timezone.utc).isoformat()
+        result["verified_at_utc"] = verified_at
+        safe_fields = (
+            "status", "route", "root_http_status", "root_content_type", "root_asset_version",
+            "tile_http_status", "tile_content_type", "tile_bytes", "credential_configured", "tiles_loaded",
+        )
+        persisted_verification = {key: result[key] for key in safe_fields if key in result}
+        persisted_verification["verified_at_utc"] = verified_at
+        persisted_verification["attempts"] = result.get("attempts", [])
+        try:
+            source_registry_service.mark_validated(
+                "src-gev-google-photoreal-tiles",
+                verified_at,
+                {
+                    "last_fetch_status": "LIVE_VERIFIED",
+                    "data_mode": "EXTERNAL_GEOPATIAL_TILE_SERVICE",
+                    "credential_values_stored": False,
+                    "last_verification": persisted_verification,
+                },
+            )
+            readback = source_registry_service.get_source("src-gev-google-photoreal-tiles")
+            stored = readback.provenance_reference.get("last_verification", {})
+            if stored.get("status") != "LIVE_VERIFIED" or stored.get("verified_at_utc") != verified_at:
+                raise RuntimeError("Photorealistic tiles registry read-back failed")
+        except Exception:
+            source_registry_service.mark_fetch_status(
+                "src-gev-google-photoreal-tiles", "UNAVAILABLE",
+                {"last_error": "Service verification metadata read-back failed", "credential_values_stored": False},
+            )
+            photoreal_tiles_last_verification = {"status": "UNAVAILABLE"}
+            raise HTTPException(status_code=503, detail="Photorealistic tiles registry read-back failed") from None
+        photoreal_tiles_last_verification = persisted_verification
+        return {**persisted_verification, "dataset_id": "google_cesium_photorealistic_3d_tiles", "registry_readback": True}
+
+    photoreal_tiles_last_verification = {
+        "status": "UNAVAILABLE",
+        "credential_configured": bool(result.get("credential_configured")),
+        "tiles_loaded": False,
+        "reason": result.get("reason", "provider_tiles_unavailable_or_invalid"),
+        "attempts": result.get("attempts", []),
+    }
+    source_registry_service.mark_fetch_status(
+        "src-gev-google-photoreal-tiles",
+        "UNAVAILABLE",
+        {
+            "last_error": result.get("reason", "provider_tiles_unavailable_or_invalid"),
+            "credential_configured": bool(result.get("credential_configured")),
+            "credential_values_stored": False,
+            "last_verification": photoreal_tiles_last_verification,
+        },
+    )
+    reason = result.get("reason", "provider_tiles_unavailable_or_invalid")
+    raise HTTPException(status_code=503, detail=f"Photorealistic tiles unavailable ({reason})")
+
+
+@app.get("/geospatial/satellite-imagery/manifest")
+def get_satellite_imagery_manifest(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Return provider metadata without exposing any provider credentials."""
+    manifest = satellite_imagery_safe_manifest(satellite_imagery_last_verification)
+    try:
+        source = source_registry_service.get_source("src-gev-world-satellite-imagery")
+        manifest["source_id"] = source.source_id
+        manifest["last_validation"] = source.last_validation
+    except SourceNotFoundError:
+        manifest["source_id"] = "src-gev-world-satellite-imagery"
+    return manifest
+
+
+@app.post("/geospatial/satellite-imagery/verify")
+def verify_satellite_imagery_endpoint(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch a real provider tile; persist only sanitized metadata and read it back."""
+    global satellite_imagery_last_verification
+    result = verify_satellite_imagery()
+    result["dataset_id"] = "gods_eye_view_world_satellite_imagery"
+    if result.get("status") == "LIVE_VERIFIED" and result.get("tiles_loaded") is True:
+        verified_at = result.get("verified_at_utc") or datetime.now(timezone.utc).isoformat()
+        fields = ("status", "provider", "tile_http_status", "tile_content_type", "tile_bytes", "tiles_loaded")
+        persisted = {key: result[key] for key in fields if key in result}
+        persisted.update({"verified_at_utc": verified_at, "attempts": result.get("attempts", [])})
+        try:
+            source_registry_service.mark_validated(
+                "src-gev-world-satellite-imagery", verified_at,
+                {"last_fetch_status": "LIVE_VERIFIED", "data_mode": "EXTERNAL_GEOPATIAL_TILE_SERVICE", "credential_values_stored": False, "last_verification": persisted},
+            )
+            readback = source_registry_service.get_source("src-gev-world-satellite-imagery")
+            stored = readback.provenance_reference.get("last_verification", {})
+            if stored.get("status") != "LIVE_VERIFIED" or stored.get("verified_at_utc") != verified_at:
+                raise RuntimeError("satellite imagery registry read-back failed")
+        except Exception:
+            source_registry_service.mark_fetch_status("src-gev-world-satellite-imagery", "UNAVAILABLE", {"last_error": "Service verification metadata read-back failed", "credential_values_stored": False})
+            satellite_imagery_last_verification = {"status": "UNAVAILABLE"}
+            raise HTTPException(status_code=503, detail="Satellite imagery registry read-back failed") from None
+        satellite_imagery_last_verification = persisted
+        return {**persisted, "dataset_id": "gods_eye_view_world_satellite_imagery", "registry_readback": True, "credential_values_included": False}
+    satellite_imagery_last_verification = {"status": "UNAVAILABLE", "tiles_loaded": False, "reason": result.get("reason", "all_provider_tiles_unavailable")}
+    source_registry_service.mark_fetch_status("src-gev-world-satellite-imagery", "UNAVAILABLE", {"last_error": satellite_imagery_last_verification["reason"], "credential_values_stored": False, "last_verification": satellite_imagery_last_verification})
+    raise HTTPException(status_code=503, detail=f"Satellite imagery unavailable ({satellite_imagery_last_verification['reason']})")
+
+
+@app.get("/geospatial/terrain/manifest")
+def get_world_terrain_manifest(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Return terrain provider and coverage metadata without credentials."""
+    manifest = world_terrain_safe_manifest(world_terrain_last_verification)
+    try:
+        source = source_registry_service.get_source("src-gev-world-3d-terrain")
+        manifest["source_id"] = source.source_id
+        manifest["last_validation"] = source.last_validation
+    except SourceNotFoundError:
+        manifest["source_id"] = "src-gev-world-3d-terrain"
+    return manifest
+
+
+@app.post("/geospatial/terrain/verify")
+def verify_world_terrain_endpoint(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch layer metadata and one real quantized-mesh tile; then verify registry read-back."""
+    global world_terrain_last_verification
+    result = verify_world_terrain()
+    result["dataset_id"] = "gods_eye_view_world_3d_terrain"
+    if result.get("status") == "LIVE_VERIFIED" and result.get("tiles_loaded") is True:
+        verified_at = result.get("verified_at_utc") or datetime.now(timezone.utc).isoformat()
+        fields = ("status", "provider", "layer_http_status", "tile_http_status", "tile_content_type", "tile_bytes", "tiles_loaded", "format", "tile_template", "credential_configured")
+        persisted = {key: result[key] for key in fields if key in result}
+        persisted.update({"verified_at_utc": verified_at, "credential_values_stored": False})
+        try:
+            source_registry_service.mark_validated(
+                "src-gev-world-3d-terrain", verified_at,
+                {"last_fetch_status": "LIVE_VERIFIED", "data_mode": "EXTERNAL_GEOPATIAL_TERRAIN_SERVICE", "credential_values_stored": False, "last_verification": persisted},
+            )
+            readback = source_registry_service.get_source("src-gev-world-3d-terrain")
+            stored = readback.provenance_reference.get("last_verification", {})
+            if stored.get("status") != "LIVE_VERIFIED" or stored.get("verified_at_utc") != verified_at:
+                raise RuntimeError("terrain registry read-back failed")
+        except Exception:
+            source_registry_service.mark_fetch_status("src-gev-world-3d-terrain", "UNAVAILABLE", {"last_error": "Service verification metadata read-back failed", "credential_values_stored": False})
+            world_terrain_last_verification = {"status": "UNAVAILABLE", "tiles_loaded": False, "reason": "registry_readback_failed"}
+            raise HTTPException(status_code=503, detail="Terrain registry read-back failed") from None
+        world_terrain_last_verification = persisted
+        return {**persisted, "dataset_id": "gods_eye_view_world_3d_terrain", "registry_readback": True, "credential_values_included": False}
+    reason = result.get("reason", "provider_unreachable")
+    world_terrain_last_verification = {"status": "UNAVAILABLE", "tiles_loaded": False, "reason": reason}
+    source_registry_service.mark_fetch_status("src-gev-world-3d-terrain", "UNAVAILABLE", {"last_error": reason, "credential_values_stored": False, "last_verification": world_terrain_last_verification})
+    raise HTTPException(status_code=503, detail=f"Terrain provider unavailable ({reason})")
+
+
+@app.get("/geospatial/vector-basemap/manifest")
+def get_vector_basemap_manifest(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Return the OpenFreeMap vector tile service metadata without credentials."""
+    manifest = vector_basemap_safe_manifest(vector_basemap_last_verification)
+    try:
+        source = source_registry_service.get_source("src-gev-openfreemap-vector-basemap")
+        manifest["source_id"] = source.source_id
+        manifest["last_validation"] = source.last_validation
+    except SourceNotFoundError:
+        manifest["source_id"] = "src-gev-openfreemap-vector-basemap"
+    return manifest
+
+
+@app.post("/geospatial/vector-basemap/verify")
+def verify_vector_basemap_endpoint(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Fetch OpenFreeMap TileJSON and a real vector tile; verify registry read-back."""
+    global vector_basemap_last_verification
+    result = verify_vector_basemap()
+    result["dataset_id"] = "gods_eye_view_openfreemap_vector_basemap"
+    if result.get("status") == "LIVE_VERIFIED" and result.get("tiles_loaded") is True:
+        verified_at = result.get("verified_at_utc") or datetime.now(timezone.utc).isoformat()
+        fields = (
+            "status", "provider", "tilejson_http_status", "tile_http_status", "tile_content_type",
+            "tile_bytes", "tiles_loaded", "tile_url_template", "tilejson_version", "vector_layers",
+            "bounds", "minzoom", "maxzoom", "attribution",
+        )
+        persisted = {key: result[key] for key in fields if key in result}
+        persisted.update({"verified_at_utc": verified_at, "credential_values_stored": False})
+        try:
+            source_registry_service.mark_validated(
+                "src-gev-openfreemap-vector-basemap", verified_at,
+                {
+                    "last_fetch_status": "LIVE_VERIFIED",
+                    "data_mode": "EXTERNAL_GEOPATIAL_VECTOR_TILE_SERVICE",
+                    "tilejson_endpoint": "https://tiles.openfreemap.org/planet",
+                    "consumed_vector_layers": [layer for layer in ("transportation", "landuse") if layer in persisted.get("vector_layers", [])],
+                    "style_url": None,
+                    "style_note": "God's Eye View decodes vector data; its OpenFreeMap source does not configure a cartographic style URL.",
+                    "fallback_workflow": "OpenFreeMap roads are primary without TomTom; Hybrid uses OpenFreeMap where TomTom has no flow. The tile source does not silently switch origins.",
+                    "credential_values_stored": False,
+                    "last_verification": persisted,
+                },
+            )
+            readback = source_registry_service.get_source("src-gev-openfreemap-vector-basemap")
+            stored = readback.provenance_reference.get("last_verification", {})
+            if stored.get("status") != "LIVE_VERIFIED" or stored.get("verified_at_utc") != verified_at:
+                raise RuntimeError("vector basemap registry read-back failed")
+        except Exception:
+            source_registry_service.mark_fetch_status("src-gev-openfreemap-vector-basemap", "UNAVAILABLE", {"last_error": "Service verification metadata read-back failed", "credential_values_stored": False})
+            vector_basemap_last_verification = {"status": "UNAVAILABLE", "tiles_loaded": False, "reason": "registry_readback_failed"}
+            raise HTTPException(status_code=503, detail="Vector basemap registry read-back failed") from None
+        vector_basemap_last_verification = persisted
+        return {**persisted, "dataset_id": "gods_eye_view_openfreemap_vector_basemap", "registry_readback": True, "credential_values_included": False}
+    reason = result.get("reason", "provider_unreachable")
+    vector_basemap_last_verification = {"status": "UNAVAILABLE", "tiles_loaded": False, "reason": reason}
+    source_registry_service.mark_fetch_status("src-gev-openfreemap-vector-basemap", "UNAVAILABLE", {"last_error": reason, "credential_values_stored": False, "last_verification": vector_basemap_last_verification})
+    raise HTTPException(status_code=503, detail=f"Vector basemap unavailable ({reason})")
+
+
+@app.get("/live-datasets")
+def list_live_feed_datasets(
+    identity: AuthIdentity = Depends(get_identity),
+) -> Dict[str, Any]:
+    """Live-feed registry; separate from static and synthetic dataset entries."""
+    photoreal_manifest = photoreal_tiles_safe_manifest(photoreal_tiles_last_verification)
+    satellite_manifest = satellite_imagery_safe_manifest(satellite_imagery_last_verification)
+    terrain_manifest = world_terrain_safe_manifest(world_terrain_last_verification)
+    vector_basemap_manifest = vector_basemap_safe_manifest(vector_basemap_last_verification)
+    datasets = [
+        {
+            "dataset_id": "gods_eye_view_natural_earth_regions",
+            "name": "Natural Earth 10m Geography Regions",
+            "source": "Natural Earth 10m physical vectors — ne_10m_geography_regions_polys",
+            "status": natural_earth_dataset_status["regions"], "data_mode": "STATIC_SNAPSHOT",
+            "update_frequency": "Static source snapshot; no automatic refresh schedule",
+            "coverage": "Global; source feature geometry extents", "attribution": NaturalEarthFeatureService.ATTRIBUTION,
+            "feature_endpoint": "/natural-earth/regions/features", "attribute_endpoint": "/natural-earth/regions/attributes",
+            "ingestion_endpoint": "/natural-earth/regions/ingest", "verification_endpoint": "/natural-earth/regions/ingest",
+            "source_feature_count": 1046, "record_count": natural_earth_feature_service.readback_counts("regions")["attributes"],
+            "geometry_record_count": natural_earth_feature_service.readback_counts("regions")["geometries"],
+            "last_updated_at_utc": natural_earth_last_verified_at["regions"],
+        },
+        {
+            "dataset_id": "gods_eye_view_natural_earth_marine",
+            "name": "Natural Earth 10m Geography Marine Areas",
+            "source": "Natural Earth 10m physical vectors — ne_10m_geography_marine_polys",
+            "status": natural_earth_dataset_status["marine"], "data_mode": "STATIC_SNAPSHOT",
+            "update_frequency": "Static source snapshot; no automatic refresh schedule",
+            "coverage": "Global; source feature geometry extents", "attribution": NaturalEarthFeatureService.ATTRIBUTION,
+            "feature_endpoint": "/natural-earth/marine/features", "attribute_endpoint": "/natural-earth/marine/attributes",
+            "ingestion_endpoint": "/natural-earth/marine/ingest", "verification_endpoint": "/natural-earth/marine/ingest",
+            "source_feature_count": 292, "record_count": natural_earth_feature_service.readback_counts("marine")["attributes"],
+            "geometry_record_count": natural_earth_feature_service.readback_counts("marine")["geometries"],
+            "last_updated_at_utc": natural_earth_last_verified_at["marine"],
+        },
+        {
+            "dataset_id": "gods_eye_view_openfreemap_vector_basemap",
+            "name": "God's Eye View OpenFreeMap Vector Basemap Tiles",
+            "source": vector_basemap_manifest["provider"],
+            "status": vector_basemap_manifest["status"],
+            "data_mode": "EXTERNAL_GEOPATIAL_VECTOR_TILE_SERVICE",
+            "service_type": "MAPBOX_VECTOR_TILES",
+            "coverage": vector_basemap_manifest["coverage"],
+            "attribution": vector_basemap_manifest["attribution"],
+            "manifest_endpoint": "/geospatial/vector-basemap/manifest",
+            "verification_endpoint": "/geospatial/vector-basemap/verify",
+            "credential_configured": False,
+            "credential_values_included": False,
+            "tiles_loaded": vector_basemap_manifest["status"] == "LIVE_VERIFIED",
+            "last_updated_at_utc": vector_basemap_last_verification.get("verified_at_utc"),
+            "record_count": 0,
+        },
+        {
+            "dataset_id": "gods_eye_view_world_3d_terrain",
+            "name": "God's Eye View World 3D Terrain",
+            "source": terrain_manifest["provider"],
+            "status": terrain_manifest["status"],
+            "data_mode": "EXTERNAL_GEOPATIAL_TERRAIN_SERVICE",
+            "service_type": "QUANTIZED_MESH_TERRAIN",
+            "coverage": terrain_manifest["coverage"],
+            "attribution": terrain_manifest["attribution"],
+            "manifest_endpoint": "/geospatial/terrain/manifest",
+            "verification_endpoint": "/geospatial/terrain/verify",
+            "credential_configured": terrain_manifest["credential_configured"],
+            "credential_values_included": False,
+            "tiles_loaded": terrain_manifest["status"] == "LIVE_VERIFIED",
+            "last_updated_at_utc": world_terrain_last_verification.get("verified_at_utc"),
+            "record_count": 0,
+        },
+        {
+            "dataset_id": "gods_eye_view_world_satellite_imagery",
+            "name": "God's Eye View World Satellite Imagery",
+            "source": satellite_manifest["provider"],
+            "status": satellite_manifest["status"],
+            "data_mode": "EXTERNAL_GEOPATIAL_TILE_SERVICE",
+            "service_type": "WORLD_SATELLITE_IMAGERY",
+            "coverage": satellite_manifest["coverage"],
+            "attribution": satellite_manifest["attribution"],
+            "manifest_endpoint": "/geospatial/satellite-imagery/manifest",
+            "verification_endpoint": "/geospatial/satellite-imagery/verify",
+            "credential_values_included": False,
+            "tiles_loaded": satellite_manifest["status"] == "LIVE_VERIFIED",
+            "last_updated_at_utc": satellite_imagery_last_verification.get("verified_at_utc"),
+            "record_count": 0,
+        },
+        {
+            "dataset_id": "google_cesium_photorealistic_3d_tiles",
+            "name": "Google Photorealistic 3D Tiles via CesiumJS",
+            "source": "Google Maps Platform / Cesium ion",
+            "status": photoreal_manifest["status"],
+            "data_mode": "EXTERNAL_GEOPATIAL_TILE_SERVICE",
+            "service_type": "PHOTOREALISTIC_3D_TILES",
+            "terms": "Google Maps Platform terms for direct tiles; Cesium ion terms for the hosted asset route.",
+            "coverage": "Global where Google Photorealistic 3D coverage is available; completeness varies by location.",
+            "attribution": "Google Maps Platform per-tile credits must remain visible; Cesium ion attribution applies on the hosted asset route.",
+            "manifest_endpoint": "/geospatial/3d-tiles/photorealistic/manifest",
+            "verification_endpoint": "/geospatial/3d-tiles/photorealistic/verify",
+            "preferred_route": photoreal_manifest["preferred_route"],
+            "credential_configured": photoreal_manifest["credential_configured"],
+            "credential_values_included": False,
+            "tiles_loaded": photoreal_manifest["status"] == "LIVE_VERIFIED",
+            "last_updated_at_utc": photoreal_tiles_last_verification.get("verified_at_utc"),
+            "record_count": 0,
+        },
+        {
+            "dataset_id": BhoteKoshiEventService.DATASET_ID,
+            "name": "Bhote Koshi Historical Flood Reconstruction",
+            "source": "God's Eye View / GeoPera / Vantor Open Data",
+            "status": "STATIC_VERIFIED" if bhote_koshi_last_verified_at else "UNVERIFIED",
+            "data_mode": "STATIC_HISTORICAL_RECONSTRUCTION",
+            "update_frequency": "Static historical reconstruction; no automatic refresh schedule",
+            "last_updated_at_utc": bhote_koshi_last_verified_at,
+            "event_endpoint": "/events/bhote-koshi",
+            "feature_endpoint": "/events/bhote-koshi/features",
+            "media_endpoint": "/events/bhote-koshi/media",
+            "ingestion_endpoint": "/events/bhote-koshi/ingest",
+            "record_count": (
+                len(bhote_koshi_event_service.event_store.list_all())
+                + len(bhote_koshi_event_service.geometry_store.list_all())
+                + len(bhote_koshi_event_service.media_store.list_all())
+            ),
+            "event_record_count": len(bhote_koshi_event_service.event_store.list_all()),
+            "geometry_record_count": len(bhote_koshi_event_service.geometry_store.list_all()),
+            "media_reference_count": len(bhote_koshi_event_service.media_store.list_all()),
+            "media_mode": "EXTERNAL_LINK_METADATA_ONLY",
+            "attribution": "GeoPera reconstruction (CC BY-NC 4.0); Vantor Open Data imagery; linked witness posts retain their owners' terms",
+        },
+        {
+            "dataset_id": DamFeatureService.DATASET_ID,
+            "name": "God's Eye View Dams (OpenInfraMap Snapshot)",
+            "source": "OpenStreetMap contributors / Open Infrastructure Map",
+            "status": "STATIC_VERIFIED" if dam_snapshot_last_verified_at else "UNVERIFIED",
+            "data_mode": "STATIC_SNAPSHOT",
+            "update_frequency": "Static source snapshot; no automatic refresh schedule",
+            "last_updated_at_utc": dam_snapshot_last_verified_at,
+            "attribute_endpoint": "/dams/attributes",
+            "feature_endpoint": "/dams/features",
+            "ingestion_endpoint": "/dams/ingest",
+            "source_feature_count": 704,
+            "record_count": len(dam_feature_service.list_attributes(limit=1_000_000)),
+            "license": "Open Database License (ODbL) 1.0",
+            "attribution": "© OpenStreetMap contributors; Open Infrastructure Map",
+        },
+        {
+            "dataset_id": "ds-gev-seismic-events",
+            "name": "USGS Earthquake Events",
+            "source": "USGS",
+            "status": observation_feed_state["usgs"]["status"],
+            "last_updated_at_utc": observation_feed_state["usgs"].get("last_verified_at_utc"),
+            "observation_endpoint": "/earthquakes/usgs/observations",
+            "ingestion_endpoint": "/earthquakes/usgs/ingest",
+            "verification_endpoint": "/earthquakes/usgs/ingest",
+            "record_count": len(earthquake_observation_service.list(limit=1_000_000)),
+        },
+        {
+            "dataset_id": AISObservationService.DATASET_ID,
+            "name": "AISStream Vessel Positions",
+            "source": "AISStream",
+            "status": observation_feed_state["aisstream"]["status"],
+            "last_updated_at_utc": observation_feed_state["aisstream"].get("last_verified_at_utc"),
+            "observation_endpoint": "/aisstream/observations",
+            "ingestion_endpoint": "/aisstream/ingest",
+            "credential_values_included": False,
+            "record_count": len(ais_observation_service.list(limit=1_000_000)),
+        },
+        {
+            "dataset_id": AircraftObservationService.DATASET_ID,
+            "name": "ADS-B Military-Feed Aircraft Observations",
+            "source": "adsb.lol",
+            "status": observation_feed_state["adsb_military"]["status"],
+            "last_updated_at_utc": observation_feed_state["adsb_military"].get("last_verified_at_utc"),
+            "observation_endpoint": "/aircraft/adsb/military/observations",
+            "ingestion_endpoint": "/aircraft/adsb/military/ingest",
+            "verification_endpoint": "/aircraft/adsb/military/ingest",
+            "record_count": len(aircraft_observation_service.list(limit=1_000_000)),
+        },
+        {
+            "dataset_id": FireObservationService.DATASET_ID,
+            "name": "NASA FIRMS Active Fire Detections",
+            "source": "NASA LANCE FIRMS (VIIRS SNPP, NOAA-20, NOAA-21 NRT)",
+            "status": "LIVE_VERIFIED" if firms_last_verified_at else ("CONFIGURED" if os.environ.get("FIRMS_MAP_KEY") else "BLOCKED"),
+            "last_updated_at_utc": firms_last_verified_at,
+            "update_frequency": "Near real time; FIRMS NRT observations, God’s Eye View uses a 30-minute server cache",
+            "observation_endpoint": "/wildfires/firms/observations",
+            "ingestion_endpoint": "/wildfires/firms/ingest",
+            "record_count": len(fire_observation_service.list(limit=1_000_000)),
+        },
+        {
+            "dataset_id": TrafficObservationService.DATASET_ID,
+            "name": "TomTom Traffic Flow Segments",
+            "source": "TomTom Traffic API (God’s Eye View relative-flow vector tiles)",
+            "status": "BLOCKED" if not os.environ.get("TOMTOM_API_KEY") else ("UNAVAILABLE" if traffic_last_fetch_error else ("LIVE_VERIFIED" if traffic_last_verified_at else "CONFIGURED")),
+            "data_mode": "LIVE_ONLY",
+            "last_updated_at_utc": traffic_last_verified_at,
+            "verified_tiles": traffic_verified_tiles,
+            "observation_endpoint": "/traffic/tomtom/observations",
+            "ingestion_endpoint": "/traffic/tomtom/ingest",
+            "record_count": len(traffic_observation_service.list(limit=1_000_000)),
+        },
+        {
+            "dataset_id": WeatherObservationService.WIND_DATASETS["GFS"],
+            "name": "NOAA GFS 10 m Wind Point Forecasts",
+            "source": "God's Eye View wind provider / NOAA GFS",
+            "record_type": "FORECAST",
+            "data_mode": "LIVE_ONLY_POINT_SAMPLES",
+            "status": weather_source_state["src-gev-gfs-wind"]["last_fetch_status"] if weather_source_state["src-gev-gfs-wind"]["last_fetch_status"] in ("UNAVAILABLE", "LIVE_VERIFIED") else "CONFIGURED",
+            "last_updated_at_utc": weather_source_state["src-gev-gfs-wind"]["last_verified_at_utc"],
+            "verified_coordinates": weather_source_state["src-gev-gfs-wind"]["verified_coordinates"],
+            "observation_endpoint": "/weather/wind/forecasts?model=gfs",
+            "ingestion_endpoint": "/weather/wind/gfs/ingest",
+            "record_count": len(weather_observation_service.list(WeatherObservationService.WIND_DATASETS["GFS"], limit=1_000_000)),
+        },
+        {
+            "dataset_id": WeatherObservationService.WIND_DATASETS["ECMWF"],
+            "name": "ECMWF IFS 10 m Wind Point Forecasts",
+            "source": "God's Eye View wind provider / ECMWF Open Data",
+            "record_type": "FORECAST",
+            "data_mode": "LIVE_ONLY_POINT_SAMPLES",
+            "status": weather_source_state["src-gev-ecmwf-wind"]["last_fetch_status"] if weather_source_state["src-gev-ecmwf-wind"]["last_fetch_status"] in ("UNAVAILABLE", "LIVE_VERIFIED") else "CONFIGURED",
+            "last_updated_at_utc": weather_source_state["src-gev-ecmwf-wind"]["last_verified_at_utc"],
+            "verified_coordinates": weather_source_state["src-gev-ecmwf-wind"]["verified_coordinates"],
+            "observation_endpoint": "/weather/wind/forecasts?model=ecmwf",
+            "ingestion_endpoint": "/weather/wind/ecmwf/ingest",
+            "record_count": len(weather_observation_service.list(WeatherObservationService.WIND_DATASETS["ECMWF"], limit=1_000_000)),
+        },
+        {
+            "dataset_id": WeatherObservationService.CURRENT_DATASET,
+            "name": "Open-Meteo Current Surface Weather",
+            "source": "Open-Meteo",
+            "record_type": "CURRENT_CONDITIONS",
+            "data_mode": "LIVE_ONLY_MODEL_DERIVED_CURRENT",
+            "status": weather_source_state["src-open-meteo-current-weather"]["last_fetch_status"] if weather_source_state["src-open-meteo-current-weather"]["last_fetch_status"] in ("UNAVAILABLE", "LIVE_VERIFIED") else "CONFIGURED",
+            "last_updated_at_utc": weather_source_state["src-open-meteo-current-weather"]["last_verified_at_utc"],
+            "verified_coordinates": weather_source_state["src-open-meteo-current-weather"]["verified_coordinates"],
+            "observation_endpoint": "/weather/open-meteo/current",
+            "ingestion_endpoint": "/weather/open-meteo/ingest",
+            "record_count": len(weather_observation_service.list(WeatherObservationService.CURRENT_DATASET, limit=1_000_000)),
+        },
+        {
+            "dataset_id": SATELLITE_CLOUD_PRODUCTS["clouds"]["dataset_id"],
+            "name": "NOAA nowCOAST Global Satellite Infrared Imagery",
+            "source": "NOAA/NWS/NESDIS nowCOAST via God's Eye View",
+            "product": "clouds",
+            "layer": WEATHER_IMAGERY_LAYERS["clouds"],
+            "data_mode": "LIVE_GEOSPATIAL_IMAGERY_TILES",
+            "status": satellite_cloud_state["clouds"]["last_fetch_status"] if satellite_cloud_state["clouds"]["last_fetch_status"] in ("UNAVAILABLE", "LIVE_VERIFIED") else "CONFIGURED",
+            "last_updated_at_utc": satellite_cloud_state["clouds"]["last_verified_at_utc"],
+            "retrieved_at_utc": (satellite_cloud_state["clouds"].get("metadata") or {}).get("retrieved_at_utc"),
+            "coverage": (satellite_cloud_state["clouds"].get("metadata") or {}).get("coverage", "Global infrared mosaic; incomplete polar coverage"),
+            "bounds": (satellite_cloud_state["clouds"].get("metadata") or {}).get("bounds"),
+            "available_timestamps": (satellite_cloud_state["clouds"].get("metadata") or {}).get("available_timestamps", []),
+            "latest_timestamp": (satellite_cloud_state["clouds"].get("metadata") or {}).get("latest_timestamp"),
+            "last_image_retrieval": satellite_cloud_state["clouds"].get("last_image_retrieval"),
+            "observation_endpoint": "/weather/satellite/manifest?product=clouds",
+            "ingestion_endpoint": "/weather/satellite/verify?product=clouds",
+            "image_endpoint": "/weather/satellite/image?product=clouds&time={timestamp}",
+            "tile_endpoint": "/weather/satellite/tile?product=clouds&time={timestamp}&z={z}&x={x}&y={y}",
+            "record_count": 0,
+        },
+        {
+            "dataset_id": SATELLITE_CLOUD_PRODUCTS["clouds-regional"]["dataset_id"],
+            "name": "NOAA nowCOAST GOES Regional Satellite Infrared Imagery",
+            "source": "NOAA/NWS/NESDIS nowCOAST via God's Eye View",
+            "product": "clouds-regional",
+            "layer": WEATHER_IMAGERY_LAYERS["clouds-regional"],
+            "data_mode": "LIVE_GEOSPATIAL_IMAGERY_TILES",
+            "status": satellite_cloud_state["clouds-regional"]["last_fetch_status"] if satellite_cloud_state["clouds-regional"]["last_fetch_status"] in ("UNAVAILABLE", "LIVE_VERIFIED") else "CONFIGURED",
+            "last_updated_at_utc": satellite_cloud_state["clouds-regional"]["last_verified_at_utc"],
+            "retrieved_at_utc": (satellite_cloud_state["clouds-regional"].get("metadata") or {}).get("retrieved_at_utc"),
+            "coverage": (satellite_cloud_state["clouds-regional"].get("metadata") or {}).get("coverage", "GOES East/West regional North American coverage"),
+            "bounds": (satellite_cloud_state["clouds-regional"].get("metadata") or {}).get("bounds"),
+            "available_timestamps": (satellite_cloud_state["clouds-regional"].get("metadata") or {}).get("available_timestamps", []),
+            "latest_timestamp": (satellite_cloud_state["clouds-regional"].get("metadata") or {}).get("latest_timestamp"),
+            "last_image_retrieval": satellite_cloud_state["clouds-regional"].get("last_image_retrieval"),
+            "observation_endpoint": "/weather/satellite/manifest?product=clouds-regional",
+            "ingestion_endpoint": "/weather/satellite/verify?product=clouds-regional",
+            "image_endpoint": "/weather/satellite/image?product=clouds-regional&time={timestamp}",
+            "tile_endpoint": "/weather/satellite/tile?product=clouds-regional&time={timestamp}&z={z}&x={x}&y={y}",
+            "record_count": 0,
+        },
+        {
+            "dataset_id": NOAA_WEATHER_IMAGERY_PRODUCTS["lightning"]["dataset_id"],
+            "name": "NOAA nowCOAST Lightning Strike Density Imagery",
+            "source": "NOAA/NWS nowCOAST via God's Eye View; derived from Vaisala NLDN/GLD360",
+            "product": "lightning",
+            "layer": WEATHER_IMAGERY_LAYERS["lightning"],
+            "data_mode": "LIVE_GEOSPATIAL_IMAGERY_TILES",
+            "status": satellite_cloud_state["lightning"]["last_fetch_status"] if satellite_cloud_state["lightning"]["last_fetch_status"] in ("UNAVAILABLE", "LIVE_VERIFIED") else "CONFIGURED",
+            "last_updated_at_utc": satellite_cloud_state["lightning"]["last_verified_at_utc"],
+            "retrieved_at_utc": (satellite_cloud_state["lightning"].get("metadata") or {}).get("retrieved_at_utc"),
+            "coverage": (satellite_cloud_state["lightning"].get("metadata") or {}).get("coverage", "Pacific and Americas across the dateline; live bounds from WMS capabilities"),
+            "bounds": (satellite_cloud_state["lightning"].get("metadata") or {}).get("bounds"),
+            "available_timestamps": (satellite_cloud_state["lightning"].get("metadata") or {}).get("available_timestamps", []),
+            "latest_timestamp": (satellite_cloud_state["lightning"].get("metadata") or {}).get("latest_timestamp"),
+            "last_image_retrieval": satellite_cloud_state["lightning"].get("last_image_retrieval"),
+            "observation_endpoint": "/weather/lightning/manifest",
+            "ingestion_endpoint": "/weather/lightning/verify",
+            "image_endpoint": "/weather/lightning/image?time={timestamp}",
+            "tile_endpoint": "/weather/lightning/tile?time={timestamp}&z={z}&x={x}&y={y}",
+            "record_count": 0,
+        },
+        {
+            "dataset_id": "noaa_nowcoast_conus_base_reflectivity_radar",
+            "name": "NOAA nowCOAST CONUS Base Reflectivity Radar",
+            "source": "NOAA/NWS nowCOAST MRMS radar mosaic via God's Eye View",
+            "product": "radar",
+            "layer": "conus_base_reflectivity_mosaic",
+            "data_mode": "LIVE_GEOSPATIAL_IMAGERY_TILES",
+            "status": radar_source_state["last_fetch_status"] if radar_source_state["last_fetch_status"] in ("UNAVAILABLE", "LIVE_VERIFIED") else "CONFIGURED",
+            "last_updated_at_utc": radar_source_state["last_verified_at_utc"],
+            "retrieved_at_utc": (radar_source_state.get("metadata") or {}).get("retrieved_at_utc"),
+            "coverage": (radar_source_state.get("metadata") or {}).get("coverage", "Contiguous United States"),
+            "bounds": (radar_source_state.get("metadata") or {}).get("bounds"),
+            "available_radar_timestamps": (radar_source_state.get("metadata") or {}).get("available_radar_timestamps", []),
+            "latest_radar_timestamp": (radar_source_state.get("metadata") or {}).get("latest_radar_timestamp"),
+            "last_image_retrieval": radar_source_state.get("last_image_retrieval"),
+            "observation_endpoint": "/weather/radar/manifest",
+            "ingestion_endpoint": "/weather/radar/verify",
+            "image_endpoint": "/weather/radar/image?time={timestamp}",
+            "tile_endpoint": "/weather/radar/tile?time={timestamp}&z={z}&x={x}&y={y}",
+            "record_count": 0,
+        },
+        {
+            "dataset_id": CYCLONE_DATASETS["storms"],
+            "name": "NOAA NHC/CPHC Current Tropical Cyclone Status",
+            "source": "NOAA NHC / CPHC via God's Eye View",
+            "data_mode": "CURRENT_STORM_OBSERVATIONS",
+            "status": cyclone_source_state["storms"]["last_fetch_status"],
+            "last_updated_at_utc": cyclone_source_state["storms"]["last_verified_at_utc"],
+            "retrieved_at_utc": cyclone_source_state["storms"]["last_metadata"].get("fetched_at_utc"),
+            "coverage": cyclone_source_state["storms"]["last_metadata"].get("coverage", "Atlantic and eastern/central North Pacific; not worldwide"),
+            "active_storm_count": cyclone_source_state["storms"]["last_metadata"].get("active_storm_count"),
+            "observation_endpoint": "/cyclones/nhc/storms",
+            "ingestion_endpoint": "/cyclones/nhc/ingest",
+            "record_count": len(cyclone_observation_service.list(CYCLONE_DATASETS["storms"], limit=1000)),
+        },
+        {
+            "dataset_id": CYCLONE_DATASETS["points"],
+            "name": "NOAA Tropical Cyclone Forecast Points",
+            "source": "NOAA Tropical Weather GIS layer 5 via God's Eye View",
+            "data_mode": "GEOSPATIAL_FEATURES",
+            "status": cyclone_source_state["points"]["last_fetch_status"],
+            "last_updated_at_utc": cyclone_source_state["points"]["last_verified_at_utc"],
+            "gis_layer_id": 5,
+            "observation_endpoint": "/cyclones/nhc/forecast-points",
+            "ingestion_endpoint": "/cyclones/nhc/ingest",
+            "record_count": len(cyclone_observation_service.list(CYCLONE_DATASETS["points"], limit=1000)),
+        },
+        {
+            "dataset_id": CYCLONE_DATASETS["tracks"],
+            "name": "NOAA Tropical Cyclone Storm Tracks",
+            "source": "NOAA Tropical Weather GIS layer 6 via God's Eye View",
+            "data_mode": "GEOSPATIAL_FEATURES",
+            "status": cyclone_source_state["tracks"]["last_fetch_status"],
+            "last_updated_at_utc": cyclone_source_state["tracks"]["last_verified_at_utc"],
+            "gis_layer_id": 6,
+            "observation_endpoint": "/cyclones/nhc/tracks",
+            "ingestion_endpoint": "/cyclones/nhc/ingest",
+            "record_count": len(cyclone_observation_service.list(CYCLONE_DATASETS["tracks"], limit=1000)),
+        },
+        {
+            "dataset_id": CYCLONE_DATASETS["cones"],
+            "name": "NOAA Tropical Cyclone Forecast Cones",
+            "source": "NOAA Tropical Weather GIS layer 7 via God's Eye View",
+            "data_mode": "GEOSPATIAL_FEATURES",
+            "status": cyclone_source_state["cones"]["last_fetch_status"],
+            "last_updated_at_utc": cyclone_source_state["cones"]["last_verified_at_utc"],
+            "gis_layer_id": 7,
+            "observation_endpoint": "/cyclones/nhc/cones",
+            "ingestion_endpoint": "/cyclones/nhc/ingest",
+            "record_count": len(cyclone_observation_service.list(CYCLONE_DATASETS["cones"], limit=1000)),
+        },
+    ]
+    return {"count": len(datasets), "datasets": datasets, "note": "Includes live feeds, imagery services, and explicitly labeled static source snapshots. Static datasets are not live feeds."}
+
+
+@app.get("/live-datasets/registry", include_in_schema=False)
+def live_feed_registry_page() -> FileResponse:
+    return FileResponse(os.path.join(os.path.dirname(__file__), "frontend", "live-dataset-registry.html"), media_type="text/html")
 
 
 @app.post("/geo-quest/candidates/gev.aircraft_tracking/register")
