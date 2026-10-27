@@ -4,7 +4,8 @@ from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
 
-load_dotenv()
+if "PYTEST_CURRENT_TEST" not in os.environ:
+    load_dotenv()
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -107,8 +108,12 @@ from services.dataset_retrieval_service import (
 from services.bucket_client import BucketClient, BucketUnavailableError
 
 from api.production import router as production_router
+from api.pravah import router as pravah_router
 from security.middleware import ReplayMitigationTable, RS256JWTVerifier, SecurityMiddleware
 from services.crypto_audit_emitter import CryptoAuditEmitter
+from services.pravah_ledger import PravahReplayLedger
+from services.state_machine import PravahStateMachine
+from services.event_pipeline import EventPipeline
 
 from database_targets.models import (
     IngestRequest,
@@ -222,6 +227,18 @@ app.state.replay_table = production_replay_table
 app.state.audit_emitter = production_audit_emitter
 app.include_router(production_router)
 
+pravah_ledger = PravahReplayLedger()
+pravah_state_machine = PravahStateMachine()
+event_pipeline = EventPipeline(
+    ledger=pravah_ledger,
+    state_machine=pravah_state_machine,
+    audit_emitter=production_audit_emitter,
+)
+app.state.pravah_ledger = pravah_ledger
+app.state.pravah_state_machine = pravah_state_machine
+app.state.event_pipeline = event_pipeline
+app.include_router(pravah_router)
+
 logger = logging.getLogger("masterdb")
 if not logger.handlers:
     _handler = logging.StreamHandler()
@@ -272,6 +289,20 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     return JSONResponse(
         status_code=exc.status_code,
         content=_error_body(request, "http_error", str(exc.detail)),
+    )
+
+
+from fastapi.exceptions import RequestValidationError
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    logger.warning("Validation error at %s: %s", request.url.path, exc.errors())
+    errors = exc.errors()
+    msg = "; ".join(f"{'.'.join(str(loc) for loc in err.get('loc', []))}: {err.get('msg')}" for err in errors)
+    return JSONResponse(
+        status_code=422,
+        content=_error_body(request, "validation_error", msg or "Request validation failed."),
     )
 
 

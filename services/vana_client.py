@@ -41,8 +41,16 @@ class VanaClient:
         api_key: Optional[str] = None,
         timeout_seconds: float = 10.0,
     ) -> None:
-        self.base_url = (base_url or os.environ.get("VANA_BASE_URL") or "").rstrip("/")
-        self.api_key = api_key or os.environ.get("VANA_API_KEY") or DEFAULT_VANA_API_KEY
+        self.base_url = (
+            base_url
+            if base_url is not None
+            else (os.environ.get("VANA_BASE_URL") or "")
+        ).rstrip("/")
+        self.api_key = (
+            api_key
+            if api_key is not None
+            else (os.environ.get("VANA_API_KEY") or DEFAULT_VANA_API_KEY)
+        )
         self.timeout_seconds = timeout_seconds
 
         # Circuit breaker to prevent cascading failures if VANA is down.
