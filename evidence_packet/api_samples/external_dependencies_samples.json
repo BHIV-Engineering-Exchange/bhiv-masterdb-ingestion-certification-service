@@ -1,0 +1,44 @@
+{
+  "description": "Transparent verification probes for external ecosystem services (all confirmed unconfigured / offline without mocks)",
+  "samples": [
+    {
+      "service": "MDU (Metadata Definition Unit)",
+      "endpoint": "GET /mdu/status",
+      "environment_variable": "MDU_BASE_URL (Unset)",
+      "response": {
+        "status_code": 200,
+        "body": {
+          "configured": false,
+          "live": false,
+          "mode": "local_fallback",
+          "message": "MDU_BASE_URL is not set. Operating in local fallback contract mode."
+        }
+      }
+    },
+    {
+      "service": "Pravah Bucket Client",
+      "endpoint": "GET /bucket/status",
+      "environment_variable": "PRAVAH_BHIV_BUCKET (Unset)",
+      "response": {
+        "status_code": 503,
+        "body": {
+          "configured": false,
+          "live": false,
+          "error": "PRAVAH_BHIV_BUCKET is not set in this environment."
+        }
+      }
+    },
+    {
+      "service": "InsightFlow Observability Bridge",
+      "endpoint": "POST /observability/push-to-insightbridge",
+      "environment_variable": "PRAVAH_BHIV_INSIGHT_FLOW_BRIDGE (Unset)",
+      "response": {
+        "status_code": 200,
+        "body": {
+          "pushed": false,
+          "reason": "PRAVAH_BHIV_INSIGHT_FLOW_BRIDGE is not set in this environment."
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "capability_registration": "PENDING",
+  "capability_id": "gev.aircraft_tracking",
+  "capability_name": "God's Eye View Airspace Aircraft Tracking Capability",
+  "capability_status": "PROPOSED (PENDING MASTERDB AUTHORIZATION)",
+  "discoverable": false,
+  "registered_in_masterdb": false,
+  "purpose": "Provide near real-time spatial positioning, kinematic monitoring, and situational awareness for commercial and general aviation aircraft within monitored airspace sectors.",
+  "source_dataset_reference": {
+    "proposed_dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+    "dataset_record_file": "registration/dataset_record.json",
+    "data_licence": "Open Data Commons Open Database License (ODbL) v1.0"
+  },
+  "inputs": [
+    {
+      "name": "center_latitude",
+      "type": "float",
+      "description": "Geographic center point latitude in decimal degrees [-90.0, 90.0]",
+      "required": true,
+      "reference_value": 19.0760
+    },
+    {
+      "name": "center_longitude",
+      "type": "float",
+      "description": "Geographic center point longitude in decimal degrees [-180.0, 180.0]",
+      "required": true,
+      "reference_value": 72.8777
+    },
+    {
+      "name": "search_radius_nm",
+      "type": "float",
+      "description": "Observation radius around center in nautical miles [1, 250]",
+      "required": true,
+      "reference_value": 100
+    },
+    {
+      "name": "filter_hex_id",
+      "type": "string",
+      "description": "Optional filter for specific 24-bit ICAO aircraft hex identifier",
+      "required": false
+    },
+    {
+      "name": "filter_callsign",
+      "type": "string",
+      "description": "Optional filter for specific commercial flight callsign prefix",
+      "required": false
+    }
+  ],
+  "outputs": [
+    {
+      "name": "aircraft_state_vectors",
+      "type": "array[object]",
+      "description": "Array of normalized aircraft observations matching schema defined in dataset_record.json",
+      "elements": {
+        "aircraft_hex_id": "string (uppercase ICAO address)",
+        "callsign": "string (trimmed uppercase callsign)",
+        "registration": "string (tail registration)",
+        "aircraft_type_icao": "string (model designator)",
+        "latitude": "float (WGS84 decimal degrees)",
+        "longitude": "float (WGS84 decimal degrees)",
+        "altitude_baro_ft": "integer (feet)",
+        "ground_speed_kts": "float (knots)",
+        "true_track_deg": "float (degrees clockwise from north)",
+        "is_on_ground": "boolean (surface status)",
+        "provenance": "object (audit lineage)"
+      }
+    },
+    {
+      "name": "query_metadata",
+      "type": "object",
+      "description": "Execution timestamp, observation count, and query bounding parameters"
+    }
+  ],
+  "geographic_scope": {
+    "primary_sector": "Mumbai FIR (VABB / BOM)",
+    "initial_operational_radius_nm": 100,
+    "extensible": true,
+    "coordinate_reference_system": "EPSG:4326 (WGS84)"
+  },
+  "freshness_characteristics": {
+    "cadence_type": "Polling snapshot / Scheduled recurring ingestion",
+    "typical_latency_seconds": "< 1.5s from radio broadcast reception to normalized record output",
+    "observation_age_metrics": "Monitored via 'seen' and 'seen_pos' sensor age attributes"
+  },
+  "provenance_requirements": {
+    "mandatory_audit_trace": true,
+    "required_attributes": [
+      "source_system",
+      "source_url",
+      "query_center_lat",
+      "query_center_lon",
+      "query_radius_nm",
+      "raw_acquisition_utc",
+      "cleaning_pipeline_utc"
+    ]
+  },
+  "limitations": [
+    "VHF Radio Line-of-Sight: Target aircraft below radar/SDR horizon or masked by terrain cannot report positions.",
+    "Feeder Infrastructure Availability: Relies on community SDR ground receiver uptime.",
+    "Transponder Dependency: Excludes military stealth or unequipped general aviation aircraft lacking Mode-S/ADS-B transponders."
+  ],
+  "possible_bhiv_consumers": [
+    "BHIV MasterDB Geospatial Truth Engine",
+    "Airspace Density & Flow Management Analytics",
+    "Flight Route Deviation & Anomaly Detection Agent",
+    "Urban Air Mobility (UAM) Corridor Monitoring Agent"
+  ],
+  "dependencies": [
+    "adsb.lol REST API v2 network connectivity",
+    "Python 3.9+ runtime environment",
+    "WGS84 spatial coordinate validation module",
+    "BHIV MasterDB authorization and service bus routing (PENDING)"
+  ],
+  "governance_notice": {
+    "registration_authority": "BHIV Architecture & MasterDB Governance Council",
+    "current_status": "PROPOSED CANDIDATE ONLY",
+    "authorized_for_production": false
+  }
+}

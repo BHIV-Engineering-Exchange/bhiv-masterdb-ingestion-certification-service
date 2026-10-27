@@ -210,6 +210,31 @@ export MDU_BASE_URL="https://bhiv-mdu-api.onrender.com"
 export MDU_API_KEY="<the shared key>"
 ```
 
+## Persistence & Production Configuration
+
+In development and test environments (`ENVIRONMENT` unset or non-production), MASTERDB runs with in-memory storage by default for isolated, ephemeral sessions (all state is reset on process restart).
+
+In production mode (`ENVIRONMENT=production`, `APP_ENV=production`, or `MASTERDB_ENV=production`), fail-closed startup validation enforces that persistent storage is configured. Startup will fail with a sanitized configuration error if persistence is unconfigured or explicitly ephemeral (such as SQLite `:memory:`).
+
+Supported storage configuration options (in order of precedence):
+
+1. **Relational Database (`MASTERDB_DATABASE_URL`)** [Takes priority]:
+   Any SQLAlchemy-compatible persistent connection string:
+   ```bash
+   # PostgreSQL (recommended for production deployments)
+   export MASTERDB_DATABASE_URL="postgresql://<db_user>:<db_password>@<db_host>:5432/<db_name>"
+
+   # File-based SQLite (local persistent storage)
+   export MASTERDB_DATABASE_URL="sqlite:///var/data/masterdb.sqlite"
+   ```
+2. **Persistent Storage Directory (`MASTERDB_STORAGE_DIR`)** [Fallback if database URL unset]:
+   A directory path on a persistent disk or volume for JSON file-backed storage:
+   ```bash
+   export MASTERDB_STORAGE_DIR="/var/data/masterdb_storage"
+   ```
+
+*Note: On ephemeral hosting providers (such as Render without persistent Disks), configure a persistent database (`MASTERDB_DATABASE_URL`) or attach a persistent disk to `MASTERDB_STORAGE_DIR` to ensure data survives across restarts.*
+
 ## Run API
 
 ```bash
@@ -228,7 +253,7 @@ Validate a dataset:
 ```bash
 curl -X POST http://127.0.0.1:8000/validate \
   -H "Content-Type: application/json" \
-  -d "{\"dataset_id\":\"sample-certified\",\"dataset_path\":\"datasets/certifiable_sample.csv\",\"metadata_path\":\"datasets/metadata.json\"}"
+  -d "{\"dataset_id\":\"sample-certified\",\"dataset_path\":\"certifiable_sample.csv\",\"metadata_path\":\"metadata.json\"}"
 ```
 
 Certify a validated dataset:
@@ -349,26 +374,95 @@ curl http://127.0.0.1:8000/packages/<package_id>/audit
 
 See `API_DOCUMENTATION.md` for the full endpoint reference.
 
-## Test
+## Operational Configuration & Production Hardening
+
+### 1. Environment Modes & Safety Gates
+
+- **Production Mode (`ENVIRONMENT=production` or `APP_ENV=production`):**
+  - **Fail-Closed JWT Secret:** `AUTH_JWT_SECRET` must be set with at least 32 characters and cannot match known defaults. The service raises `RuntimeError` and refuses to boot if unset or insecure.
+  - **Fail-Closed Persistence:** Storage must be explicitly configured via `MASTERDB_DATABASE_URL` or `MASTERDB_STORAGE_DIR`. Ephemeral storage (such as `sqlite:///:memory:` or `mode=memory`) is strictly prohibited and halts startup.
+- **Development / Test Mode (`ENVIRONMENT=development` or unset):**
+  - Generates a per-process ephemeral JWT secret if unset (with explicit console warnings).
+  - Defaults to isolated in-memory or temporary storage for local experimentation.
+
+### 2. Environment Variables Summary
+
+| Variable Name | Required in Production | Description / Behavior |
+| :--- | :---: | :--- |
+| `ENVIRONMENT` / `APP_ENV` | Optional | Set to `production` to activate production safety gates. |
+| `AUTH_PASSWORD` | **Yes** | Standard user password for `POST /auth/token`. If unset, authentication fails closed and no standard tokens are issued. |
+| `ADMIN_PASSWORD` | **Yes** | Dedicated administrative credential required to issue tokens with `bhiv-admin` or `admin` roles. Must differ from `AUTH_PASSWORD`. |
+| `AUTH_JWT_SECRET` | **Yes** | HMAC-SHA256 signing secret for JWTs ($\ge 32$ characters). Unset in production raises `RuntimeError`. |
+| `MASTERDB_DATABASE_URL` | **Yes\*** | Primary database URL (`postgresql://...` or `sqlite:///path/to/file.db`). Ephemeral in-memory SQLite rejected in production. |
+| `MASTERDB_STORAGE_DIR` | **Yes\*** | Filesystem storage directory for JSON persistence. Required if `MASTERDB_DATABASE_URL` is unset. |
+| `MDU_BASE_URL` | Optional | Base URL for live MDU service. If unset, fallback placeholder contracts are safely used (`/mdu/status` reports `live: false`). |
+| `MDU_API_KEY` | Optional | API key for authenticated MDU communication. |
+| `PRAVAH_BHIV_BUCKET` | Optional | Object store endpoint for evidence/bucket storage. If unset, `/bucket/*` endpoints report unavailable (HTTP 503). |
+| `PRAVAH_BHIV_INSIGHT_FLOW_BRIDGE` | Optional | Endpoint for telemetry/observability event publishing. If unset, `/observability/push-to-insightbridge` returns `pushed: false`. |
+| `RATE_LIMIT_MAX_REQUESTS` | Optional | Maximum requests allowed per window (default: 120). Health/readiness probes are exempt. |
+| `RATE_LIMIT_WINDOW_SECONDS` | Optional | Rate limit sliding window duration in seconds (default: 60). |
+
+*\* Either `MASTERDB_DATABASE_URL` or `MASTERDB_STORAGE_DIR` must be configured in production.*
+
+### 3. Authentication & Credential Separation
+
+Token issuance via `POST /auth/token` enforces strict role segregation:
+- **Standard Users:** Authenticate using `AUTH_PASSWORD`. The service issues JWTs granting only standard unprivileged roles (e.g. `ingest:relationaldb`, `viewer`). Any request for privileged roles (`admin`, `bhiv-admin`) is automatically stripped.
+- **Administrators:** Require dedicated `ADMIN_PASSWORD`. Grants administrative roles (`bhiv-admin`, `operator`, `admin`) required for administrative endpoints like `/admin/configuration`.
+- **Rate Limiting:** Sliding-window rate limiter verifies token authenticity before tracking subject identity, preventing forgery-based rate limit exhaustion attacks.
+
+### 4. Health & Readiness Probes
+
+- **Liveness Probe (`GET /health`):**
+  - Returns `{"status": "ok"}` with HTTP 200.
+  - Verifies process responsiveness without external dependencies.
+- **Readiness Probe (`GET /ready`):**
+  - Returns `{"status": "ok", "checks": {"bcaes_registry": "ok", "canonical_repository": "ok", "persistence": "ok"}}` with HTTP 200 when storage is healthy.
+  - Actively executes `ping()` against configured persistence backends.
+  - Returns HTTP 503 `{"status": "degraded", ...}` if storage connectivity fails, without leaking connection strings or credentials.
+
+### 5. Running Verification & Test Suites
+
+Execute test suites from the repository root using the virtual environment:
 
 ```bash
-python -m pytest
+# Focused Persistence Security Suite (21 tests)
+.\venv\Scripts\pytest -q tests/test_persistence_security.py
+
+# Focused Authentication Security Suite (20 tests)
+.\venv\Scripts\pytest -q tests/test_authentication_security.py
+
+# Focused E2E Core Flow & Fresh Session Persistence (2 tests)
+.\venv\Scripts\pytest -q tests/test_real_e2e_flow.py tests/test_fresh_session_persistence.py
+
+# Full Repository Test Suite (445 tests)
+.\venv\Scripts\pytest -q
 ```
 
-Current suite covers validation artifacts, certification success/rejection
-cases, REST API responses, package lifecycle transitions (legal/illegal),
-replay validation, lineage/version compatibility, retrieval readiness
-rules, registry API endpoints, MDU version-negotiation logic
-(`test_mdu_contract_adapter.py`), Runtime Discovery filtering/ordering
-(`test_runtime_discovery_service.py`), the TANTRA façade
-(`test_tantra_interface_service.py`), and audit-completeness/replay
-reporting (`test_audit_and_replay.py`).
+### 6. Known Limitations & Unconfigured External Dependencies
 
-**Note on execution:** the tests above were written and syntax-checked but
-could not be executed in the sandbox this was built in (no network access
-to install `fastapi`/`httpx`/`pydantic`, and no reachable MDU endpoint).
-Run `pip install -r requirements.txt && pytest` in a networked environment
-before merging.
+- **MDU (`MDU_BASE_URL`):** When unset, MDU endpoints operate in contract-compatible fallback mode.
+- **Pravah Bucket (`PRAVAH_BHIV_BUCKET`):** When unset, `/bucket/*` and `/evidence/*` fail closed with HTTP 503 rather than silently mocking storage.
+- **InsightBridge (`PRAVAH_BHIV_INSIGHT_FLOW_BRIDGE`):** When unset, observability push reports `pushed: false` gracefully.
+
+## Dataset Contracts
+
+Consumer-facing contracts are published in `datasets/dataset_contracts.json`
+and validated against `datasets/dataset_contract.schema.json`. Internal source
+paths are kept separately in `datasets/internal_dataset_registry.json`; never
+return that internal registry from a consumer-facing API. Contracts use unique
+capability IDs, machine-readable consumer identities, domain/visibility/
+sensitivity policies, and references to shared schemas. Failure fixtures are
+marked internal. Three synthetic demo datasets cover mangrove monitoring,
+maritime vessel analytics, and financial market analytics.
+
+Validation checks contract shape, capability-ID uniqueness, shared schema
+references and schema validity, internal source mappings, and synthetic
+dataset records:
+
+```bash
+python scripts/validate_dataset_contracts.py
+```
 
 ## Project Structure
 
@@ -377,7 +471,9 @@ config/                 Validation schema and rule configuration
 database_targets/       MASTERDB database routing / controlled ingestion
                         attachment (8 target databases, RBAC, contract) —
                         see DATABASE_TARGETS_ARCHITECTURE.md
-datasets/               Sample valid and invalid dataset packages
+datasets/               Sample datasets, consumer contracts, and internal
+                        source registry; see dataset_contracts.json and
+                        internal_dataset_registry.json
 engines/                Scoring, risk, classification, recommendation engines
 profiling/              Dataset profiling
 shared_data/            Phase 1 — canonical Shared Data Service Registry (Task 4)

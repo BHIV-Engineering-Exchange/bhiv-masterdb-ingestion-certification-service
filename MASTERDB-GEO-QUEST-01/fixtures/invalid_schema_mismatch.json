@@ -1,0 +1,32 @@
+{
+  "scenario_id": "SCENARIO_SCHEMA_MISMATCH",
+  "description": "Records missing mandatory non-nullable schema attributes such as coordinates or entity identifier.",
+  "expected_rule_violations": ["RULE-GEO-003", "RULE-GEO-007"],
+  "records": [
+    {
+      "callsign": "NOMATCH1",
+      "latitude": null,
+      "longitude": null,
+      "altitude_baro_ft": 10000,
+      "is_on_ground": false,
+      "provenance": {
+        "source_system": "adsb.lol",
+        "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+        "raw_acquisition_utc": "2026-10-15T09:45:00Z"
+      }
+    },
+    {
+      "aircraft_hex_id": null,
+      "callsign": "NOMATCH2",
+      "latitude": 19.088,
+      "longitude": 72.867,
+      "altitude_baro_ft": 10000,
+      "is_on_ground": false,
+      "provenance": {
+        "source_system": "adsb.lol",
+        "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+        "raw_acquisition_utc": "2026-10-15T09:45:00Z"
+      }
+    }
+  ]
+}

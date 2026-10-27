@@ -1,0 +1,20 @@
+{
+  "description": "Internal-only capability ID to repository source file mapping. Never include this registry in consumer-facing responses.",
+  "capability_id_to_source_file": {
+    "masterdb.customer.sample_validation": "datasets/sample.csv",
+    "masterdb.customer.certifiable_sample": "datasets/certifiable_sample.csv",
+    "gev.aircraft.raw_observations": "MASTERDB-GEO-QUEST-01/raw/aircraft_raw.json",
+    "gev.aircraft.normalized_observations": "MASTERDB-GEO-QUEST-01/cleaned/aircraft_cleaned.json",
+    "gev.aircraft.quarantine_review": "MASTERDB-GEO-QUEST-01/cleaned/aircraft_quarantine.json",
+    "gev.aircraft.synthetic_test": "MASTERDB-GEO-QUEST-01/fixtures/valid_synthetic_aircraft.json",
+    "gev.aircraft.fixture.duplicate_records": "MASTERDB-GEO-QUEST-01/fixtures/invalid_duplicate_records.json",
+    "gev.aircraft.fixture.inconsistent_measurements": "MASTERDB-GEO-QUEST-01/fixtures/invalid_inconsistent_measurements.json",
+    "gev.aircraft.fixture.malformed_field_types": "MASTERDB-GEO-QUEST-01/fixtures/invalid_malformed_field_types.json",
+    "gev.aircraft.fixture.missing_provenance": "MASTERDB-GEO-QUEST-01/fixtures/invalid_missing_provenance.json",
+    "gev.aircraft.fixture.schema_mismatch": "MASTERDB-GEO-QUEST-01/fixtures/invalid_schema_mismatch.json",
+    "gev.aircraft.fixture.stale_data": "MASTERDB-GEO-QUEST-01/fixtures/invalid_stale_data.json",
+    "cap-mangrove-monitoring": "datasets/synthetic/mangrove_observations.json",
+    "cap-maritime-cargo": "datasets/synthetic/maritime_vessels.json",
+    "cap-fin-market-analytics": "datasets/synthetic/financial_market.json"
+  }
+ }

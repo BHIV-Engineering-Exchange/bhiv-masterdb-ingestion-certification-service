@@ -1,0 +1,44 @@
+====================================================================================================
+               HEALTH, READINESS & PROBES TERMINAL CAPTURE
+====================================================================================================
+Repository : C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main
+Branch     : fix/masterdb-auth-hardening
+HEAD Commit: df6fffb9b5c7413652cd7549a6501805f989ca70
+Timestamp  : 2026-10-12
+----------------------------------------------------------------------------------------------------
+
+PS C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main> curl -s http://localhost:8000/health
+{
+  "status": "healthy",
+  "service": "MASTERDB Ingestion & Certification Service",
+  "version": "1.0.0"
+}
+
+----------------------------------------------------------------------------------------------------
+
+PS C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main> curl -s http://localhost:8000/ready
+{
+  "status": "ok",
+  "persistence": "ready",
+  "backend": "sql"
+}
+
+----------------------------------------------------------------------------------------------------
+
+PS C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main> curl -s -X POST http://localhost:8000/auth/token -H "Content-Type: application/json" -d '{"actor":"guest","password":""}'
+{
+  "detail": "Invalid credentials."
+}
+[HTTP 401 Unauthorized - Fail-closed on missing credentials]
+
+----------------------------------------------------------------------------------------------------
+
+PS C:\Pratik_Bhuwad\MasterDB\bhiv-masterdb-ingestion-certification-service-main> curl -s http://localhost:8000/mdu/status
+{
+  "configured": false,
+  "live": false,
+  "mode": "local_fallback",
+  "message": "MDU_BASE_URL is not set. Operating in local fallback contract mode."
+}
+
+====================================================================================================

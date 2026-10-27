@@ -1,0 +1,30 @@
+{
+  "dataset_id": "ds-maritime-001",
+  "version": "1.0.0-demo",
+  "synthetic": true,
+  "records": [
+    {
+      "vessel_id": "IMO0000001",
+      "observed_at": "2026-10-01T12:00:00Z",
+      "latitude": 19.02,
+      "longitude": 72.82,
+      "speed_knots": 12.4,
+      "destination_port": "INBOM",
+      "port_congestion_index": 0.62
+    },
+    {
+      "vessel_id": "IMO0000002",
+      "observed_at": "2026-10-01T12:05:00Z",
+      "latitude": 18.95,
+      "longitude": 72.88,
+      "speed_knots": 8.1,
+      "destination_port": "INBOM",
+      "port_congestion_index": 0.62
+    }
+  ],
+  "provenance": {
+    "origin": "Synthetic demonstration data",
+    "source_reference": "National Maritime Data Gateway demo fixture",
+    "certification_reference": "MASTERDB-CERT-MAR-002-DEMO"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "source_registration_status": "PENDING AUTHORIZATION",
+  "source_name": "adsb.lol",
+  "source_type": "external_geospatial_aircraft_surveillance_feed",
+  "reference_project": "God's Eye View (GEV) Open Surveillance Architecture",
+  "relationship_to_gev": "adsb.lol serves as the primary community ADS-B/Mode-S aggregation backend and open telemetry reference architecture for the God's Eye View project.",
+  "endpoint_used": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+  "base_url": "https://api.adsb.lol/v2",
+  "geographic_coverage_query": {
+    "center_latitude": 19.0760,
+    "center_longitude": 72.8777,
+    "radius_nautical_miles": 100,
+    "target_airspace": "Mumbai FIR (VABB / BOM) and coastal airspace"
+  },
+  "acquisition_method": "Automated HTTP GET request to REST v2 geographic bounding circle endpoint with 25s timeout",
+  "exact_acquisition_timestamp_utc": "2026-10-03T08:26:35.695048+00:00",
+  "http_status_received": 200,
+  "response_latency_seconds": 0.698772,
+  "verified_licence": {
+    "data_licence": "Open Data Commons Open Database License (ODbL) v1.0",
+    "data_licence_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "api_software_licence": "BSD 3-Clause 'New' or 'Revised' License",
+    "contributor_terms": "Creative Commons Zero 1.0 Universal (CC0 1.0)",
+    "official_sources": [
+      "https://adsb.lol/",
+      "https://adsb.lol/docs/",
+      "https://github.com/adsblol/api",
+      "https://github.com/adsblol/globe_history"
+    ]
+  },
+  "attribution_requirements": {
+    "statutory_reference": "ODbL v1.0 Section 4.3",
+    "required_credit": "Must attribute source as 'adsb.lol and its contributors' and include notice of the ODbL license in any public distribution or Produced Work",
+    "share_alike_clause": "ODbL v1.0 Section 4.4 requires public derivative databases to be distributed under ODbL v1.0",
+    "open_access_clause": "ODbL v1.0 Section 4.6 prohibits DRM or technical measures that restrict access"
+  },
+  "provenance": {
+    "origin": "Airborne aircraft transponders (1090 MHz Mode-S / ADS-B Extended Squitter)",
+    "ingestion_layer": "Volunteer SDR ground station receivers uploading via dump1090/readsb feeds",
+    "aggregation_layer": "adsb.lol globally distributed ingestion and deduplication servers",
+    "local_pipeline_collector": "scripts/collect_aircraft.py",
+    "local_raw_artifact": "raw/aircraft_raw.json",
+    "acquisition_meta_artifact": "raw/acquisition_metadata.json"
+  },
+  "source_limitations": [
+    "Feeder Density Variation: Coverage is proportional to volunteer SDR receiver density; reduced fidelity over open ocean and unpopulated landmasses.",
+    "Temporal Snapshot: Per-request snapshot; requires continuous scheduled polling or WebSocket streaming for uninterrupted tracking.",
+    "MLAT Dilution of Precision: Multilaterated targets exhibit higher horizontal variance compared to GNSS-backed ADS-B.",
+    "Barometric Datum: Uncorrected pressure altitudes assume standard atmosphere (1013.25 hPa) rather than local QNH.",
+    "Uncooperative Targets: Aircraft with disabled or non-functioning transponders cannot be tracked."
+  ],
+  "governance_notice": {
+    "masterdb_registration_id": "PENDING / NOT PERFORMED",
+    "masterdb_authority_claimed": false,
+    "canonical_status": "PROPOSED CANDIDATE SOURCE ONLY",
+    "notes": "Source metadata prepared for formal BHIV MasterDB evaluation. No write or registration has been executed."
+  }
+}

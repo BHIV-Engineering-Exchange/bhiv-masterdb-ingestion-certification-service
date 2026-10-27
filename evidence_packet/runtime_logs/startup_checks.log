@@ -1,0 +1,40 @@
+=== STARTUP VERIFICATION SUBPROCESS CHECKS ===
+Timestamp: 2026-10-12T13:10:00+05:30
+Branch: fix/masterdb-auth-hardening
+Base Commit: df6fffb9b5c7413652cd7549a6501805f989ca70
+
+[CASE 1] Production mode with unconfigured persistence:
+Environment: APP_ENV=production, AUTH_JWT_SECRET=production-secret-must-be-at-least-32-chars-long!
+Command: python -c "from services.startup_config import validate_startup_configuration; validate_startup_configuration()"
+Result: RuntimeError: Persistent storage is required in production mode. Neither MASTERDB_DATABASE_URL nor MASTERDB_STORAGE_DIR is set.
+Exit Code: 1 (FAIL CLOSED - EXPECTED)
+
+[CASE 2] Production mode with sqlite:///:memory:
+Environment: APP_ENV=production, MASTERDB_DATABASE_URL=sqlite:///:memory:, AUTH_JWT_SECRET=production-secret-must-be-at-least-32-chars-long!
+Command: python -c "from services.startup_config import validate_startup_configuration; validate_startup_configuration()"
+Result: RuntimeError: Ephemeral SQLite persistence (sqlite:///:memory:) is prohibited in production mode.
+Exit Code: 1 (FAIL CLOSED - EXPECTED)
+
+[CASE 3] Production mode with sqlite:///test.db?mode=memory
+Environment: APP_ENV=production, MASTERDB_DATABASE_URL=sqlite:///test.db?mode=memory, AUTH_JWT_SECRET=production-secret-must-be-at-least-32-chars-long!
+Command: python -c "from services.startup_config import validate_startup_configuration; validate_startup_configuration()"
+Result: RuntimeError: Ephemeral SQLite persistence (mode=memory) is prohibited in production mode.
+Exit Code: 1 (FAIL CLOSED - EXPECTED)
+
+[CASE 4] Production mode with missing AUTH_JWT_SECRET
+Environment: APP_ENV=production, MASTERDB_STORAGE_DIR=/var/data/masterdb
+Command: python -c "from services.startup_config import validate_startup_configuration; validate_startup_configuration()"
+Result: RuntimeError: AUTH_JWT_SECRET is required and must be at least 32 characters in production mode.
+Exit Code: 1 (FAIL CLOSED - EXPECTED)
+
+[CASE 5] Production mode with short AUTH_JWT_SECRET (12 chars)
+Environment: APP_ENV=production, MASTERDB_STORAGE_DIR=/var/data/masterdb, AUTH_JWT_SECRET=short_secret
+Command: python -c "from services.startup_config import validate_startup_configuration; validate_startup_configuration()"
+Result: RuntimeError: AUTH_JWT_SECRET must be at least 32 characters in production mode (provided 12).
+Exit Code: 1 (FAIL CLOSED - EXPECTED)
+
+[CASE 6] Production mode with valid physical SQLite and valid 32-char secret
+Environment: APP_ENV=production, MASTERDB_DATABASE_URL=sqlite:///production_test.db, AUTH_JWT_SECRET=production-secret-must-be-at-least-32-chars-long!
+Command: python -c "from services.startup_config import validate_startup_configuration; validate_startup_configuration()"
+Result: SUCCESS - Configuration validated. Persistence: persistent SQL (sqlite:///production_test.db).
+Exit Code: 0 (PASS - EXPECTED)

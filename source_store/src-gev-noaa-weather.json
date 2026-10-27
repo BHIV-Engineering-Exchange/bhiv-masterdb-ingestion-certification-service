@@ -1,0 +1,23 @@
+{
+    "source_id": "src-gev-noaa-weather",
+    "name": "God's Eye View - NOAA GFS & nowCOAST Meteorological Services",
+    "authority": "NOAA National Weather Service / National Environmental Satellite Service",
+    "source_type": "WEATHER_GRIB2_AND_WMS_RASTER",
+    "licence": "US_PUBLIC_DOMAIN",
+    "access_method": "S3_BYTE_RANGE_AND_WMS",
+    "geographic_coverage": "GLOBAL_AND_CONUS",
+    "update_characteristics": "6_HOURLY_GFS_CYCLE_4_MINUTE_NOWCOAST_RADAR",
+    "reliability_limitations": "GRID_INTERPOLATION_AND_RADAR_BEAM_BLOCKAGE",
+    "attribution": "NOAA Global Forecast System (GFS) / NOAA nowCOAST",
+    "connector": "gods_eye_view_connector",
+    "last_validation": "2026-10-19T12:53:57.943468+00:00",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "NOAA NWS",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-19T12:53:57.943468+00:00",
+    "updated_at": "2026-10-19T12:53:57.943468+00:00"
+}

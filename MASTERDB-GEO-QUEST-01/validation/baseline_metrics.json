@@ -1,0 +1,82 @@
+{
+  "baseline_identifier": "MASTERDB-GEO-QUEST-01-BASELINE-V1",
+  "generated_at_utc": "2026-10-15T09:44:19.212856+00:00",
+  "source_dataset": "raw/aircraft_raw.json",
+  "cleaned_dataset": "cleaned/aircraft_cleaned.json",
+  "quarantine_dataset": "cleaned/aircraft_quarantine.json",
+  "record_counts": {
+    "raw_record_count": 19,
+    "cleaned_record_count": 19,
+    "quarantined_record_count": 0,
+    "duplicate_hex_count": 0,
+    "unique_hex_count": 19,
+    "conservation_equation": "raw (19) == cleaned (19) + quarantined (0)",
+    "conservation_verified": true
+  },
+  "field_level_baseline": {
+    "total_fields": 20,
+    "mandatory_fields": ["aircraft_hex_id", "latitude", "longitude", "is_on_ground", "provenance"],
+    "mandatory_field_missing_count": 0,
+    "null_counts": {
+      "aircraft_hex_id": 0,
+      "callsign": 0,
+      "registration": 0,
+      "aircraft_type_icao": 0,
+      "squawk_code": 1,
+      "emitter_category": 0,
+      "latitude": 0,
+      "longitude": 0,
+      "altitude_baro_ft": 0,
+      "altitude_geom_ft": 1,
+      "is_on_ground": 0,
+      "ground_speed_kts": 0,
+      "true_track_deg": 1,
+      "vertical_rate_fpm": 1,
+      "position_age_seconds": 0,
+      "last_seen_seconds": 0,
+      "distance_from_center_nm": 0,
+      "bearing_from_center_deg": 0,
+      "signal_rssi_db": 0,
+      "provenance": 0
+    }
+  },
+  "spatial_distribution": {
+    "center": {"lat": 19.0760, "lon": 72.8777},
+    "radius_nm": 100.0,
+    "bounding_box_actual": {
+      "min_latitude": 17.525521,
+      "max_latitude": 19.832883,
+      "min_longitude": 71.867365,
+      "max_longitude": 74.218489
+    },
+    "coordinate_coverage_pct": 100.0
+  },
+  "kinematic_ranges": {
+    "altitude_baro_ft": {
+      "min": 1025,
+      "max": 35000,
+      "surface_ground_count": 1
+    },
+    "ground_speed_kts": {
+      "min": 11.8,
+      "max": 491.4
+    },
+    "true_track_deg": {
+      "min": 1.8,
+      "max": 354.14
+    }
+  },
+  "provenance_completeness": {
+    "total_records": 19,
+    "records_with_provenance": 19,
+    "provenance_completeness_pct": 100.0,
+    "source_system": "adsb.lol",
+    "licence": "ODbL v1.0"
+  },
+  "quality_gates_baseline": {
+    "total_checks": 6,
+    "passed_checks": 6,
+    "failed_checks": 0,
+    "pass_rate_pct": 100.0
+  }
+}

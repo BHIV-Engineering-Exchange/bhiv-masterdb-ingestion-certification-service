@@ -15,3 +15,4 @@ PyJWT==2.13.0
 SQLAlchemy==2.0.51
 psycopg2-binary==2.9.12
 starlette==0.45.3
+jsonschema==4.26.0

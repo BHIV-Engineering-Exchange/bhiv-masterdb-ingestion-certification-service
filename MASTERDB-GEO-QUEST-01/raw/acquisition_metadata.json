@@ -1,0 +1,22 @@
+{
+  "status": "SUCCESS",
+  "source_url": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+  "utc_acquisition_timestamp": "2026-10-03T08:26:35.695048+00:00",
+  "http_status": 200,
+  "response_time_seconds": 0.698772,
+  "content_length_bytes": 12022,
+  "response_headers": {
+    "Date": "Sat, 03 Oct 2026 08:27:40 GMT",
+    "Content-Type": "application/json",
+    "Content-Length": "2815",
+    "Connection": "keep-alive",
+    "Cache-Control": "no-store",
+    "Content-Encoding": "zstd"
+  },
+  "total_aircraft_records_raw": 19,
+  "api_now_timestamp": 1791016059501,
+  "api_msg": "No error",
+  "api_total_field": 19,
+  "collector_script": "collect_aircraft.py",
+  "live_data_collected": true
+}

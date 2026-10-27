@@ -1,0 +1,114 @@
+{
+  "registration_status": "PENDING",
+  "dataset_name": "BHIV vNEXT Normalized Aircraft Observation Dataset",
+  "proposed_dataset_id": "BHIV-GEO-QUEST-01-AIRCRAFT",
+  "dataset_classification": "Candidate Governed Spatial Asset",
+  "canonical_status": "NOT CANONICAL (CANDIDATE ONLY)",
+  "version": "1.0.0-candidate",
+  "description": "Standardized, schema-conformant, quality-validated snapshot of real-time ADS-B aircraft observations in the Mumbai Flight Information Region (FIR), collected from adsb.lol under ODbL v1.0 licensing.",
+  "source_reference": {
+    "source_name": "adsb.lol",
+    "endpoint": "https://api.adsb.lol/v2/lat/19.0760/lon/72.8777/dist/100",
+    "source_record_reference": "registration/source_record.json"
+  },
+  "record_counts": {
+    "raw_record_count": 19,
+    "cleaned_record_count": 19,
+    "quarantined_record_count": 0,
+    "total_governed_records": 19,
+    "duplicate_hex_identifiers": 0,
+    "conservation_verified": true
+  },
+  "geographic_coverage": {
+    "center_latitude": 19.0760,
+    "center_longitude": 72.8777,
+    "radius_nautical_miles": 100,
+    "airspace_name": "Mumbai FIR (VABB / BOM)",
+    "bounding_envelope_actual": {
+      "min_latitude": 17.525521,
+      "max_latitude": 19.832883,
+      "min_longitude": 71.867365,
+      "max_longitude": 74.218489
+    },
+    "coordinate_reference_system": "EPSG:4326 (WGS84)"
+  },
+  "acquisition_timestamp_utc": "2026-10-03T08:26:35.695048+00:00",
+  "cleaning_pipeline_utc": "2026-10-03T08:27:30.723779+00:00",
+  "licence": {
+    "licence_name": "Open Data Commons Open Database License (ODbL) v1.0",
+    "licence_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "attribution_requirement": "Attribute to 'adsb.lol and its contributors' and include ODbL notice",
+    "share_alike_requirement": "Any publicly distributed adapted database must be under ODbL v1.0"
+  },
+  "schema": {
+    "format": "JSON Tabular (Array of Normalized Aircraft Objects)",
+    "field_count": 20,
+    "fields": [
+      {"name": "aircraft_hex_id", "type": "string", "description": "24-bit ICAO aircraft hex transponder address (uppercase)", "nullable": false},
+      {"name": "callsign", "type": "string", "description": "Flight callsign (whitespace stripped, uppercase)", "nullable": true},
+      {"name": "registration", "type": "string", "description": "Aircraft civil/military tail registration number", "nullable": true},
+      {"name": "aircraft_type_icao", "type": "string", "description": "ICAO aircraft model designator (e.g. B77L, A20N)", "nullable": true},
+      {"name": "squawk_code", "type": "string", "description": "4-digit octal secondary surveillance transponder code", "nullable": true},
+      {"name": "emitter_category", "type": "string", "description": "ADS-B emitter category code (e.g. A3, A5)", "nullable": true},
+      {"name": "latitude", "type": "float", "description": "WGS84 latitude coordinate rounded to 6 decimal places", "nullable": false},
+      {"name": "longitude", "type": "float", "description": "WGS84 longitude coordinate rounded to 6 decimal places", "nullable": false},
+      {"name": "altitude_baro_ft", "type": "integer", "description": "Barometric pressure altitude in feet (0 if on ground)", "nullable": true},
+      {"name": "altitude_geom_ft", "type": "integer", "description": "Geometric altitude in feet above WGS84 ellipsoid", "nullable": true},
+      {"name": "is_on_ground", "type": "boolean", "description": "True if aircraft is on ground surface, False if airborne", "nullable": false},
+      {"name": "ground_speed_kts", "type": "float", "description": "Speed over ground in knots (>= 0)", "nullable": true},
+      {"name": "true_track_deg", "type": "float", "description": "Course over ground in degrees clockwise from true north [0.0, 360.0]", "nullable": true},
+      {"name": "vertical_rate_fpm", "type": "integer", "description": "Rate of climb or descent in feet per minute", "nullable": true},
+      {"name": "position_age_seconds", "type": "float", "description": "Latency in seconds since last geographic position report", "nullable": true},
+      {"name": "last_seen_seconds", "type": "float", "description": "Latency in seconds since last transmission message received", "nullable": true},
+      {"name": "distance_from_center_nm", "type": "float", "description": "Distance from query reference point in nautical miles", "nullable": true},
+      {"name": "bearing_from_center_deg", "type": "float", "description": "Bearing angle from query reference point in degrees", "nullable": true},
+      {"name": "signal_rssi_db", "type": "float", "description": "Received signal strength indicator in dBFS", "nullable": true},
+      {"name": "provenance", "type": "object", "description": "Complete lineage block containing source endpoint, query center, and timestamps", "nullable": false}
+    ]
+  },
+  "transformations_applied": [
+    "Unpacked aircraft records from raw API 'ac' collection container.",
+    "Mapped raw field keys to standardized domain attributes (hex, flight, r, t, alt_baro, gs, track).",
+    "Stripped trailing and leading whitespace on callsigns, registrations, and aircraft types.",
+    "Enforced uppercase formatting on all alphanumeric identifiers.",
+    "Validated WGS84 coordinate boundary constraints (latitude in [-90, +90], longitude in [-180, +180]).",
+    "Decoupled surface state: 'alt_baro: ground' mapped to is_on_ground=True and altitude_baro_ft=0.",
+    "Attached immutable audit provenance to each record."
+  ],
+  "quality_checks_summary": {
+    "quality_report_reference": "validation/aircraft_quality_report.json",
+    "overall_status": "PASS",
+    "checks_executed": [
+      {"check_id": "CHK_01_RECORD_CONSERVATION", "result": "PASS", "description": "19 raw == 19 cleaned + 0 quarantined"},
+      {"check_id": "CHK_02_IDENTIFIER_UNIQUENESS", "result": "PASS", "description": "0 duplicate aircraft hex addresses"},
+      {"check_id": "CHK_03_COORDINATE_VALIDITY", "result": "PASS", "description": "100% of cleaned coordinates within WGS84 bounds"},
+      {"check_id": "CHK_04_NUMERIC_RANGE_VALIDITY", "result": "PASS", "description": "Speeds, tracks, and altitudes within valid aviation envelopes"},
+      {"check_id": "CHK_05_TIMESTAMP_AGE_INTEGRITY", "result": "PASS", "description": "Sensor latencies non-negative"},
+      {"check_id": "CHK_06_PROVENANCE_COMPLETENESS", "result": "PASS", "description": "100% of records embed complete provenance"}
+    ]
+  },
+  "provenance": {
+    "raw_input_path": "raw/aircraft_raw.json",
+    "cleaned_output_path": "cleaned/aircraft_cleaned.json",
+    "quarantine_output_path": "cleaned/aircraft_quarantine.json",
+    "profiling_report_path": "validation/profiling_report.json",
+    "quality_report_path": "validation/aircraft_quality_report.json"
+  },
+  "limitations": [
+    "Temporal Snapshot: Dataset represents a discrete temporal query at 2026-10-03T08:26:35Z.",
+    "Regional Feeder Coverage: Ground receiver density determines boundary detection fidelity.",
+    "Line-of-Sight Decay: Radio horizon over open water reduces low-altitude oceanic coverage."
+  ],
+  "intended_consumers": [
+    "BHIV Geospatial MasterDB Query Engine",
+    "Airspace Situational Awareness Service",
+    "Spatial Anomaly Detection Pipeline",
+    "Trajectory Prediction and Conflict Detection Agents"
+  ],
+  "governance_notice": {
+    "masterdb_registration_id": "PENDING / NOT PERFORMED",
+    "canonical_registration_claimed": false,
+    "runtime_integration_status": "PENDING",
+    "production_deployment_status": "NOT PERFORMED"
+  }
+}

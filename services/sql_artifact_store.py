@@ -94,6 +94,12 @@ class SqlArtifactStore:
         self._engine = create_engine(database_url, future=True)
         _Base.metadata.create_all(self._engine)
 
+    def ping(self) -> bool:
+        """Verifies the database connection is alive and responding."""
+        with self._engine.connect() as conn:
+            conn.execute(select(1))
+        return True
+
     def save(self, key: str, value: Dict[str, Any]) -> Dict[str, Any]:
         with Session(self._engine) as session:
             existing = session.get(ArtifactRecord, (self.store_name, key))

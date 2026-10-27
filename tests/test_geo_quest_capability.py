@@ -1,3 +1,4 @@
+import os
 import uuid
 import pytest
 from fastapi.testclient import TestClient
@@ -13,7 +14,15 @@ def client():
 
 @pytest.fixture
 def auth_header(client):
-    res = client.post("/auth/token", json={"actor": "geo-quest-tester", "roles": ["ecosystem-reader", "viewer", "operator", "admin"]})
+    auth_pw = os.environ.get("AUTH_PASSWORD", "test-auth-password")
+    res = client.post(
+        "/auth/token",
+        json={
+            "actor": "geo-quest-tester",
+            "password": auth_pw,
+            "roles": ["ecosystem-reader", "viewer", "operator", "admin"],
+        },
+    )
     assert res.status_code == 200
     token = res.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

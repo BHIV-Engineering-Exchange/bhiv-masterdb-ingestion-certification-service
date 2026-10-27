@@ -1,0 +1,43 @@
+# Environments & Variables
+.env
+*.env
+.env.*
+.venv/
+venv/
+ENV/
+env/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Credentials, Keys, & Secrets
+secrets
+secrets/
+*secret*
+credentials
+credentials/
+*credential*
+tokens
+tokens/
+*token*
+*.pem
+*.key
+*.cert
+*.id_rsa
+
+# Transient runtime & test stores
+source_store/
+geo_quest_candidate_store/
+candidate_store/
+
+# IDE & OS Artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/

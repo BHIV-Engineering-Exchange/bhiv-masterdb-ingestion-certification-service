@@ -1,0 +1,31 @@
+{
+  "scenario_id": "SCENARIO_MISSING_PROVENANCE",
+  "description": "Aircraft records missing mandatory source provenance blocks or provenance subfields.",
+  "expected_rule_violations": ["RULE-GEO-006"],
+  "records": [
+    {
+      "aircraft_hex_id": "8005A4",
+      "callsign": "AIC404",
+      "registration": "VT-EXD",
+      "latitude": 19.088,
+      "longitude": 72.867,
+      "altitude_baro_ft": 5000,
+      "is_on_ground": false,
+      "ground_speed_kts": 250.0,
+      "provenance": null
+    },
+    {
+      "aircraft_hex_id": "8005A5",
+      "callsign": "IGO505",
+      "registration": "VT-IFE",
+      "latitude": 19.120,
+      "longitude": 72.890,
+      "altitude_baro_ft": 7000,
+      "is_on_ground": false,
+      "ground_speed_kts": 280.0,
+      "provenance": {
+        "source_system": "adsb.lol"
+      }
+    }
+  ]
+}
