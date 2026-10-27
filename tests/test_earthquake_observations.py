@@ -9,6 +9,7 @@ from services.earthquake_observation_service import (
     EarthquakeObservationValidationError,
 )
 from services.sql_artifact_store import SqlArtifactStore
+from services.source_registry_service import SourceRegistryService
 
 
 def observation(event_id="us-test-1", magnitude=4.2):
@@ -54,7 +55,11 @@ def test_sql_store_survives_service_restart_and_updates_key(tmp_path):
 
 def test_api_fetches_and_returns_stored_observations(monkeypatch, tmp_path):
     previous = main.earthquake_observation_service
+    previous_registry = main.source_registry_service
+    previous_feed_state = main.observation_feed_state["usgs"]
     main.earthquake_observation_service = EarthquakeObservationService(ArtifactStore(str(tmp_path)))
+    main.source_registry_service = SourceRegistryService(store_dir=str(tmp_path / "registry"))
+    main.observation_feed_state["usgs"] = {"status": "PENDING", "last_verified_at_utc": None}
     monkeypatch.setattr(main, "fetch_earthquakes", lambda: {"source": "USGS", "observations": [observation()]})
     main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["operator"])
     try:
@@ -62,10 +67,45 @@ def test_api_fetches_and_returns_stored_observations(monkeypatch, tmp_path):
         response = client.post("/earthquakes/usgs/ingest")
         assert response.status_code == 200
         assert response.json()["inserted"] == 1
+        assert response.json()["status"] == "LIVE_VERIFIED"
+        assert response.json()["readback_records"] == 1
+        assert response.json()["registry_readback"] is True
         listed = client.get("/earthquakes/usgs/observations")
         assert listed.status_code == 200
         assert listed.json()["observations"][0]["event_id"] == "us-test-1"
+        source = main.source_registry_service.get_source("src-gev-usgs-seismic")
+        assert source.provenance_reference["last_fetch_status"] == "LIVE_VERIFIED"
+        assert source.provenance_reference["last_verification"]["readback_records"] == 1
+        listed_dataset = next(
+            row for row in client.get("/live-datasets").json()["datasets"]
+            if row["dataset_id"] == "ds-gev-seismic-events"
+        )
+        assert listed_dataset["status"] == "LIVE_VERIFIED"
+        assert listed_dataset["record_count"] == 1
         assert client.get("/earthquakes/map").status_code == 200
     finally:
         main.app.dependency_overrides.pop(main.get_identity, None)
         main.earthquake_observation_service = previous
+        main.source_registry_service = previous_registry
+        main.observation_feed_state["usgs"] = previous_feed_state
+
+
+def test_empty_usgs_feed_stays_pending(monkeypatch, tmp_path):
+    previous = (main.earthquake_observation_service, main.source_registry_service,
+                main.observation_feed_state["usgs"])
+    main.earthquake_observation_service = EarthquakeObservationService(ArtifactStore(str(tmp_path / "earthquakes")))
+    main.source_registry_service = SourceRegistryService(store_dir=str(tmp_path / "registry"))
+    main.observation_feed_state["usgs"] = {"status": "PENDING", "last_verified_at_utc": None}
+    monkeypatch.setattr(main, "fetch_earthquakes", lambda: {"source": "USGS", "observations": []})
+    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["operator"])
+    try:
+        response = TestClient(main.app).post("/earthquakes/usgs/ingest")
+        assert response.status_code == 200
+        assert response.json()["status"] == "PENDING"
+        assert response.json()["readback_records"] == 0
+        source = main.source_registry_service.get_source("src-gev-usgs-seismic")
+        assert source.provenance_reference["last_fetch_status"] == "PENDING"
+    finally:
+        main.app.dependency_overrides.pop(main.get_identity, None)
+        (main.earthquake_observation_service, main.source_registry_service,
+         main.observation_feed_state["usgs"]) = previous

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>MASTERDB Dataset Registry</title>
+    <style>
+      body{font:15px system-ui;margin:20px;color:#152235}header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}input{padding:8px;min-width:300px}button{padding:8px 12px;margin:3px}#status{margin:12px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.card{border:1px solid #ccd6df;border-radius:8px;padding:14px}.live{color:#087443;font-weight:700}table{width:100%;border-collapse:collapse;margin-top:18px}td,th{border-bottom:1px solid #d9e1e8;padding:7px;text-align:left;font-size:13px;vertical-align:top}
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Dataset Registry</h1>
+      <label>MASTERDB API <input id="api"></label>
+      <label>Bearer token <input id="token" type="password" autocomplete="off"></label>
+      <button id="refresh">Refresh</button>
+    </header>
+    <p id="status">Enter a bearer token, then refresh.</p>
+    <div id="datasets" class="grid"></div>
+    <table>
+      <thead><tr><th>Dataset</th><th>Latest record</th><th>Fields</th></tr></thead>
+      <tbody id="observations"></tbody>
+    </table>
+    <script>
+      const api=document.getElementById('api');
+      const token=document.getElementById('token');
+      const status=document.getElementById('status');
+      const datasets=document.getElementById('datasets');
+      const observations=document.getElementById('observations');
+      api.value=location.origin;
+      const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const headers=()=>({Authorization:'Bearer '+token.value});
+
+      async function load(){
+        status.textContent='Loading dataset registry…';
+        datasets.innerHTML='';
+        observations.innerHTML='';
+        try{
+          const registry=await fetch(api.value.replace(/\/$/,'')+'/live-datasets',{headers:headers()});
+          if(!registry.ok)throw Error('Registry API returned '+registry.status);
+          const data=await registry.json();
+          for(const d of data.datasets){
+            const endpoint=d.observation_endpoint||d.feature_endpoint||d.attribute_endpoint||d.manifest_endpoint;
+            datasets.insertAdjacentHTML('beforeend',`<section class="card"><div class="live">${esc(d.status)}</div><h2>${esc(d.name)}</h2><div>${esc(d.dataset_id)}</div><p>Source: ${esc(d.source)}<br>Mode: ${esc(d.data_mode||'LIVE_FEED')}<br>Stored records: ${esc(d.record_count)}${d.attribution?`<br>Attribution: ${esc(d.attribution)}`:''}</p>${endpoint?`<button data-endpoint="${esc(endpoint)}" data-name="${esc(d.name)}">Load records or manifest</button>`:''}${d.verification_endpoint?`<button data-verify="${esc(d.verification_endpoint)}" data-name="${esc(d.name)}">Verify service</button>`:''}${d.media_endpoint?`<button data-endpoint="${esc(d.media_endpoint)}" data-name="${esc(d.name)} media references">Load media references</button>`:''}</section>`);
+          }
+          document.querySelectorAll('[data-endpoint]').forEach(b=>b.onclick=()=>loadObservation(b.dataset.endpoint,b.dataset.name));
+          document.querySelectorAll('[data-verify]').forEach(b=>b.onclick=()=>verifyService(b.dataset.verify,b.dataset.name));
+          status.textContent=`${data.count} datasets loaded. Status and data mode distinguish live feeds from static snapshots.`;
+        }catch(e){status.textContent=e.message}
+      }
+
+      async function loadObservation(endpoint,name){
+        try{
+          const response=await fetch(api.value.replace(/\/$/,'')+endpoint+'?limit=1',{headers:headers()});
+          if(!response.ok)throw Error(name+' API returned '+response.status);
+          const result=await response.json();
+          const items=result.observations||result.features||result.attributes||result.media_references;
+          const row=Array.isArray(items)?items[0]:result;
+          observations.insertAdjacentHTML('beforeend',`<tr><td>${esc(name)}</td><td>${esc(JSON.stringify(row||{}))}</td><td>${esc(Object.keys(row||{}).join(', '))}</td></tr>`);
+        }catch(e){status.textContent=e.message}
+      }
+
+      async function verifyService(endpoint,name){
+        try{
+          const response=await fetch(api.value.replace(/\/$/,'')+endpoint,{method:'POST',headers:headers()});
+          const result=await response.json();
+          if(!response.ok)throw Error(result.error?.message||result.detail||name+' verification returned '+response.status);
+          status.textContent=name+' verification: '+result.status+(result.registry_readback?' (registry read-back confirmed)':'');
+        }catch(e){status.textContent=e.message}
+      }
+
+      document.getElementById('refresh').onclick=load;
+    </script>
+  </body>
+</html>
