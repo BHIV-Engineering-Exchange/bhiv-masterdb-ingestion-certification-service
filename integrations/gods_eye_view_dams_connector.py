@@ -16,10 +16,8 @@ class DamsSourceUnavailable(RuntimeError):
     """Raised when the configured God's Eye View dams snapshot is missing."""
 
 
-def dams_source_path() -> Path:
-    configured = os.environ.get("GODS_EYE_VIEW_DAMS_PATH")
-    if configured:
-        return Path(configured).expanduser()
+def sibling_dams_source_path() -> Path:
+    """Return the optional snapshot from a neighboring development checkout."""
     return (
         Path(__file__).resolve().parents[2]
         / "gods-eye-view"
@@ -29,6 +27,23 @@ def dams_source_path() -> Path:
         / "dams"
         / "dams.geojsonl"
     )
+
+
+def bundled_dams_source_path() -> Path:
+    """Return MASTERDB's immutable copy of the static source snapshot."""
+    return Path(__file__).resolve().parents[1] / "datasets" / "gods_eye_view" / "dams" / "dams.geojsonl"
+
+
+def dams_source_path() -> Path:
+    configured = os.environ.get("GODS_EYE_VIEW_DAMS_PATH")
+    if configured:
+        return Path(configured).expanduser()
+    sibling_snapshot = sibling_dams_source_path()
+    if sibling_snapshot.is_file():
+        return sibling_snapshot
+    # Production and CI do not require a neighboring God's Eye View checkout:
+    # retain an immutable copy of the actual static snapshot in this project.
+    return bundled_dams_source_path()
 
 
 def fetch_dams() -> dict[str, Any]:

@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 import main
 from auth.models import AuthIdentity
+import integrations.gods_eye_view_dams_connector as dams_connector
 from integrations.gods_eye_view_dams_connector import dams_source_path, fetch_dams
 from services.artifact_store import ArtifactStore
 from services.dam_feature_service import DamFeatureService
@@ -53,6 +54,12 @@ def test_invalid_coordinates_are_rejected_without_losing_valid_features(tmp_path
     assert result["valid"] == 1
     assert result["rejected"] == 1
     assert result["rejection_reasons"] == {"coordinates must be within WGS84 bounds": 1}
+
+
+def test_bundled_snapshot_is_used_when_sibling_checkout_is_absent(monkeypatch, tmp_path):
+    monkeypatch.setattr(dams_connector, "sibling_dams_source_path", lambda: tmp_path / "missing.geojsonl")
+    assert dams_connector.dams_source_path() == dams_connector.bundled_dams_source_path()
+    assert dams_connector.fetch_dams()["source_feature_count"] == 704
 
 
 def test_authenticated_api_ingests_reads_back_and_registers_static_snapshot(monkeypatch, tmp_path):

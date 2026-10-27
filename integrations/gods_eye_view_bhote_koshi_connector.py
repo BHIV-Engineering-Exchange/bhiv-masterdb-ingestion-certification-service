@@ -21,6 +21,16 @@ def source_root() -> Path:
     return Path(__file__).resolve().parents[2] / "gods-eye-view"
 
 
+def bundled_source_root() -> Path:
+    """Return the repository-owned immutable source snapshot directory.
+
+    CI and deployed MASTERDB instances do not have a sibling God's Eye View
+    checkout.  These files are exact static snapshots, not generated event
+    storage, and preserve the original source paths in the provenance payload.
+    """
+    return Path(__file__).resolve().parents[1] / "datasets" / "gods_eye_view" / "bhote_koshi"
+
+
 def _read(path: Path) -> bytes:
     try:
         return path.read_bytes()
@@ -76,7 +86,21 @@ def fetch_bhote_koshi_event() -> dict[str, Any]:
         # third-party media-link metadata.
         "event_pack": Path("public/events/bhote-koshi-2026/event.json"),
     }
-    raw_files = {key: _read(root / relative) for key, relative in relative_files.items()}
+    source_paths = {key: root / relative for key, relative in relative_files.items()}
+    # A configured root is an explicit deployment choice and must fail loudly
+    # when incomplete.  Otherwise use the checked-in static source snapshot
+    # when the sibling development checkout is unavailable.
+    if not all(path.is_file() for path in source_paths.values()) and not os.environ.get(
+        "GODS_EYE_VIEW_BHOTE_KOSHI_ROOT"
+    ):
+        bundled = bundled_source_root()
+        source_paths = {
+            "flood_path_module": bundled / "bhoteKoshiFloodPath.js",
+            "event_module": bundled / "bhoteKoshiEvent.js",
+            "embedded_media_module": bundled / "bhoteKoshiEmbeddedMedia.js",
+            "event_pack": bundled / "event.json",
+        }
+    raw_files = {key: _read(path) for key, path in source_paths.items()}
     try:
         event = json.loads(raw_files["event_pack"].decode("utf-8-sig"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -86,7 +110,7 @@ def fetch_bhote_koshi_event() -> dict[str, Any]:
         "source": "God's Eye View / GeoPera / Vantor Open Data",
         "data_mode": "STATIC_HISTORICAL_RECONSTRUCTION",
         "event": event,
-        "flood_path_coordinates": _read_source_coordinates(root / relative_files["flood_path_module"]),
+        "flood_path_coordinates": _read_source_coordinates(source_paths["flood_path_module"]),
         "presentation_metadata": _presentation_metadata(raw_files["event_module"]),
         "source_files": [
             {

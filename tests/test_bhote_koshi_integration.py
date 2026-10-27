@@ -5,6 +5,7 @@ import pytest
 
 import main
 from auth.models import AuthIdentity
+import integrations.gods_eye_view_bhote_koshi_connector as bhote_connector
 from integrations.gods_eye_view_bhote_koshi_connector import fetch_bhote_koshi_event
 from services.artifact_store import ArtifactStore
 from services.bhote_koshi_event_service import BhoteKoshiEventService, BhoteKoshiValidationError
@@ -51,6 +52,13 @@ def test_source_validation_rejects_invalid_flood_path(tmp_path):
     feed["flood_path_coordinates"][0][1] = 95
     with pytest.raises(BhoteKoshiValidationError, match="WGS84"):
         service_at(tmp_path).ingest(feed)
+
+
+def test_bundled_source_is_used_when_sibling_checkout_is_absent(monkeypatch, tmp_path):
+    monkeypatch.setattr(bhote_connector, "source_root", lambda: tmp_path / "missing-gods-eye-view")
+    feed = fetch_bhote_koshi_event()
+    assert feed["event"]["id"] == "bhote-koshi-2026"
+    assert len(feed["flood_path_coordinates"]) == 489
 
 
 def test_authenticated_api_ingests_reads_back_and_registers_static_event(tmp_path):
