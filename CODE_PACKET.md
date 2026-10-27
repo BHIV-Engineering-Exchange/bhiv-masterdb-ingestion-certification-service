@@ -70,7 +70,7 @@ This sprint delivers the complete architectural milestone for **Scalable Ecosyst
 | `services/vana_client.py` | Modified | Respected explicit empty string `base_url=""` during initialization. |
 | `tests/test_mdu_contract_adapter.py` | Modified | Restored separated assertions in `test_adapter_reports_not_live_when_unconfigured`. |
 | `tests/test_vana_integration.py` | Modified | Provided required authentication password in `_get_token` helper. |
-| `requirements.txt` | Modified | Pinned `pytest==9.0.3` and `pytest-asyncio==0.24.0` with exact `==` match. |
+| `requirements.txt` | Modified | Pinned `pytest==9.0.3` and `pytest-asyncio==1.3.0` with exact `==` match (resolving pytest 9 constraint). |
 | `REVIEW_PACKET.md` | Modified | Comprehensive technical report, architecture decisions, self-audit scores, and verification evidence. |
 | `CODE_PACKET.md` | New | Complete summary of changes, git diff overview, and test commands executed. |
 | `CODE_INDEX.md` | Modified | Updated directory tree, module map, and key entry points. |
