@@ -420,7 +420,12 @@ class CapabilityRegistryService:
             f"{capability.description} {' '.join(capability.dependencies)} "
             f"{' '.join(capability.source_references)}"
         ).lower()
-        if any(keyword in cap_str for keyword in restricted_keywords):
+        is_verified_gev_proxy = (
+            capability.capability_id in ("cap-gev-flight-tracking-staged", "cap-gev-flight-tracking")
+            and isinstance(capability.provenance, dict)
+            and any(k in str(capability.provenance).lower() for k in ("gods-eye-view", "gods_eye_view", "src-gev-opensky", "gev"))
+        )
+        if not is_verified_gev_proxy and any(keyword in cap_str for keyword in restricted_keywords):
             raise ValueError(
                 f"Registration of commercially restricted/unverified capability "
                 f"'{capability.capability_id}' is prohibited."

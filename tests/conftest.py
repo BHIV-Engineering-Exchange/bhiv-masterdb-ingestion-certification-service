@@ -46,7 +46,8 @@ from pathlib import Path
 
 @pytest.fixture(autouse=True)
 def _reset_capability_registry(tmp_path):
-    for store_dir in ["capability_store", "source_store", "registry_store"]:
+    # Only clean up test-generated stores; NEVER touch tracked repository fixtures like source_store
+    for store_dir in ["capability_store", "registry_store"]:
         store_path = Path(store_dir)
         if store_path.exists():
             shutil.rmtree(store_path, ignore_errors=True)

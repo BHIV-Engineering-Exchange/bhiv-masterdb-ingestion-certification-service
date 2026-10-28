@@ -1,0 +1,10 @@
+{
+  "python.analysis.extraPaths": [
+    "./MASTERDB-GEO-QUEST-01",
+    "."
+  ],
+  "python.autoComplete.extraPaths": [
+    "./MASTERDB-GEO-QUEST-01",
+    "."
+  ]
+}

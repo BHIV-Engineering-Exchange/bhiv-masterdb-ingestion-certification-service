@@ -15,6 +15,9 @@
     "gev.aircraft.fixture.stale_data": "MASTERDB-GEO-QUEST-01/fixtures/invalid_stale_data.json",
     "cap-mangrove-monitoring": "datasets/synthetic/mangrove_observations.json",
     "cap-maritime-cargo": "datasets/synthetic/maritime_vessels.json",
-    "cap-fin-market-analytics": "datasets/synthetic/financial_market.json"
+    "cap-fin-market-analytics": "datasets/synthetic/financial_market.json",
+    "cap-gev-flight-tracking": "datasets/opensky_states.json",
+    "cap-gev-flight-tracking-staged": "datasets/opensky_states.json",
+    "ds-gev-opensky-flights": "datasets/opensky_states.json"
   }
- }
+}

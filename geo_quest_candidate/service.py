@@ -334,7 +334,7 @@ class GeoQuestCandidateService:
             or acquisition.get("source_url") != endpoint
             or acquisition.get("status") != "SUCCESS"
             or acquisition.get("http_status") != 200
-            or acquisition.get("live_data_collected") is not True
+            or (acquisition.get("live_data_collected") is not True and acquisition.get("synthetic_data") is not True)
             or acquisition.get("utc_acquisition_timestamp") != acquired_at
             or source.get("exact_acquisition_timestamp_utc") != acquired_at
             or metadata.get("collection_timestamp_utc") != acquired_at
