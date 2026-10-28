@@ -114,9 +114,10 @@ class KnowledgePackage(BaseModel):
 
 
 class PackageRegisterRequest(BaseModel):
-    dataset_id: str
-    dataset_version: str
-    schema_version: str
+    package_id: Optional[str] = None
+    dataset_id: str = Field(..., min_length=1)
+    dataset_version: str = Field(..., min_length=1)
+    schema_version: str = Field(..., min_length=1)
     board: str
     medium: str
     language: str
