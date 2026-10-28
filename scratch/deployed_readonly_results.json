@@ -1,0 +1,74 @@
+[
+  {
+    "endpoint": "/health",
+    "status": 200,
+    "summary": "JSON keys/length: ['status']",
+    "result": "PASS"
+  },
+  {
+    "endpoint": "/ready",
+    "status": 200,
+    "summary": "JSON keys/length: ['status', 'checks']",
+    "result": "PASS"
+  },
+  {
+    "endpoint": "/runtime/identity",
+    "status": 200,
+    "summary": "JSON keys/length: ['service_name', 'version', 'constitutional_role', 'capabilities', 'api_groups', 'auth', 'health_check_url', 'readiness_check_url', 'openapi_url', 'replay_endpoints', 'status', 'note']",
+    "result": "PASS"
+  },
+  {
+    "endpoint": "/metrics",
+    "status": 200,
+    "summary": "# HELP masterdb_bcaes_registry_objects_total Objects registered per BCAES registry type.\n# TYPE mast",
+    "result": "PASS"
+  },
+  {
+    "endpoint": "/discovery/packages",
+    "status": 200,
+    "summary": "JSON keys/length: ['count', 'packages']",
+    "result": "PASS"
+  },
+  {
+    "endpoint": "/capabilities",
+    "status": 401,
+    "summary": "{\"error\":{\"type\":\"http_error\",\"message\":\"Missing bearer token. Obtain one from POST /auth/token.\",\"p",
+    "result": "HTTPError"
+  },
+  {
+    "endpoint": "/sources",
+    "status": 401,
+    "summary": "{\"error\":{\"type\":\"http_error\",\"message\":\"Missing bearer token. Obtain one from POST /auth/token.\",\"p",
+    "result": "HTTPError"
+  },
+  {
+    "endpoint": "/mdu/status",
+    "status": 200,
+    "summary": "JSON keys/length: ['live', 'contract_finalized', 'known_gaps']",
+    "result": "PASS"
+  },
+  {
+    "endpoint": "/shared/registry",
+    "status": 200,
+    "summary": "JSON keys/length: ['count', 'datasets']",
+    "result": "PASS"
+  },
+  {
+    "endpoint": "/databases",
+    "status": 401,
+    "summary": "{\"error\":{\"type\":\"http_error\",\"message\":\"Missing bearer token. Obtain one from POST /auth/token.\",\"p",
+    "result": "HTTPError"
+  },
+  {
+    "endpoint": "/bcaes/registries",
+    "status": 200,
+    "summary": "JSON keys/length: ['registries']",
+    "result": "PASS"
+  },
+  {
+    "endpoint": "/canonical-repository/documents",
+    "status": 401,
+    "summary": "{\"error\":{\"type\":\"http_error\",\"message\":\"Missing bearer token. Obtain one from POST /auth/token.\",\"p",
+    "result": "HTTPError"
+  }
+]
