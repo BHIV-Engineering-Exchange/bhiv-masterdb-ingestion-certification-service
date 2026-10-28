@@ -155,6 +155,7 @@ class GeospatialConnectorAdapter:
                 "source_licence": source_rec.licence,
             },
             provenance={
+                **source_payload.get("provenance", {}),
                 "source_id": source_rec.source_id,
                 "authority": source_rec.authority,
                 "dataset_id": dataset_id,
@@ -188,6 +189,30 @@ class GeospatialConnectorAdapter:
         - gev_source_key: 'opensky', 'celestrak', 'firms', 'noaa', 'usgs'
         """
         gev_configs = {
+            "opensky": {
+                "source_id": "src-gev-opensky",
+                "source_name": "God's Eye View - OpenSky Network Live Air Traffic Telemetry",
+                "authority": "The OpenSky Network / Bilawal Sidhu God's Eye View Proxy",
+                "licence": "OPEN_COMMUNITY_DATA_LICENSE",
+                "geographic_coverage": "GLOBAL_AIRSPACE",
+                "update_characteristics": "REALTIME_5_SECOND_POLL_60_SECOND_CACHE",
+                "reliability_limitations": "RECEIVER_COVERAGE_GAPS_AND_TRANSPONDER_ABSENCE",
+                "attribution": "The OpenSky Network (opensky-network.org), bilawalsidhu/gods-eye-view",
+                "connector": "gods_eye_view_connector",
+                "dataset_id": "ds-gev-opensky-flights",
+                "capability_id": "cap-gev-flight-tracking-staged",
+                "capability_name": "God's Eye View - Live Flight Tracking & Airspace Monitoring",
+                "description": "Governed real-time global airspace state vectors, aircraft telemetry, callsign tracking, altitude, velocity, and transponder positional data from OpenSky Network.",
+                "purpose": "airspace_situational_awareness",
+                "domain": "geospatial",
+                "provenance": {
+                    "source": "OpenSky Network via God's Eye View Proxy",
+                    "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+                    "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30",
+                    "certification": "MASTERDB-VERIFIED-GEV-006",
+                    "proxy_endpoint": "/api/opensky",
+                },
+            },
             "marine_ports": {
                 "source_id": "src-marine-intel-ports",
                 "source_name": "Marine Intelligence - Indian Ports & Harbours Infrastructure",

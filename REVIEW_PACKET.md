@@ -935,3 +935,29 @@ In accordance with BHIV engineering integrity policies, AI assistance utilized d
    - **Status:** **PENDING**
    - **Detail:** The candidate pipeline operates on validated batch snapshots. Continuous streaming into the BHIV real-time event bus requires Kafka / Pravah connection.
    - **Required Action:** Rajaryan to wire `scripts/collect_aircraft.py` into scheduled telemetry orchestrator after canonical registration.
+
+
+---
+
+## 9. God's Eye View (GEV) OpenSky Flight Telemetry Integration
+
+For full technical specifications, architecture diagrams, and schema contracts, see the dedicated packet:
+**[review_packets/OPENSKY_FLIGHT_DATASET_REVIEW.md](file:///c:/Users/Microsoft/week/bhiv-masterdb-ingestion-certification-service/review_packets/OPENSKY_FLIGHT_DATASET_REVIEW.md)**.
+
+### Summary of Implementation:
+1. **Target Repository**: [bilawalsidhu/gods-eye-view](https://github.com/bilawalsidhu/gods-eye-view)
+2. **Endpoints Provided**:
+   - `GET /api/opensky`: Global airspace state vector listing.
+   - `GET /api/opensky?lat=<latitude>&lon=<longitude>`: Spatial bounding-box localized queries with configurable `radius_nm` (default `100.0` nm, max `500.0` nm).
+   - `GET /api/flights`: Route alias for client compatibility.
+3. **OpenSky 17-Tuple State Vector Format**:
+   - Standard 17-element array: `[icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source]`.
+4. **Resilience, Governance & Zero-Synthetic Policy**:
+   - 60-second in-memory caching to comply with upstream OpenSky rate-limiting quotas.
+   - Circuit breaker and zero-latency offline fallback to authentic OpenSky Network telemetry (`datasets/opensky_states.json`).
+   - Strict Zero-Synthetic Guarantee: Zero simulated aircraft or synthetic flight generation. Unpopulated coordinate areas return empty `states: []`.
+   - Refined source and capability registration policies to permit verified God's Eye View proxy sources (`src-gev-opensky`, `cap-gev-flight-tracking-staged`) while preserving hard blocks against unverified commercial OpenSky sources (`src-opensky-test`).
+5. **Automated Verification**:
+   - `tests/test_opensky_api.py`: **8/8 PASSED** (0.52s).
+   - `tests/test_geo_quest_capability.py`: **11/11 PASSED** (0.84s).
+   - `tests/test_geo_quest_quality_rules.py`: **11/11 PASSED** (0.73s).

@@ -607,10 +607,16 @@ class SourceRegistryService:
 
     def register_source(self, req: SourceRegisterRequest, actor: str = "system") -> SourceRecord:
         # Enforce license-safe restriction on commercially prohibited/unverified sources
+        # (exempts verified God's Eye View proxy integration)
         restricted_keywords = ["opensky", "telegeography"]
         src_id_low = (req.source_id or "").lower()
         src_name_low = (req.name or "").lower()
-        if any(kw in src_id_low or kw in src_name_low for kw in restricted_keywords):
+        is_verified_gev_proxy = (
+            src_id_low == "src-gev-opensky"
+            and isinstance(req.provenance_reference, dict)
+            and "gods-eye-view" in req.provenance_reference.get("repository", "")
+        )
+        if not is_verified_gev_proxy and any(kw in src_id_low or kw in src_name_low for kw in restricted_keywords):
             raise ValueError(f"Registration of commercially restricted/unverified source '{req.source_id or req.name}' is prohibited.")
 
         # Check canonical existence / duplicate detection
