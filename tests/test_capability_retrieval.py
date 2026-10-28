@@ -230,4 +230,3 @@ def test_repeated_revoke_behavior():
     # Second revocation returns 404 (grant not found or already revoked)
     del2 = client.delete(f"/access/{grant['request_id']}", headers={"Authorization": f"Bearer {token}"})
     assert del2.status_code == 404
-

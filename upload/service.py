@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from upload.models import UploadJob, UploadJobStep, UploadStatus
+from upload.models import UploadJob, UploadJobStep, UploadStatus, _new_id
 from upload.store import UploadJobNotFoundError, UploadStore
 
 logger = logging.getLogger("masterdb")
@@ -266,6 +266,6 @@ class UploadService:
             job = self.validate_upload(upload_id)
         if job.status == UploadStatus.VALIDATED:
             dataset_id = job.dataset_id or f"ds-{job.upload_id}"
-            package_id = job.package_id or f"pkg-{job.upload_id}"
+            package_id = job.package_id or _new_id("pkg")
             job = self.register_dataset(upload_id, dataset_id, package_id)
         return job

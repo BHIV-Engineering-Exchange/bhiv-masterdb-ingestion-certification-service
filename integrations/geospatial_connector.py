@@ -314,3 +314,92 @@ class GeospatialConnectorAdapter:
             actor=actor,
             confirm_write_authority=confirm_write_authority,
         )
+
+    def ingest_vana_source(
+        self,
+        vana_source_key: str,
+        actor: str = "system",
+        confirm_write_authority: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Specialized helper for registering verified VANA capabilities:
+        - vana_source_key: 'forest_cover', 'thane_creek_carbon', 'spatial_layers'
+        """
+        vana_configs = {
+            "forest_cover": {
+                "source_id": "src-fsi-isfr-2023",
+                "source_name": "Forest Survey of India - India State of Forest Report (ISFR 2023)",
+                "authority": "Forest Survey of India (FSI) / MoEFCC",
+                "licence": "GOVERNMENT_OPEN_DATA",
+                "geographic_coverage": "INDIA_NATIONAL_AND_DISTRICTS",
+                "update_characteristics": "BIENNIAL_PUBLICATION_CYCLE",
+                "reliability_limitations": "REMOTE_SENSING_RESOLUTION_MINIMUM_CANOPY_10PCT",
+                "attribution": "Forest Survey of India, ISFR 2023",
+                "connector": "vana_forest_governance_connector",
+                "dataset_id": "DS-FSI-ISFR-2023-FOREST-COVER",
+                "capability_id": "cap-vana-forest-cover",
+                "capability_name": "VANA - FSI ISFR 2023 Official Forest Cover Records",
+                "description": "Governed official Forest Survey of India (ISFR 2023) district forest canopy and mangrove coverage records with immutable source provenance.",
+                "purpose": "district_canopy_analysis",
+                "domain": "geospatial",
+                "provenance": {
+                    "source": "Forest Survey of India (ISFR 2023) via VANA Governance Layer",
+                    "certification": "VANA-ISFR-2023-CANONICAL",
+                    "governance_gate": "6_TUPLE_EVALUATION_GATE",
+                },
+            },
+            "thane_creek_carbon": {
+                "source_id": "src-vana-thane-creek",
+                "source_name": "VANA - Thane Creek Flamingo Sanctuary Mangrove Blue Carbon Engine",
+                "authority": "Maharashtra Mangrove Cell / VANA Carbon Quantification Engine",
+                "licence": "BHIV_RESEARCH_USE",
+                "geographic_coverage": "THANE_CREEK_FLAMINGO_SANCTUARY_MUMBAI",
+                "update_characteristics": "30_DAY_SAMPLE_REFRESH",
+                "reliability_limitations": "GROUND_TRUTH_CORE_SAMPLE_DENSITY",
+                "attribution": "Maharashtra Forest Department Mangrove Cell, VANA Blue Carbon Research Group",
+                "connector": "vana_carbon_engine_connector",
+                "dataset_id": "DS-VANA-THANE-CREEK-BLUE-CARBON",
+                "capability_id": "cap-vana-thane-creek-carbon",
+                "capability_name": "VANA - Thane Creek Mangrove Blue Carbon Engine",
+                "description": "Governed Thane Creek Flamingo Sanctuary mangrove blue carbon quantification with strict measured vs satellite segregation.",
+                "purpose": "carbon_quantification",
+                "domain": "geospatial",
+                "provenance": {
+                    "source": "VANA Blue Carbon Engine (Thane Creek)",
+                    "certification": "VANA-BLUE-CARBON-VERIFIED",
+                    "governance_gate": "6_TUPLE_EVALUATION_GATE",
+                },
+            },
+            "spatial_layers": {
+                "source_id": "src-vana-gis",
+                "source_name": "VANA - Spatial GIS GeoJSON Layers Catalog",
+                "authority": "VANA Spatial Layer Service / Survey of India RFC 7946 Standard",
+                "licence": "GOVERNMENT_OPEN_DATA",
+                "geographic_coverage": "MAHARASHTRA_COASTAL_ZONES",
+                "update_characteristics": "QUARTERLY_BOUNDARY_REVALIDATION",
+                "reliability_limitations": "RFC7946_WGS84_PROJECTION_TOLERANCES",
+                "attribution": "VANA GIS Spatial Engine",
+                "connector": "vana_spatial_gis_connector",
+                "dataset_id": "DS-VANA-SPATIAL-LAYERS",
+                "capability_id": "cap-vana-spatial-layers",
+                "capability_name": "VANA - Spatial GIS GeoJSON Layers",
+                "description": "Governed RFC 7946 WGS84 GeoJSON spatial layers: sanctuary boundaries, mangrove density, and nurseries.",
+                "purpose": "spatial_gis_analysis",
+                "domain": "geospatial",
+                "provenance": {
+                    "source": "VANA Spatial GIS Layer Catalog",
+                    "certification": "VANA-RFC7946-GEOJSON",
+                    "governance_gate": "6_TUPLE_EVALUATION_GATE",
+                },
+            },
+        }
+
+        if vana_source_key not in vana_configs:
+            raise ValueError(f"Unknown VANA source key '{vana_source_key}'. Allowed: {list(vana_configs.keys())}")
+
+        payload = vana_configs[vana_source_key]
+        return self.ingest_and_register_geospatial_capability(
+            source_payload=payload,
+            actor=actor,
+            confirm_write_authority=confirm_write_authority,
+        )

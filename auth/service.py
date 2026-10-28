@@ -40,7 +40,7 @@ class AuthService:
                     sibling_key_path = os.path.abspath(
                         os.path.join(
                             os.path.dirname(__file__),
-                            "..", "..", "..", "..", "Tantra", "TANTRA-Gated-Bridge-Infrastructure", "services", "sarathi", "keys", "public.pem"
+                            "..", "..", "..", "Tantra", "TANTRA-Gated-Bridge-Infrastructure", "services", "sarathi", "keys", "public.pem"
                         )
                     )
                     if os.path.exists(sibling_key_path):
@@ -52,7 +52,6 @@ class AuthService:
                             self._public_key_pem = fh.read().strip()
                     except Exception as exc:
                         logger.warning("Could not read AUTH_JWT_PUBLIC_KEY_PATH: %s", exc)
-
 
         env_secret = (os.environ.get("AUTH_JWT_SECRET") or os.environ.get("JWT_SECRET") or "").strip()
         env_mode = (
@@ -221,7 +220,7 @@ class AuthService:
             aud = payload.get("aud")
             if not aud:
                 raise AuthTokenError("Token is missing required audience claim.")
-            aud_list = [aud] if isinstance(aud, str) else aud
+            aud_list = [aud] if isinstance(aud, str) else [aud]
             if not any(a in ("masterdb", "tantra-bridge") for a in aud_list):
                 raise AuthTokenError(f"Untrusted or invalid token audience: {aud}")
 
@@ -229,11 +228,15 @@ class AuthService:
             if not actor or not str(actor).strip():
                 raise AuthTokenError("Token is missing a subject (actor).")
 
-            roles = payload.get("roles", [])
+            roles = payload.get("roles")
             if not roles or not isinstance(roles, list):
-                roles = ["ecosystem-reader"]
+                raise AuthTokenError("Token is missing required roles claim.")
 
-            return AuthIdentity(actor=str(actor).strip(), roles=roles)
+            safe_roles = [r for r in roles if r in ("ecosystem-reader", "viewer", "operator", "APPROVED_CONSUMER")]
+            if not safe_roles:
+                raise AuthTokenError("Token contains no valid roles.")
+
+            return AuthIdentity(actor=str(actor).strip(), roles=safe_roles)
 
         elif alg == _ALGORITHM:
             try:

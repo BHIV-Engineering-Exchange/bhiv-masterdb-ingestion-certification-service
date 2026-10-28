@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MASTERDB USGS Earthquake Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>body{font:15px system-ui;margin:0;color:#18212f}header{padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}input{padding:8px;min-width:250px}button{padding:8px 14px}#status{margin-left:auto}#map{height:72vh}table{border-collapse:collapse;width:100%}td,th{padding:7px;border-bottom:1px solid #ddd;text-align:left;font-size:13px}</style>
+</head>
+<body>
+  <header><strong>USGS Earthquakes</strong><label>MASTERDB API <input id="api"></label><label>Bearer token <input id="token" type="password" autocomplete="off"></label><button id="refresh">Load observations</button><span id="status">Enter an API token to load stored observations.</span></header>
+  <div id="map"></div><table><thead><tr><th>Event</th><th>Place</th><th>Magnitude</th><th>Depth km</th><th>Event time UTC</th><th>Coordinates</th><th>Source</th></tr></thead><tbody id="rows"></tbody></table>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    document.getElementById('api').value=window.location.origin;
+    const map=L.map('map').setView([20,0],2); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);
+    const markers=L.layerGroup().addTo(map); const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    document.getElementById('refresh').onclick=async()=>{const status=document.getElementById('status');status.textContent='Loading…';try{const base=document.getElementById('api').value.replace(/\/$/,'');const r=await fetch(base+'/earthquakes/usgs/observations?limit=1000',{headers:{Authorization:'Bearer '+document.getElementById('token').value}});if(!r.ok)throw new Error('API returned '+r.status);const data=await r.json();markers.clearLayers();document.getElementById('rows').innerHTML='';for(const e of data.observations){const fields=`<b>${esc(e.place||e.event_id)}</b><br>Magnitude: ${esc(e.magnitude)}<br>Depth: ${esc(e.depth_km)} km<br>Time: ${esc(e.event_time_utc)}<br>Coordinates: ${esc(e.latitude)}, ${esc(e.longitude)}<br><a href="${esc(e.source_url)}" target="_blank" rel="noopener">USGS source</a>`;L.circleMarker([e.latitude,e.longitude],{radius:Math.max(4,Math.min(14,(Number(e.magnitude)||1)*2)),color:'#bb2d3b'}).bindPopup(fields).addTo(markers);document.getElementById('rows').insertAdjacentHTML('beforeend',`<tr><td>${esc(e.event_id)}</td><td>${esc(e.place)}</td><td>${esc(e.magnitude)}</td><td>${esc(e.depth_km)}</td><td>${esc(e.event_time_utc)}</td><td>${esc(e.latitude)}, ${esc(e.longitude)}</td><td><a href="${esc(e.source_url)}" target="_blank" rel="noopener">USGS</a></td></tr>`)}status.textContent=`${data.count} stored observations loaded.`}catch(e){status.textContent=e.message}}
+  </script>
+</body></html>

@@ -114,9 +114,10 @@ class KnowledgePackage(BaseModel):
 
 
 class PackageRegisterRequest(BaseModel):
-    dataset_id: str
-    dataset_version: str
-    schema_version: str
+    package_id: Optional[str] = None
+    dataset_id: str = Field(..., min_length=1)
+    dataset_version: str = Field(..., min_length=1)
+    schema_version: str = Field(..., min_length=1)
     board: str
     medium: str
     language: str
@@ -435,8 +436,6 @@ class AccessContract(BaseModel):
     access_scope: List[str] = Field(default_factory=lambda: ["RETRIEVE", "QUERY"])
     reason: Optional[str] = None
     timestamp: str = Field(default_factory=_utcnow)
-    expires_at: Optional[str] = None
-
 
 
 class CapabilityRetrieveRequest(BaseModel):
@@ -444,8 +443,6 @@ class CapabilityRetrieveRequest(BaseModel):
     application_id: Optional[str] = None
     access_token: Optional[str] = None
     query_params: Dict[str, Any] = Field(default_factory=dict)
-    trace_id: Optional[str] = None
-    execution_id: Optional[str] = None
 
 
 class CapabilityRetrieveResponse(BaseModel):
@@ -455,9 +452,6 @@ class CapabilityRetrieveResponse(BaseModel):
     provenance: Dict[str, Any]
     request_id: str
     access_metadata: Dict[str, Any]
-    content_digest_sha256: Optional[str] = None
-    trace_id: Optional[str] = None
-    execution_id: Optional[str] = None
 
 
 

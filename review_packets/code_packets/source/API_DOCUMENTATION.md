@@ -6,7 +6,78 @@ Base URL for local development:
 http://127.0.0.1:8000
 ```
 
-All endpoints return structured JSON only.
+Most endpoints return structured JSON. The NOAA nowCOAST radar image and tile proxy endpoints return `image/png` bytes.
+
+## NOAA nowCOAST Radar Imagery
+
+The radar product is observed CONUS MRMS base reflectivity from NOAA nowCOAST, exposed through the existing God’s Eye View weather provider. It is a geospatial imagery service; MASTERDB stores capabilities, coverage, retrieval metadata, and available frame times, not raster pixels as observation rows. Use timestamps returned by the manifest.
+
+### GET /weather/radar/manifest
+
+Fetches the live `radar` product manifest, including coverage bounds, available UTC timestamps, latest frame, and image/tile URLs. The underlying layer is `conus_base_reflectivity_mosaic`.
+
+### GET /weather/radar/image?time={timestamp}&size=1024x512
+
+Proxies a PNG for a timestamp advertised by the manifest. `size` can be `1024x512`, `2048x1024`, or `4096x2048`. An optional `bbox=west,south,east,north` requests a bounded 2:1 detail window.
+
+### GET /weather/radar/tile?time={timestamp}&z={z}&x={x}&y={y}
+
+Proxies one PNG geographic tile for a manifest timestamp. Levels are 0 through 6. Tile size defaults to 256 and can be 512 or 1024 pixels.
+
+### POST /weather/radar/verify
+
+Fetches live capabilities and an in-coverage radar tile, then reads the source metadata back from the registry. A successful response sets the radar source to `LIVE_VERIFIED`; upstream failures remain `UNAVAILABLE` or `CONFIGURED`.
+
+The dataset appears in `GET /live-datasets` and the page at `GET /live-datasets/registry`. The radar registry item reports `record_count: 0` because imagery bytes are proxied, not persisted as ordinary observations.
+
+## NOAA nowCOAST Satellite Infrared Imagery
+
+God’s Eye View exposes two NOAA nowCOAST satellite products: the global longwave infrared mosaic (`clouds`, layer `global_longwave_imagery_mosaic`) and the GOES regional infrared product (`clouds-regional`, layer `goes_longwave_imagery`). These are raster imagery/tile services, not observation-row datasets. Each product has its own live capabilities, bounds, timestamps, verification state, and registry item.
+
+The same routes also expose NOAA nowCOAST lightning density with `product=lightning` and layer `ldn_lightning_strike_density`. This is a 15-minute strike-density product derived from ground networks, not a catalog of individual flashes.
+
+### GET /weather/satellite/manifest?product=clouds
+
+Set `product=clouds-regional` for the GOES East/West product. The response includes available timestamps, latest frame, coverage bounds, layer, retrieval time, and MASTERDB image/tile URLs.
+
+### GET /weather/satellite/image?product=clouds&time={timestamp}
+
+Returns `image/png`. Set `product=clouds-regional` for the regional imagery. The default image size is product-specific; supported `size` values and optional 2:1 `bbox` windows follow the God’s Eye View provider.
+
+### GET /weather/satellite/tile?product=clouds&time={timestamp}&z={z}&x={x}&y={y}
+
+Returns one `image/png` geographic tile. Set `product=clouds-regional` for the GOES regional product. Use an advertised timestamp and geographic tile coordinates at levels 0 through 6.
+
+### POST /weather/satellite/verify?product=clouds
+
+Fetches live product capabilities and an in-coverage tile, then confirms source metadata registry read-back before marking that product `LIVE_VERIFIED`. Repeat with `product=clouds-regional` to verify the regional product. Both registry items report `record_count: 0` because the raster bytes are proxied rather than stored as ordinary observations.
+
+Lightning density also has dedicated aliases:
+
+- `GET /weather/lightning/manifest`
+- `GET /weather/lightning/image?time={timestamp}&size={size}`
+- `GET /weather/lightning/tile?time={timestamp}&z={z}&x={x}&y={y}`
+- `POST /weather/lightning/verify`
+
+These use the same provider and validation as `product=lightning` on the satellite imagery routes. The lightning registry item reports `record_count: 0`.
+
+## NOAA Tropical Cyclones
+
+### POST /cyclones/nhc/ingest
+
+Fetches the God’s Eye View cyclone response backed by NOAA NHC/CPHC current storm status and NOAA Tropical Weather GIS feature layers. It stores current storm status observations separately from forecast point, track, and cone features. Missing upstream values remain null; the read API returns only the latest active storm snapshot.
+
+### GET /cyclones/nhc/storms
+
+Returns current storm status rows, including source storm ID, classification, basin, position and timestamp, advisory, and available intensity/movement fields.
+
+### GET /cyclones/nhc/forecast-points
+
+Returns a GeoJSON `FeatureCollection` of provider forecast points, with available tau and wind metadata.
+
+### GET /cyclones/nhc/tracks and GET /cyclones/nhc/cones
+
+Return GeoJSON `FeatureCollection` data sourced from NOAA Tropical Weather GIS layers 6 and 7. The cyclone datasets and per-product status appear in `GET /live-datasets`; products without current matching GIS features report `NO_CURRENT_FEATURES` or `NO_ACTIVE_STORMS` rather than `LIVE_VERIFIED`.
 
 ## POST /validate
 

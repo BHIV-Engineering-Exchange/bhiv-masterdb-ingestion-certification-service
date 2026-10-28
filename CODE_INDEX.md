@@ -1,147 +1,97 @@
-# CODE_INDEX.md — Phase 4 & Phase 8 (Central Data Platform Convergence)
+# CODE_INDEX.md — T-GOV-002 Milestone Advancement
 
-**Task:** MASTERDB BHIV vNEXT KAVY TASK 1/3 — MasterDB Central Data Platform Convergence  
-**Date:** 2026-09-25
+**Task ID:** T-GOV-002
+**Task Title:** Milestone Advancement: Scalable Ecosystem Integration & Pipeline Automation
+**Candidate:** Kavy Changela
+**Product Governance:** BHIV
+**Date:** 2026-10-27
 
 ---
 
-## Directory Structure (key files only)
+## 1. Directory Structure
 
 ```
 masterdb-ingestion-certification-service/
-├── main.py                              # FastAPI app — all endpoints wired here
-├── models.py                            # Pydantic models, PackageStatus, RetrievalStatus
-├── requirements.txt                     # Strictly pinned (==) — no unpinned deps
+├── main.py                              # FastAPI application root — wires all routers & services
+├── models.py                            # Core domain models, PackageStatus, Lifecycle graph
+├── models_pravah.py                     # [NEW] Strict Pydantic models for Pravah events, ledgers, pipeline
+├── requirements.txt                     # Pinned direct dependencies (== exact versions)
 │
 ├── api/
-│   └── production.py
-├── auth/
-├── bcaes_registry/
-├── canonical_repository/
-├── config/
-├── database_targets/
-├── datasets/
-├── engines/
+│   ├── production.py                    # Enterprise RS256 token verification & audit endpoints
+│   └── pravah.py                        # [NEW] Pravah event ingestion, replay, state & determinism endpoints
+│
 ├── evaluation_engine/
-├── ingestion_jobs_store/
+│   └── rule_engine.py                   # Pure, deterministic state transition rule evaluator
+│
 ├── integrations/
-├── knowledge_object_store/
+│   ├── geospatial_connector.py          # Geospatial & VANA dataset connectors
+│   ├── local_llm_client.py              # Local LLM client protected with CircuitBreaker
+│   └── pravah_client.py                 # [NEW] Pravah event bus adapter with CircuitBreaker protection
+│
 ├── middleware/
-├── operational_sync/
-├── profiling/
-├── registry_store/
-├── reports/
-├── retrieval_evidence_store/
-├── review_packets/
-│   ├── REVIEW_PACKET.md
-│   ├── CODE_INDEX.md
-│   └── ...
+│   ├── circuit_breaker.py               # Three-state CircuitBreaker (CLOSED, OPEN, HALF_OPEN)
+│   ├── rate_limit_middleware.py         # Sliding window rate-limiting middleware
+│   └── rate_limiter.py                  # In-memory sliding window rate limiter
+│
 ├── scripts/
+│   └── verify_deterministic_state.py    # [NEW] 50-run deterministic state hash verification CLI & helper
+│
 ├── security/
+│   ├── middleware.py                    # RS256 JWT verifier, ReplayMitigationTable, SecurityMiddleware
+│   └── path_resolution.py               # Path security & boundary sanitization
+│
 ├── services/
-│   ├── artifact_store.py
-│   ├── bucket_client.py                 # Phase 8: BucketClient (store/get evidence, store/get provenance)
-│   ├── certification_service.py
-│   ├── dataset_retrieval_service.py     # Phase 4: DatasetRetrievalService (list, get, query, export, stream, reference)
-│   ├── knowledge_object_service.py      # Lineage for /provenance/{package_id}
-│   ├── mdu_client.py
-│   ├── mdu_contract_adapter.py          # MDU schema/provenance passthrough + fallback
-│   ├── package_registry_service.py
-│   ├── retrieval_readiness_service.py   # assess() gate for governed access
-│   ├── runtime_discovery_service.py
-│   └── ...
-├── shared_data/
-├── shared_store/
+│   ├── crypto_audit_emitter.py          # Immutable cryptographic SHA-256 chained audit emitter
+│   ├── event_pipeline.py                # [NEW] Asynchronous event pipeline & multi-step orchestrator
+│   ├── pravah_ledger.py                 # [NEW] Thread-safe append-only Pravah replay ledger
+│   ├── state_machine.py                 # [NEW] Deterministic state machine with per-entity async locking
+│   ├── startup_config.py                # One-time startup configuration validator & logger
+│   ├── vana_client.py                   # VANA 6-tuple governance evaluation & spatial integration client
+│   ├── mdu_client.py                    # Upstream MDU client
+│   └── mdu_contract_adapter.py          # MDU schema & provenance contract adapter
+│
 ├── task_selector/
-├── tests/
-│   ├── conftest.py
-│   ├── test_api.py
-│   ├── test_bcaes_api.py
-│   ├── test_central_data_platform_api.py  # NEW — Phase 4 & 8 integration tests
-│   ├── test_dataset_retrieval_service.py   # 15 unit tests
-│   ├── test_bucket_client.py               # 10 unit tests (get_evidence, store_provenance)
-│   └── ...
-└── utils/
+│   └── review_orchestrator.py           # Coordinates RuleEngine, LLM, and audit emission
+│
+└── tests/
+    ├── conftest.py                      # Session fixtures, autouse rate limiter reset, mock stores
+    ├── unit/                            # [NEW] Unit test suite
+    │   ├── test_pravah_models.py        # Event envelope, strict validation, forbidden extra fields
+    │   ├── test_pravah_ledger.py        # Monotonic sequence, deduplication, queries, thread-safety
+    │   └── test_state_machine.py        # Legal/illegal transitions, RuleEngine checks, entity locks
+    │
+    ├── integration/                     # [NEW] Integration test suite
+    │   ├── test_event_pipeline.py       # End-to-end pipeline, replay idempotency, 50-run determinism
+    │   ├── test_pravah_api.py           # HTTP endpoints, validation error boundaries (zero 500s)
+    │   └── test_pravah_client.py        # Live & simulated dispatch, circuit breaker trips
+    │
+    ├── test_mdu_contract_adapter.py     # MDU contract negotiation & circuit breaker tests
+    ├── test_persistence_security.py     # Production fail-closed persistence validation tests
+    ├── test_vana_integration.py         # VANA governance, spatial layers & capability access tests
+    └── ... (64 total regression test modules)
 ```
 
 ---
 
-## Changed Files (this task)
+## 2. Core Modules & Responsibilities
 
-| File | Changes |
-|------|---------|
-| `main.py` | +4 inspection endpoints (`/datasets/{id}`, `/datasets/{id}/schema`, `/datasets/{id}/versions`, `/datasets/{id}/provenance`); +3 Phase 8 endpoints (`POST /evidence/{id}`, `GET /evidence/{id}`, `POST /provenance/{id}`); `DatasetNotRetrievableError` 404→400; `/runtime/identity` api_groups updated |
-| `tests/test_central_data_platform_api.py` | +11 new tests for inspection and Phase 8 endpoints; `POST /evidence` test updated to use path param per spec §4.1 |
-| `services/dataset_retrieval_service.py` | Pre-existing — powers all Phase 4 inspection and governed-access |
-| `services/bucket_client.py` | Pre-existing — powers all Phase 8 evidence/provenance bucket operations |
-| `REVIEW_PACKET.md` | This file — Phase 4/8 architectural proofs and self-audit |
-| `CODE_INDEX.md` | This file — directory tree and changed files |
-
----
-
-## New Files (this task)
-
-| File | Purpose |
-|------|---------|
-| `tests/test_central_data_platform_api.py` | 23 integration tests for Phase 4 & 8 endpoints |
-| `CODE_INDEX.md` | This file |
+| Module | Primary Responsibility |
+|--------|------------------------|
+| `models_pravah.py` | Defines immutable event envelopes, ledger entries, replay requests, determinism results, and pipeline schemas using strict Pydantic (`extra="forbid"`). |
+| `services/pravah_ledger.py` | Append-only event log maintaining monotonically increasing sequence numbers, dual-index deduplication, and atomic snapshot persistence. |
+| `services/state_machine.py` | Executes deterministic lifecycle transitions, validates lifecycle graph edges, evaluates RuleEngine rules, serializes canonical state, and computes SHA-256 state hashes. |
+| `services/event_pipeline.py` | Asynchronous coordinator linking replay ledger, state machine, cryptographic audit chain, and downstream Pravah publisher. |
+| `integrations/pravah_client.py` | Pravah event bus adapter with circuit-breaker resilience and deterministic simulated test-double mode. |
+| `api/pravah.py` | REST API routes for `/pravah/events`, `/pravah/ledger`, `/pravah/replay`, `/pravah/state/{id}`, `/pravah/verify-determinism`, and `/pipeline/execute`. |
+| `scripts/verify_deterministic_state.py` | Standalone CLI and programmatic test runner for 50-consecutive-run SHA-256 state hash determinism verification. |
 
 ---
 
-## Endpoint Inventory (Phase 4 + Phase 8)
+## 3. Key Entry Points
 
-### Phase 4 — Central Data Platform (Dataset Retrieval)
-
-| Method | Path | Handler | Service Method | Error Mapping |
-|--------|------|---------|----------------|---------------|
-| GET | `/datasets` | `list_datasets` | `list_datasets()` | — |
-| GET | `/datasets/{dataset_id}` | `get_dataset_detail` | `get_dataset()` | 404 |
-| GET | `/datasets/{dataset_id}/schema` | `get_dataset_schema` | `get_dataset_schema()` | — |
-| GET | `/datasets/{dataset_id}/versions` | `get_dataset_versions` | `get_dataset_versions()` | 404 |
-| GET | `/datasets/{dataset_id}/provenance` | `get_dataset_provenance` | `get_dataset_provenance()` | 404 |
-| POST | `/query` | `query_dataset` | `query()` | 404/400/403 |
-| POST | `/export` | `export_dataset` | `export_dataset()` | 404/400/403 |
-| POST | `/stream` | `stream_dataset` | `stream()` | 404/400/403 |
-| POST | `/reference` | `reference_dataset` | `reference()` | 404/400 |
-
-### Phase 8 — Evidence Preservation (Bucket)
-
-| Method | Path | Handler | Service Method | Error Mapping |
-|--------|------|---------|----------------|---------------|
-| POST | `/evidence/{evidence_id}` | `store_evidence` | `store_evidence()` | 503 |
-| GET | `/evidence/{evidence_id}` | `retrieve_evidence` | `get_evidence()` | 503 |
-| POST | `/provenance/{dataset_id}` | `store_provenance` | `store_provenance()` | 503 |
-| GET | `/provenance/{package_id}` | `get_provenance` | `lineage()` | 404 |
-| GET | `/bucket/status` | `bucket_status` | `status()` | — |
-
-### Runtime
-
-| Method | Path | Handler |
-|--------|------|---------|
-| GET | `/runtime/identity` | `runtime_identity` |
-
----
-
-## Dependency Pinning Verification
-
-```
-fastapi==0.115.8
-uvicorn[standard]==0.34.0
-pydantic==2.13.3
-pydantic-core==2.46.3
-requests==2.34.2
-python-dotenv==1.2.2
-cryptography==49.0.0
-pytest==9.0.3
-pytest-asyncio==0.24.0
-httpx==0.28.1
-numpy==2.5.0
-openpyxl==3.1.5
-pandas==3.0.3
-PyJWT==2.13.0
-SQLAlchemy==2.0.51
-psycopg2-binary==2.9.12
-starlette==0.45.3
-```
-
-✅ Zero unpinned `>=` dependencies. All versions are `==` pinned.
+- **Event Ingestion:** `POST /pravah/events` in `api/pravah.py` -> `EventPipeline.process_event()` in `services/event_pipeline.py`.
+- **Replay Execution:** `POST /pravah/replay` in `api/pravah.py` -> `EventPipeline.replay_ledger()` in `services/event_pipeline.py`.
+- **Pipeline Automation:** `POST /pipeline/execute` in `api/pravah.py` -> `EventPipeline.execute_pipeline()` in `services/event_pipeline.py`.
+- **Deterministic Verification:** `python scripts/verify_deterministic_state.py` or `POST /pravah/verify-determinism`.
+- **Application Startup:** `main.py` -> initializes all singletons, wires `pravah_router`, and adds uniform `RequestValidationError` handler.

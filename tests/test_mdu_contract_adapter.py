@@ -46,6 +46,8 @@ def test_schema_compatibility_falls_back_to_placeholder_when_unconfigured(monkey
 def test_adapter_reports_not_live_when_unconfigured(monkeypatch):
     monkeypatch.delenv("MDU_BASE_URL", raising=False)
     monkeypatch.delenv("MDU_API_KEY", raising=False)
+    adapter = MDUContractAdapter(client=MDUClient(base_url=None, api_key=None))
+    assert adapter.is_live() is False
 
 
 def test_circuit_breaker_opens_after_failures(monkeypatch):
@@ -64,6 +66,3 @@ def test_circuit_breaker_opens_after_failures(monkeypatch):
         client.get_dataset_schema("ds")
 
     assert client._circuit_breaker.state == CircuitBreakerState.OPEN
-
-    adapter = MDUContractAdapter(client=MDUClient(base_url=None, api_key=None))
-    assert adapter.is_live() is False
