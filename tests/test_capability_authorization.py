@@ -93,3 +93,140 @@ def test_request_access_rejects_unregistered_capability_version():
     }
     res = client.post("/access/request", json=payload, headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 403
+
+
+def test_durable_grant_persistence_across_instances(tmp_path):
+    from services.capability_registry_service import CapabilityRegistryService
+    from services.artifact_store import ArtifactStore
+    from models import CapabilityAccessRequest
+
+    store_dir = str(tmp_path / "persist_test_cap_store")
+    grant_store = ArtifactStore(reports_dir=str(tmp_path / "persist_test_grants"))
+
+    svc1 = CapabilityRegistryService(store_dir=store_dir, grant_store=grant_store)
+    access_req = CapabilityAccessRequest(
+        application_id="PERSIST_APP",
+        capability_id="cap-mangrove-monitoring",
+        purpose="environmental_monitoring",
+    )
+    grant1 = svc1.request_access(actor="persist-tester", roles=["ecosystem-reader"], request_data=access_req)
+    assert grant1.authorized is True
+
+    # Fresh instance without memory cache
+    svc2 = CapabilityRegistryService(store_dir=store_dir, grant_store=grant_store)
+    loaded_grant = svc2.get_access_contract(grant1.access_token)
+    assert loaded_grant is not None
+    assert loaded_grant.request_id == grant1.request_id
+    assert loaded_grant.application_id == "PERSIST_APP"
+    assert loaded_grant.capability_id == "cap-mangrove-monitoring"
+
+
+def test_rs256_token_access_request_authorization(monkeypatch):
+    import jwt
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from main import auth_service
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    priv_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode()
+    pub_pem = key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode()
+
+    old_pubkey = auth_service.public_key_pem
+    auth_service.public_key_pem = pub_pem
+    try:
+        # Valid RS256 token from tantra-sarathi for masterdb audience
+        valid_token = jwt.encode(
+            {
+                "sub": "tantra-execution-agent",
+                "roles": ["ecosystem-reader"],
+                "iss": "tantra-sarathi",
+                "aud": "masterdb",
+            },
+            priv_pem,
+            algorithm="RS256",
+        )
+        res = client.post(
+            "/access/request",
+            json={
+                "application_id": "VALID_CONSUMER",
+                "capability_id": "cap-mangrove-monitoring",
+                "purpose": "environmental_monitoring",
+            },
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["authorized"] is True
+
+        # Invalid issuer
+        bad_iss_token = jwt.encode(
+            {
+                "sub": "tantra-execution-agent",
+                "roles": ["ecosystem-reader"],
+                "iss": "evil-untrusted-issuer",
+                "aud": "masterdb",
+            },
+            priv_pem,
+            algorithm="RS256",
+        )
+        res_bad_iss = client.post(
+            "/access/request",
+            json={
+                "application_id": "VALID_CONSUMER",
+                "capability_id": "cap-mangrove-monitoring",
+                "purpose": "environmental_monitoring",
+            },
+            headers={"Authorization": f"Bearer {bad_iss_token}"},
+        )
+        assert res_bad_iss.status_code == 401
+
+        # Invalid audience
+        bad_aud_token = jwt.encode(
+            {
+                "sub": "tantra-execution-agent",
+                "roles": ["ecosystem-reader"],
+                "iss": "tantra-sarathi",
+                "aud": "other-service",
+            },
+            priv_pem,
+            algorithm="RS256",
+        )
+        res_bad_aud = client.post(
+            "/access/request",
+            json={
+                "application_id": "VALID_CONSUMER",
+                "capability_id": "cap-mangrove-monitoring",
+                "purpose": "environmental_monitoring",
+            },
+            headers={"Authorization": f"Bearer {bad_aud_token}"},
+        )
+        assert res_bad_aud.status_code == 401
+
+        # Missing roles claim fails closed
+        no_roles_token = jwt.encode(
+            {
+                "sub": "tantra-execution-agent",
+                "iss": "tantra-sarathi",
+                "aud": "masterdb",
+            },
+            priv_pem,
+            algorithm="RS256",
+        )
+        res_no_roles = client.post(
+            "/access/request",
+            json={
+                "application_id": "VALID_CONSUMER",
+                "capability_id": "cap-mangrove-monitoring",
+                "purpose": "environmental_monitoring",
+            },
+            headers={"Authorization": f"Bearer {no_roles_token}"},
+        )
+        assert res_no_roles.status_code == 401
+    finally:
+        auth_service.public_key_pem = old_pubkey

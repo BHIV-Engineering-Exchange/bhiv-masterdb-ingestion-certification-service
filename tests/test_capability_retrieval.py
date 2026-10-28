@@ -112,3 +112,121 @@ def test_access_grant_cannot_be_reused_by_another_authenticated_actor():
             headers={"Authorization": f"Bearer {other_actor_token}"},
         )
         assert response.status_code == 403
+
+
+def test_revoked_access_grant_denies_retrieval():
+    token = _get_token(actor="DATA_CONSUMER", roles=["ecosystem-reader"])
+    req_res = client.post(
+        "/access/request",
+        json={
+            "application_id": "DATA_CONSUMER",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert req_res.status_code == 200
+    grant = req_res.json()
+
+    # Revoke grant via DELETE /access/{request_id}
+    del_res = client.delete(f"/access/{grant['request_id']}", headers={"Authorization": f"Bearer {token}"})
+    assert del_res.status_code == 200
+    assert del_res.json()["status"] == "revoked"
+
+    # Attempt retrieval with revoked token -> must be rejected with 403
+    ret_res = client.post(
+        "/capabilities/cap-mangrove-monitoring/retrieve",
+        json={
+            "application_id": "DATA_CONSUMER",
+            "access_token": grant["access_token"],
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert ret_res.status_code == 403
+    assert "revoked" in ret_res.text.lower()
+
+
+def test_retrieval_trace_and_execution_correlation():
+    token = _get_token(actor="DATA_CONSUMER", roles=["ecosystem-reader"])
+    req_res = client.post(
+        "/access/request",
+        json={
+            "application_id": "DATA_CONSUMER",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    grant = req_res.json()
+
+    test_trace_id = "trace-tantra-cross-service-001"
+    test_exec_id = "exec-tantra-cross-service-001"
+
+    ret_res = client.post(
+        "/capabilities/cap-mangrove-monitoring/retrieve",
+        json={
+            "application_id": "DATA_CONSUMER",
+            "access_token": grant["access_token"],
+            "trace_id": test_trace_id,
+            "execution_id": test_exec_id,
+            "query_params": {"region": "Sundarbans-North"},
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert ret_res.status_code == 200
+    payload = ret_res.json()
+    assert payload["trace_id"] == test_trace_id
+    assert payload["execution_id"] == test_exec_id
+    assert "content_digest_sha256" in payload["provenance"]
+
+
+def test_expired_access_grant_denies_retrieval():
+    token = _get_token(actor="DATA_CONSUMER", roles=["ecosystem-reader"])
+    req_res = client.post(
+        "/access/request",
+        json={
+            "application_id": "DATA_CONSUMER",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert req_res.status_code == 200
+    grant = req_res.json()
+
+    from main import capability_registry_service
+    contract = capability_registry_service.get_access_contract(grant["access_token"])
+    contract.expires_at = "2020-01-01T00:00:00+00:00"
+
+    ret_res = client.post(
+        "/capabilities/cap-mangrove-monitoring/retrieve",
+        json={
+            "application_id": "DATA_CONSUMER",
+            "access_token": grant["access_token"],
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert ret_res.status_code == 403
+    assert "expired" in ret_res.text.lower()
+
+
+def test_repeated_revoke_behavior():
+    token = _get_token(actor="DATA_CONSUMER", roles=["ecosystem-reader"])
+    req_res = client.post(
+        "/access/request",
+        json={
+            "application_id": "DATA_CONSUMER",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    grant = req_res.json()
+
+    # First revocation succeeds
+    del1 = client.delete(f"/access/{grant['request_id']}", headers={"Authorization": f"Bearer {token}"})
+    assert del1.status_code == 200
+
+    # Second revocation returns 404 (grant not found or already revoked)
+    del2 = client.delete(f"/access/{grant['request_id']}", headers={"Authorization": f"Bearer {token}"})
+    assert del2.status_code == 404

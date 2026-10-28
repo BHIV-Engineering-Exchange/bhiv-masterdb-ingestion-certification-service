@@ -846,6 +846,13 @@ gev_geospatial_candidate_service = GeospatialExportCandidateService(
     mdu_contracts=mdu_contract_adapter,
 )
 
+if _DATABASE_URL:
+    capability_registry_service.sql_store = _sql_store("target_datasets")
+    capability_registry_service.grant_store = _sql_store("capability_grants")
+elif _persist_path("capability_grants"):
+    capability_registry_service.grant_store = ArtifactStore(_persist_path("capability_grants"))
+
+
 
 # --- BCAES Canonical Registry (ecosystem bootstrap) ------------------------
 # Catalogs architectural objects (domains, capabilities, platform services,
@@ -2599,6 +2606,24 @@ def get_access_contract_audit(
     if contract is None:
         raise HTTPException(status_code=404, detail=f"Access contract with request_id '{request_id}' not found.")
     return contract
+
+
+@app.delete("/access/{request_id}")
+def revoke_access_contract(
+    request_id: str,
+    reason: Optional[str] = Query(None),
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    """Revoke an active access contract immediately."""
+    success = capability_registry_service.revoke_access_contract(
+        request_id_or_token=request_id,
+        actor=identity.actor,
+        reason=reason or "Revoked via administrative action.",
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Access contract '{request_id}' not found.")
+    return {"status": "revoked", "request_id": request_id}
+
 
 
 @app.post("/geo-quest/candidates/gev.aircraft_tracking/register")
