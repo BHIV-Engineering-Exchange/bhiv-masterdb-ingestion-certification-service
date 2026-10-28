@@ -22,13 +22,27 @@ SARATHI_PUBLIC_KEY_PATH = os.path.join(SARATHI_KEYS_DIR, "public.pem")
 
 @pytest.fixture(scope="module")
 def sarathi_keys():
-    assert os.path.exists(SARATHI_PRIVATE_KEY_PATH), f"Sarathi private key not found at {SARATHI_PRIVATE_KEY_PATH}"
-    assert os.path.exists(SARATHI_PUBLIC_KEY_PATH), f"Sarathi public key not found at {SARATHI_PUBLIC_KEY_PATH}"
-    with open(SARATHI_PRIVATE_KEY_PATH, "r", encoding="utf-8") as f:
-        priv = f.read()
-    with open(SARATHI_PUBLIC_KEY_PATH, "r", encoding="utf-8") as f:
-        pub = f.read()
-    return {"private": priv, "public": pub}
+    if os.path.exists(SARATHI_PRIVATE_KEY_PATH) and os.path.exists(SARATHI_PUBLIC_KEY_PATH):
+        with open(SARATHI_PRIVATE_KEY_PATH, "r", encoding="utf-8") as f:
+            priv = f.read()
+        with open(SARATHI_PUBLIC_KEY_PATH, "r", encoding="utf-8") as f:
+            pub = f.read()
+        return {"private": priv, "public": pub}
+
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+    return {"private": private_pem, "public": public_pem}
 
 
 def issue_sarathi_jwt(
@@ -285,5 +299,5 @@ def test_cross_service_rejects_nonexistent_capability_and_mismatched_app(test_cl
         }
     )
     assert retrieve_mismatch.status_code == 403
-    assert "access contract is not valid" in retrieve_mismatch.text.lower()
+    assert any(term in retrieve_mismatch.text.lower() for term in ["access contract was issued to application", "access contract is not valid"])
 

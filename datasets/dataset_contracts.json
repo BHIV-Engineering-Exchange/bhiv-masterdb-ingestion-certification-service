@@ -571,29 +571,47 @@
       "dataset_id": "ds-gev-opensky-flights",
       "name": "God's Eye View - OpenSky Network Live Air Traffic Telemetry",
       "capability_id": "cap-gev-flight-tracking-staged",
-      "source_id": "src-gev-opensky",
-      "file_location": "datasets/opensky_states.json",
-      "record_count": 17,
-      "synthetic_records": 0,
       "version": "1.0.0",
       "description": "Authentic OpenSky Network ADS-B Mode-S aircraft state vectors for God's Eye View 3D Globe flight tracking.",
-      "status": "active",
+      "status": "candidate",
       "visibility": "public",
       "sensitivity": "low",
       "domain": "geospatial",
       "allowed_domains": [
         "geospatial",
-        "surveillance",
-        "aerospace"
+        "aviation"
       ],
-      "contract_kind": "telemetry_dataset",
-      "licence": "Open Data Community License (ODbL v1.0)",
+      "contract_kind": "dataset",
+      "schema": {
+        "$ref": "#/shared_schemas/opensky_states_v1"
+      },
+      "allowed_purposes": [
+        "flight_tracking",
+        "airspace_monitoring",
+        "geospatial_visualization"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "bhiv.geospatial_query_engine",
+          "name": "BHIV Geospatial MasterDB Query Engine",
+          "domain": "geospatial"
+        },
+        {
+          "consumer_id": "gev.cesium_3d_globe",
+          "name": "God's Eye View 3D Airspace Globe",
+          "domain": "geospatial"
+        }
+      ],
       "provenance": {
         "source": "The OpenSky Network via God's Eye View Proxy",
+        "source_id": "src-gev-opensky",
+        "authority": "The OpenSky Network / Bilawal Sidhu God's Eye View Proxy",
         "repository": "https://github.com/bilawalsidhu/gods-eye-view",
         "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30",
         "proxy_endpoint": "/api/opensky",
-        "synthetic": false
+        "licence": "Open Data Community License (ODbL v1.0)",
+        "synthetic": false,
+        "record_count": 17
       }
     }
   ],
@@ -1053,6 +1071,16 @@
         "provenance"
       ],
       "additionalProperties": false
+    },
+    "opensky_states_v1": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "OpenSky Network State Vector Telemetry Schema",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 17,
+        "maxItems": 17
+      }
     }
   }
 }
