@@ -73,6 +73,7 @@ from services.mdu_client import MDUUnavailableError
 from services.mdu_contract_adapter import MDUContractAdapter
 from services.package_registry_service import (
     InvalidTransitionError,
+    PackageAlreadyExistsError,
     PackageNotFoundError,
     PackageRegistryService,
 )
@@ -285,11 +286,13 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 artifact_store = ArtifactStore()
 validation_service = ValidationService(artifact_store=artifact_store)
+report_service = ReportService(artifact_store=artifact_store)
+package_registry_service = PackageRegistryService(report_service=report_service)
 certification_service = CertificationService(
     validation_service=validation_service,
     artifact_store=artifact_store,
+    package_registry=package_registry_service,
 )
-report_service = ReportService(artifact_store=artifact_store)
 
 # --- Database Targets: attach the ingestion/certification pipeline above to
 # the 8 MASTERDB target databases (VectorDB, GraphDB, MetadataDB,
@@ -308,11 +311,11 @@ upload_service = UploadService()
 
 # --- MASTERDB knowledge platform runtime (Knowledge Package Lifecycle,
 # Provenance/Lineage, Retrieval Readiness) ---------------------------------
-package_registry_service = PackageRegistryService()
 knowledge_object_service = KnowledgeObjectService(registry=package_registry_service)
 retrieval_readiness_service = RetrievalReadinessService(
     registry=package_registry_service,
     knowledge_object_service=knowledge_object_service,
+    report_service=report_service,
 )
 
 # --- Phase 4 — MASTERDB Dataset Retrieval & Phase 8 — Bucket Evidence -------
@@ -750,18 +753,22 @@ def cancel_upload(upload_id: str, reason: UploadCancelRequest,
 
 @app.post("/packages/register")
 def register_package(request: PackageRegisterRequest) -> dict:
-    package = package_registry_service.register(
-        dataset_id=request.dataset_id,
-        dataset_version=request.dataset_version,
-        schema_version=request.schema_version,
-        board=request.board,
-        medium=request.medium,
-        language=request.language,
-        owner=request.owner,
-        actor=request.actor,
-        reason=request.reason,
-    )
-    return package.model_dump(mode="json")
+    try:
+        package = package_registry_service.register(
+            dataset_id=request.dataset_id,
+            dataset_version=request.dataset_version,
+            schema_version=request.schema_version,
+            board=request.board,
+            medium=request.medium,
+            language=request.language,
+            owner=request.owner,
+            actor=request.actor,
+            reason=request.reason,
+            package_id=request.package_id,
+        )
+        return package.model_dump(mode="json")
+    except PackageAlreadyExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @app.post("/packages/promote")
@@ -933,18 +940,22 @@ def mdu_schema_compatibility(dataset_id: str, local_schema_version: str) -> dict
 
 @app.post("/tantra/datasets/register")
 def tantra_register_dataset(request: PackageRegisterRequest) -> dict:
-    package = tantra_interface_service.register_dataset(
-        dataset_id=request.dataset_id,
-        dataset_version=request.dataset_version,
-        schema_version=request.schema_version,
-        board=request.board,
-        medium=request.medium,
-        language=request.language,
-        owner=request.owner,
-        actor=request.actor,
-        reason=request.reason,
-    )
-    return package.model_dump(mode="json")
+    try:
+        package = tantra_interface_service.register_dataset(
+            dataset_id=request.dataset_id,
+            dataset_version=request.dataset_version,
+            schema_version=request.schema_version,
+            board=request.board,
+            medium=request.medium,
+            language=request.language,
+            owner=request.owner,
+            actor=request.actor,
+            reason=request.reason,
+            package_id=request.package_id,
+        )
+        return package.model_dump(mode="json")
+    except PackageAlreadyExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @app.get("/tantra/packages/{package_id}/retrieval-readiness")

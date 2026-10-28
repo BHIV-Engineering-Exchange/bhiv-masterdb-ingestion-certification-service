@@ -114,12 +114,29 @@ Consuming systems registering datasets or artifact references MUST submit comple
 
 Consumers MUST NOT attempt to retrieve packages directly from storage without verifying retrieval readiness.
 
+### Canonical Retrieval Readiness Values:
+Retrieval readiness is distinct from package lifecycle status. It is governed by four canonical states evaluated deterministically:
+
+1. `NOT_RETRIEVABLE`:
+   - Package is not yet certified (`status` in `REGISTERED`, `INGESTED`, `VALIDATED`, `VERIFIED`).
+   - OR package has been withdrawn (`DEPRECATED`, `ARCHIVED`).
+   - OR dataset certification failed (`state: "REJECTED"` or `eligible_for_masterdb: false`).
+2. `PARTIALLY_RETRIEVABLE`:
+   - Package is certified or retrieval-ready, but required metadata (`board`, `medium`, `language`, `owner`, `schema_version`) is incomplete.
+   - OR no Knowledge Object with a valid `source_reference` has been linked via the Provenance Engine.
+3. `RETRIEVABLE`:
+   - Package status is `CERTIFIED`, active (not deprecated or archived), all required metadata fields are present, and valid lineage is registered.
+4. `CERTIFIED_RETRIEVABLE`:
+   - Package status has been promoted to `RETRIEVAL_READY`, active, dataset certification is verified clean, all metadata is complete, and valid lineage is registered.
+
 ### Minimum Consumer Requirements:
 1. **Pre-Retrieval Readiness Check:**
    - Prior to fetching dataset records, consumers MUST call `GET /packages/{package_id}/retrieval` (or `GET /tantra/packages/{package_id}/retrieval-readiness`).
    - Consumers MUST NOT ingest data unless the returned status is `CERTIFIED_RETRIEVABLE` (or `RETRIEVABLE` for verified non-runtime releases).
    - If the status is `NOT_RETRIEVABLE` or `PARTIALLY_RETRIEVABLE`, the consumer MUST inspect `corrective_actions` and halt downstream processing.
-2. **Capability-Gated Retrieval (`POST /capabilities/{capability_id}/retrieve`):**
+2. **Endpoint Consistency:**
+   - `GET /packages/{package_id}/retrieval`, `GET /tantra/packages/{package_id}/retrieval-readiness`, and the `retrieval_readiness` block inside `GET /tantra/packages/{package_id}/runtime` evaluate the exact same rules and return identical readiness values.
+3. **Capability-Gated Retrieval (`POST /capabilities/{capability_id}/retrieve`):**
    - Consumers MUST provide valid credentials, consumer ID, and required dataset version:
      ```json
      {
@@ -129,7 +146,7 @@ Consumers MUST NOT attempt to retrieve packages directly from storage without ve
        "credentials": {"token": "Bearer <jwt>"}
      }
      ```
-3. **Runtime Package Delivery (`GET /tantra/packages/{package_id}/runtime`):**
+4. **Runtime Package Delivery (`GET /tantra/packages/{package_id}/runtime`):**
    - Delivers the consolidated runtime envelope: package metadata, schema hash, retrieval clearance, and access endpoints.
 
 ---
@@ -204,7 +221,16 @@ Every package in MASTERDB MUST have verifiable provenance before entering operat
 
 ## 8. Validation & Certification Contract
 
-Validation and certification are distinct quality gates. Validation asserts structural health; certification asserts governance compliance.
+Validation and certification are distinct quality gates with distinct operational state models.
+
+- **Validation (`POST /validate`):** Evaluates structural artifact integrity (column names, types, completeness, nullness, schema conformance) and yields an `integrity_score` (0.0 to 100.0). Results in `CertificationState.VALIDATED`.
+- **Certification (`POST /certify`):** Evaluates governance compliance against four strict criteria:
+  1. `classification == "Trusted"`
+  2. `integrity_score >= 90.0`
+  3. `risk_flags` is empty (0 flags)
+  4. `recommendations` is empty (0 unaddressed recommendations)
+  - If all criteria pass: dataset reaches `CertificationState.CERTIFIED` (`eligible_for_masterdb: true`).
+  - If any criterion fails: dataset reaches `CertificationState.REJECTED` (`eligible_for_masterdb: false`).
 
 ```
 +---------------+      POST /validate      +-----------------+      POST /certify      +---------------+
@@ -217,40 +243,40 @@ Validation and certification are distinct quality gates. Validation asserts stru
                                                                                        +---------------+
 ```
 
-### Minimum Consumer Requirements:
-1. **Validation Submission (`POST /validate`):**
-   - Payload MUST supply valid file paths: `dataset_path` (CSV/JSON) and `metadata_path`.
-   - The engine validates column types, nullness, completeness, and calculates an `integrity_score` (0.0 to 100.0).
-2. **Report Retrieval (`GET /report/{dataset_id}`):**
-   - Consumers MUST inspect diagnostic reports for `risk_flags` and `recommendations`.
-3. **Certification Rules (`POST /certify`):**
-   - Certification transitions to `CERTIFIED` ONLY when:
-     - Integrity score is $\ge 90.0$.
-     - Classification is `Trusted`.
-     - Zero risk flags exist.
-     - Zero unaddressed recommendations remain.
-   - Failing any rule transitions the dataset to `REJECTED`. Consumers MUST NOT ingest `REJECTED` datasets.
+### Distinction Between Certification State and Package Lifecycle State:
+- `CertificationState` (`NEW`, `VALIDATED`, `VERIFIED`, `CERTIFIED`, `REJECTED`) tracks the quality gate assessment of a dataset artifact.
+- `PackageStatus` (`REGISTERED`, `INGESTED`, `VALIDATED`, `VERIFIED`, `CERTIFIED`, `RETRIEVAL_READY`, `DEPRECATED`, `ARCHIVED`) tracks the release bundle lifecycle in the package registry.
+- `REJECTED` is a `CertificationState`, NOT a `PackageStatus`.
+- **Enforced Coupling Rule:** If a dataset's certification state is `REJECTED`, its corresponding package release CANNOT be promoted to `CERTIFIED` or `RETRIEVAL_READY`. Any attempt to promote a package whose dataset certification failed is rejected with HTTP 400 (`InvalidTransitionError`).
+- **Demotion on Failed Re-certification:** If an existing `CERTIFIED` or `RETRIEVAL_READY` package undergoes re-certification and fails, the package is immediately transitioned to `DEPRECATED` with reason `"Certification failed: dataset transitioned to REJECTED."` This guarantees a failed certification never leaves a package appearing certified.
 
 ---
 
 ## 9. Versioning & Operational Lifecycle Contract
 
-All package status changes MUST strictly follow the canonical `PACKAGE_LIFECYCLE_GRAPH`.
+All package status changes MUST strictly follow the canonical `PACKAGE_LIFECYCLE_GRAPH`. Allowed transitions are defined in one authoritative place (`models.py`).
+
+### Canonical Package Lifecycle States (8 States):
+`REGISTERED`, `INGESTED`, `VALIDATED`, `VERIFIED`, `CERTIFIED`, `RETRIEVAL_READY`, `DEPRECATED`, `ARCHIVED`.
+
+### Authoritative Transition Rules:
+- $\text{REGISTERED} \longrightarrow [\text{INGESTED}, \text{DEPRECATED}]$
+- $\text{INGESTED} \longrightarrow [\text{VALIDATED}, \text{DEPRECATED}]$
+- $\text{VALIDATED} \longrightarrow [\text{VERIFIED}, \text{DEPRECATED}]$
+- $\text{VERIFIED} \longrightarrow [\text{CERTIFIED}, \text{DEPRECATED}]$ (Requires verified certification)
+- $\text{CERTIFIED} \longrightarrow [\text{RETRIEVAL\_READY}, \text{DEPRECATED}]$
+- $\text{RETRIEVAL\_READY} \longrightarrow [\text{DEPRECATED}]$
+- $\text{DEPRECATED} \longrightarrow [\text{ARCHIVED}]$ (Only entry point to ARCHIVED)
+- $\text{ARCHIVED} \longrightarrow []$ (Terminal state; no transitions permitted)
 
 ### Minimum Consumer Requirements:
-1. **Allowed Transition Paths:**
-   - $\text{REGISTERED} \longrightarrow \text{INGESTED}$
-   - $\text{INGESTED} \longrightarrow \text{VALIDATED}$
-   - $\text{VALIDATED} \longrightarrow \text{VERIFIED}$
-   - $\text{VERIFIED} \longrightarrow \text{CERTIFIED}$
-   - $\text{CERTIFIED} \longrightarrow \text{RETRIEVAL\_READY}$
-   - $\text{ANY ACTIVE STATE} \longrightarrow \text{DEPRECATED}$
-   - $\text{DEPRECATED} \longrightarrow \text{ARCHIVED}$ (Terminal state)
-2. **Promotion Request (`POST /packages/promote`):**
+1. **Promotion Request (`POST /packages/promote`):**
    - Payload MUST specify: `package_id`, `to_status`, `actor`, `reason`.
    - Consumers MUST NOT attempt illegal skips (e.g. `REGISTERED -> CERTIFIED`). All invalid transitions are rejected with HTTP 400 and are never recorded in history.
-3. **Deprecation Handling:**
-   - Consumers MUST handle deprecation notifications. When a package transitions to `DEPRECATED`, its retrieval status immediately drops to `NOT_RETRIEVABLE`.
+2. **Deprecation Handling (`POST /packages/deprecate`):**
+   - Consumers MAY deprecate any active package. When a package transitions to `DEPRECATED`, its retrieval status immediately drops to `NOT_RETRIEVABLE`.
+3. **Audit & Replay:**
+   - Consumers SHOULD verify transition audit completeness via `GET /packages/{id}/audit` and replay consistency via `GET /packages/{id}/replay` (`drift_detected: false`).
 
 ---
 
@@ -335,11 +361,11 @@ Before any consuming system is certified for production deployment, it MUST prov
 
 ## Ecosystem Compliance Summary
 
-| System | Primary Integration Seam | Enforced Minimum Contract Dimensions | Current Status |
-|---|---|---|---|
-| **TANTRA** | `/tantra/*` Façade | Discovery (§1), Retrieval (§4), Observability (§10) | **PARTIAL** (HTTP façade verified; Kafka stream blocked) |
-| **MDU** | `MDUContractAdapter` | Semantics (§5), Provenance (§7), Versioning (§9) | **PARTIAL** (Local negotiation verified; live creds blocked) |
-| **MANTRA** | `/discovery/packages`, `/capabilities/*` | Discovery (§1), Identity (§2), Retrieval (§4) | **UNKNOWN** (Awaiting formal consumer specification) |
-| **YANTRA** | `/niyantran/*`, `/parikshak/*`, `/ingest` | Identity (§2), Registration (§3), Resilience (§11) | **PARTIAL** (Unit tests passing; live orchestrator blocked) |
-| **VAJRA** | `SecurityMiddleware`, `/production/*` | Authorization (§6), Observability & Audit (§10) | **VERIFIED (LOCAL)** / **PARTIAL (DEPLOYED)** |
-| **BIQOS** | `ValidationService`, `/validate` | Validation (§8), Observability (§10), Testing (§12) | **VERIFIED (LOCAL)** / **PARTIAL (DEPLOYED)** |
+| System | Role & Integration Boundary | Actual Interface Found | Confirmed Owner | Evidence & Type | Status | Test Execution Level | Concrete Next Action |
+|---|---|---|---|---|---|---|---|
+| **TANTRA** | Central runtime & orchestration consuming governed packages | `/tantra/*` HTTP Façade (`/tantra/datasets/register`, `/tantra/packages/{id}/retrieval-readiness`, `/tantra/packages/{id}/runtime`, `/tantra/capabilities`) | Harsha / TANTRA Team | `DEPLOYED_API_TEST` (Live 22-step flow executed on Render), `LOCAL_AUTOMATED_TEST` (`test_tantra_interface_service.py`) | **VERIFIED** (HTTP Façade); **PARTIAL** (External Kafka stream) | Live Deployed API & Local Automated Tests | Finalize live production Kafka topic subscription for asynchronous event streaming. |
+| **MDU** | Semantic, unit, vocabulary, schema & provenance authority | `MDUContractAdapter`, `/mdu/status`, `/mdu/schema/{id}`, `/mdu/provenance/{id}`, `/mdu/schema-compatibility/{id}` | Nupur / MDU Team | `DEPLOYED_API_TEST` (`/mdu/status` returned HTTP 200 on Render), `LOCAL_AUTOMATED_TEST` (`test_mdu_contract_adapter.py`) | **PARTIAL** (Contract & Fallback verified; live remote credentials blocked) | Live Deployed Read-Only & Local Fallback Mock | Obtain live production `MDU_API_KEY` to decommission local fallback mode. |
+| **MANTRA** | Analytics, spatial intelligence & model runtime | Catalog discovery `/discovery/packages`, capability retrieval `/capabilities/*` | Unconfirmed | `SOURCE_CODE_INSPECTION`, `DOCUMENTATION_ONLY` | **UNKNOWN** (Awaiting formal interface specification) | Not Executed Live | Obtain formal MANTRA consumption specification and candidate integration contracts. |
+| **YANTRA** | Operational task governance & automated pipeline execution | Operational sync (`/niyantran/*`, `/parikshak/*`), controlled ingestion (`/ingest`) | Unconfirmed | `LOCAL_AUTOMATED_TEST` (`test_operational_sync.py`, `test_database_router_service.py`) | **PARTIAL** (Local handlers and DB router verified; external orchestrator live push unverified) | Local Automated Tests Only | Schedule live push verification with NIYANTRAN and PARIKSHAK task orchestrators. |
+| **VAJRA** | Enterprise perimeter security & RBAC enforcement | `SecurityMiddleware`, JWT Bearer verification, `/production/*` endpoints | Security Team | `DEPLOYED_API_TEST` (Confirmed 401 fail-closed on unauthenticated endpoints), `LOCAL_AUTOMATED_TEST` (`test_authentication_security.py`) | **VERIFIED (LOCAL)** / **PARTIAL (DEPLOYED)** (Render instance `AUTH_PASSWORD` unset) | Live Deployed Status Check & Local Automated Tests | Configure persistent `AUTH_PASSWORD` and `AUTH_JWT_SECRET` in Render deployment environment. |
+| **BIQOS** | Data quality, validation rules & integrity scoring | `ValidationService`, `CertificationService`, `/validate`, `/certify`, `/report/{id}` | Kavy Changela | `DEPLOYED_API_TEST` (Live schema introspection), `LOCAL_AUTOMATED_TEST` (`test_validation_service.py`, `test_certification_service.py`) | **VERIFIED** | Live Schema Verification & Local Automated Tests | Maintain governance threshold rules (integrity score $\ge 90$, Trusted, 0 flags, 0 recommendations). |
