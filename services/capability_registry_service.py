@@ -1020,7 +1020,7 @@ class CapabilityRegistryService:
 
         # Validate consumer/application binding
         if retrieve_req.application_id and retrieve_req.application_id != contract.application_id:
-            reason = f"Access contract was issued to application '{contract.application_id}', not '{retrieve_req.application_id}'."
+            reason = f"The access contract is not valid for this application: issued to '{contract.application_id}', not '{retrieve_req.application_id}'."
             self._emit_audit(
                 request_id=contract.request_id,
                 actor=actor,
