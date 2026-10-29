@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 if "PYTEST_CURRENT_TEST" not in os.environ:
     load_dotenv()
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 
@@ -186,6 +186,7 @@ from services.state_machine import PravahStateMachine
 from services.event_pipeline import EventPipeline
 
 from database_targets.models import (
+    IdempotencyConflictError,
     IngestRequest,
     IngestionFormat,
     IngestionJobStatus,
@@ -993,17 +994,31 @@ def get_target_database_records(
 
 
 @app.post("/ingest", status_code=201)
-def ingest_dataset(request: IngestRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
-    job = database_router_service.ingest(
-        dataset_id=request.dataset_id,
-        target_database=request.target_database,
-        source_format=request.source_format,
-        actor=identity.actor,
-        roles=identity.roles,
-        package_id=request.package_id,
-        metadata=request.metadata,
-        upload_id=request.upload_id,  # P0-3: propagate upload linkage
+def ingest_dataset(
+    request: IngestRequest,
+    x_idempotency_key: Optional[str] = Header(None, alias="X-Idempotency-Key"),
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    idempotency_key = (
+        request.idempotency_key
+        or x_idempotency_key
+        or (request.metadata.get("idempotency_key") if request.metadata else None)
     )
+    try:
+        job = database_router_service.ingest(
+            dataset_id=request.dataset_id,
+            target_database=request.target_database,
+            source_format=request.source_format,
+            actor=identity.actor,
+            roles=identity.roles,
+            package_id=request.package_id,
+            metadata=request.metadata,
+            upload_id=request.upload_id,  # P0-3: propagate upload linkage
+            trace_id=request.trace_id,
+            idempotency_key=idempotency_key,
+        )
+    except IdempotencyConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     audit_logger.info(
         "ingest job_id=%s dataset_id=%s target=%s actor=%s status=%s",
         job.job_id, job.dataset_id, job.target_database.value, identity.actor, job.status.value,
@@ -1057,7 +1072,8 @@ def initiate_upload(request: UploadInitiationRequest, identity: AuthIdentity = D
             actor=identity.actor, roles=identity.roles, checksum_sha256=request.checksum_sha256,
             classification=request.classification, source_reference=request.source_reference,
             provenance_metadata=request.provenance_metadata, schema_version=request.schema_version,
-            product_source=request.product_source, intended_use=request.intended_use, metadata=request.metadata)
+            product_source=request.product_source, intended_use=request.intended_use, metadata=request.metadata,
+            trace_id=request.trace_id)
         audit_logger.info("upload.initiate actor=%s upload_id=%s filename=%s size=%d",
             identity.actor, job.upload_id, request.filename, request.file_size)
         return {"upload_id": job.upload_id, "trace_id": job.trace_id, "status": job.status.value,

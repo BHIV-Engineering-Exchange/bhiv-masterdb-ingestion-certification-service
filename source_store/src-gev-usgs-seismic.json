@@ -10,14 +10,20 @@
     "reliability_limitations": "PRELIMINARY_AUTOMATED_MAGNITUDE_REVISIONS",
     "attribution": "Data courtesy of the U.S. Geological Survey",
     "connector": "gods_eye_view_connector",
-    "last_validation": "2026-10-19T12:53:57.965656+00:00",
+    "last_validation": "NOT VERIFIED",
     "status": "ACTIVE",
     "provenance_reference": {
         "provider": "USGS",
         "repository": "https://github.com/bilawalsidhu/gods-eye-view",
-        "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30"
+        "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30",
+        "last_fetch_status": "PENDING",
+        "last_error": "successful_fetch_and_storage_readback_not_confirmed",
+        "last_verification": {
+            "status": "PENDING",
+            "stored_dataset_records": 0
+        }
     },
     "write_authority_confirmed": true,
     "created_at": "2026-10-19T12:53:57.965656+00:00",
-    "updated_at": "2026-10-19T12:53:57.965656+00:00"
+    "updated_at": "2026-10-29T08:12:51.370878+00:00"
 }

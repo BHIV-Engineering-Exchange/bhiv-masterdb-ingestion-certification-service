@@ -1,0 +1,25 @@
+{
+    "source_id": "src-gev-noaa-nhc-cyclone-status",
+    "name": "God's Eye View - NOAA NHC/CPHC Current Tropical Cyclone Status",
+    "authority": "NOAA National Hurricane Center / Central Pacific Hurricane Center",
+    "source_type": "CURRENT_TROPICAL_CYCLONE_ADVISORY_JSON",
+    "licence": "US_GOVERNMENT_PUBLIC_DOMAIN",
+    "access_method": "NOAA_CURRENTSTORMS_JSON_VIA_GODS_EYE_VIEW",
+    "geographic_coverage": "ATLANTIC_AND_EASTERN_CENTRAL_NORTH_PACIFIC; NOT_WORLDWIDE",
+    "update_characteristics": "CURRENT_ADVISORY_AND_STORM_POSITION; PROVIDER_REFRESHES_WITH_5_MINUTE_CACHE",
+    "reliability_limitations": "ADVISORY_POSITIONS_AND_INTENSITY_ARE_SUBJECT_TO_OFFICIAL_REVISION; ONLY_ACTIVE_STORMS",
+    "attribution": "NOAA/NWS National Hurricane Center / Central Pacific Hurricane Center",
+    "connector": "integrations.noaa_cyclone_connector.fetch_current_cyclones",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "NOAA NHC / CPHC",
+        "upstream": "https://www.nhc.noaa.gov/CurrentStorms.json",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "server/providers/cyclones.js",
+        "last_fetch_status": "NOT VERIFIED"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:51.013131+00:00",
+    "updated_at": "2026-10-29T08:12:51.013143+00:00"
+}

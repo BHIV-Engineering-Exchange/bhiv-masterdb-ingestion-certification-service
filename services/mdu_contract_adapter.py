@@ -113,7 +113,7 @@ class MDUContractAdapter:
     ) -> None:
         self.snapshot = snapshot or MDUContractSnapshot()
         self.client = client or MDUClient()
-        # canonical_id -> MDU internal UUID. Confirmed live 2026-07-08:
+        # canonical_id -> MDU internal UUID. Confirmed live:
         # /schemas/dataset/{id} and /datasets/{id}/provenance require MDU's
         # internal UUID, while MASTERDB's registry only knows the canonical
         # string ID (e.g. "BHIV-DS-MARITIME-AIS-LIVE-001"). The canonical
@@ -121,7 +121,7 @@ class MDUContractAdapter:
         # resolve through that once per process and cache the result.
         self._id_resolution_cache: Dict[str, str] = {}
 
-    def _resolve_mdu_id(self, dataset_id: str) -> str:
+    def _resolve_mdu_id(self, dataset_id: str, trace_id: Optional[str] = None) -> str:
         """
         Resolve a MASTERDB dataset_id (canonical string or already a UUID)
         to the internal UUID MDU's schema/provenance endpoints require.
@@ -135,7 +135,7 @@ class MDUContractAdapter:
         if dataset_id in self._id_resolution_cache:
             return self._id_resolution_cache[dataset_id]
 
-        canonical = self.client.get_canonical_dataset(dataset_id)
+        canonical = self.client.get_canonical_dataset(dataset_id, trace_id=trace_id)
         resolved = canonical.get("id")
         if not resolved:
             raise MDUUnavailableError(
@@ -166,7 +166,7 @@ class MDUContractAdapter:
     def is_live(self) -> bool:
         return self.client.is_configured()
 
-    def fetch_schema_contract(self, dataset_id: str) -> Dict[str, Any]:
+    def fetch_schema_contract(self, dataset_id: str, trace_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Fetch MDU's canonical (current) schema for a dataset. Raises
         MDUUnavailableError if MDU is unconfigured/unreachable — callers
@@ -178,21 +178,16 @@ class MDUContractAdapter:
         MDU's schema endpoint only accepts its own UUID.
 
         MDU returns a LIST of schema version records (schema history), not
-        a single object -- confirmed live 2026-07-08. This method returns
-        only the current (index 0) version, since callers (and this
-        function's own -> Dict[str, Any] contract, and main.py's
-        `-> dict` route annotation) expect a single schema object, not a
-        version history. If the full history is needed later, add a
-        separate `fetch_schema_history()` method rather than changing this
-        one's return shape.
+        a single object. This method returns only the current (index 0)
+        version.
         """
-        resolved_id = self._resolve_mdu_id(dataset_id)
-        schema = self.client.get_dataset_schema(resolved_id)
+        resolved_id = self._resolve_mdu_id(dataset_id, trace_id=trace_id)
+        schema = self.client.get_dataset_schema(resolved_id, trace_id=trace_id)
         if isinstance(schema, list):
             schema = schema[0] if schema else {}
         return schema
 
-    def fetch_provenance_contract(self, dataset_id: str) -> Dict[str, Any]:
+    def fetch_provenance_contract(self, dataset_id: str, trace_id: Optional[str] = None) -> Any:
         """
         Fetch MDU's provenance/lineage chain for a dataset, verbatim.
 
@@ -200,14 +195,99 @@ class MDUContractAdapter:
         internal UUID; resolves the former to the latter internally, since
         MDU's provenance endpoint only accepts its own UUID.
         """
-        resolved_id = self._resolve_mdu_id(dataset_id)
-        return self.client.get_dataset_provenance(resolved_id)
+        resolved_id = self._resolve_mdu_id(dataset_id, trace_id=trace_id)
+        return self.client.get_dataset_provenance(resolved_id, trace_id=trace_id)
 
-    def fetch_canonical_dataset(self, dataset_id: str) -> Dict[str, Any]:
-        return self.client.get_canonical_dataset(dataset_id)
+    def fetch_dataset_relationships(self, dataset_id: str, trace_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Fetch lineage relationships involving a dataset from MDU.
+        """
+        resolved_id = self._resolve_mdu_id(dataset_id, trace_id=trace_id)
+        relationships = self.client.get_dataset_relationships(resolved_id, trace_id=trace_id)
+        return relationships if isinstance(relationships, list) else []
+
+    def fetch_canonical_dataset(self, dataset_id: str, trace_id: Optional[str] = None) -> Dict[str, Any]:
+        return self.client.get_canonical_dataset(dataset_id, trace_id=trace_id)
+
+    # -- Provenance and Lineage Mutation --------------------------------------
+
+    def record_provenance_event(
+        self,
+        dataset_id: str,
+        event_type: str,
+        recorded_by: str = "MASTERDB",
+        source_system: str = "MASTERDB",
+        source_reference: Optional[str] = None,
+        ingestion_pipeline: Optional[str] = None,
+        transformation_reference: Optional[str] = None,
+        trust_at_event: Optional[str] = None,
+        notes: Optional[str] = None,
+        is_replay_safe: bool = True,
+        replay_context: Optional[Dict[str, Any]] = None,
+        trace_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Submit a new provenance event for a dataset to MDU.
+        Resolves canonical dataset_id to MDU internal UUID automatically.
+        """
+        resolved_id = self._resolve_mdu_id(dataset_id, trace_id=trace_id)
+        payload: Dict[str, Any] = {
+            "event_type": event_type,
+            "recorded_by": recorded_by,
+            "source_system": source_system,
+            "is_replay_safe": is_replay_safe,
+        }
+        if source_reference is not None:
+            payload["source_reference"] = source_reference
+        if ingestion_pipeline is not None:
+            payload["ingestion_pipeline"] = ingestion_pipeline
+        if transformation_reference is not None:
+            payload["transformation_reference"] = transformation_reference
+        if trust_at_event is not None:
+            payload["trust_at_event"] = trust_at_event
+        if notes is not None:
+            payload["notes"] = notes
+        if replay_context is not None:
+            payload["replay_context"] = replay_context
+
+        return self.client.record_provenance(resolved_id, payload, trace_id=trace_id)
+
+    def create_dataset_relationship(
+        self,
+        parent_dataset_id: str,
+        child_dataset_id: str,
+        relationship_type: str = "DERIVED_FROM",
+        created_by: str = "MASTERDB",
+        description: Optional[str] = None,
+        transformation_notes: Optional[str] = None,
+        chain_replay_safe: bool = True,
+        trace_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Record a lineage relationship edge between parent and child datasets in MDU.
+        Resolves canonical dataset IDs to MDU internal UUIDs automatically.
+        """
+        parent_uuid = self._resolve_mdu_id(parent_dataset_id, trace_id=trace_id)
+        child_uuid = self._resolve_mdu_id(child_dataset_id, trace_id=trace_id)
+
+        payload: Dict[str, Any] = {
+            "parent_dataset_id": parent_uuid,
+            "child_dataset_id": child_uuid,
+            "relationship_type": relationship_type,
+            "created_by": created_by,
+            "chain_replay_safe": chain_replay_safe,
+        }
+        if description is not None:
+            payload["description"] = description
+        if transformation_notes is not None:
+            payload["transformation_notes"] = transformation_notes
+
+        return self.client.create_relationship(payload, trace_id=trace_id)
+
+    # -- Schema negotiation ---------------------------------------------------
 
     def validate_schema_compatibility(
-        self, dataset_id: str, local_schema_version: str
+        self, dataset_id: str, local_schema_version: str, trace_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Compare MASTERDB's locally-declared schema_version for a package
@@ -226,8 +306,8 @@ class MDUContractAdapter:
                 "known_gaps": self.known_gaps(),
             }
         try:
-            resolved_id = self._resolve_mdu_id(dataset_id)
-            schema = self.client.get_dataset_schema(resolved_id)
+            resolved_id = self._resolve_mdu_id(dataset_id, trace_id=trace_id)
+            schema = self.client.get_dataset_schema(resolved_id, trace_id=trace_id)
         except MDUUnavailableError as exc:
             return {
                 "source": "placeholder",
@@ -237,12 +317,6 @@ class MDUContractAdapter:
                 "known_gaps": self.known_gaps(),
             }
 
-        # MDU returns a list of schema version records (schema history), not
-        # a single object. Confirmed live 2026-07-08 via
-        # scripts/confirm_mdu_contract.py against
-        # BHIV-DS-MARITIME-AIS-LIVE-001. Using index 0 as "current" pending
-        # confirmation from Nupur on whether MDU guarantees ordering, or
-        # whether MASTERDB should instead sort by frozen_at/created_at.
         if isinstance(schema, list):
             schema = schema[0] if schema else {}
 
@@ -265,10 +339,6 @@ class MDUContractAdapter:
           - equal strings              -> compatible, exact match
           - equal major, differing minor -> compatible, with a warning
           - differing major             -> incompatible
-
-        This rule is MASTERDB's own negotiation policy (how MASTERDB decides
-        whether to proceed), not a claim about what MDU's versioning scheme
-        means semantically — that meaning stays MDU's to define.
         """
         if not remote_version:
             return {

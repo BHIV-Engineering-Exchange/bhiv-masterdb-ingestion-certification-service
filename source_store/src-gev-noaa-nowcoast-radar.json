@@ -1,0 +1,27 @@
+{
+    "source_id": "src-gev-noaa-nowcoast-radar",
+    "name": "God's Eye View - NOAA nowCOAST CONUS Base Reflectivity Radar",
+    "authority": "NOAA/NWS nowCOAST",
+    "source_type": "GEOSPATIAL_WEATHER_RADAR_WMS",
+    "licence": "NOAA_PUBLIC_DATA; NOAA_NOWCOAST_TERMS",
+    "access_method": "WMS_IMAGE_AND_GEOGRAPHIC_TILES_VIA_GODS_EYE_VIEW",
+    "geographic_coverage": "CONTIGUOUS_UNITED_STATES; BOUNDS_FROM_LIVE_WMS_CAPABILITIES",
+    "update_characteristics": "MRMS_RADAR_BASE_REFLECTIVITY_APPROX_1_KM; APPROX_4_MINUTE_UPDATES; AVAILABLE_TIMES_FROM_WMS_CAPABILITIES",
+    "reliability_limitations": "OBSERVED_REFLECTIVITY_NOT_RAINFALL_FORECAST; SPATIAL_GAPS_DO_NOT_MEAN_NO_PRECIPITATION",
+    "attribution": "NOAA/NWS nowCOAST",
+    "connector": "integrations.noaa_radar_connector",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "NOAA nowCOAST",
+        "service": "weather_radar",
+        "layer": "conus_base_reflectivity_mosaic",
+        "product": "radar",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "server/providers/weather.js",
+        "last_fetch_status": "NOT VERIFIED"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:50.921017+00:00",
+    "updated_at": "2026-10-29T08:12:50.921035+00:00"
+}

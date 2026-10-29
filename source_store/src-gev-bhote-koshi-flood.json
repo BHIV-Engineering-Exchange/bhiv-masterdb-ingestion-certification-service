@@ -1,0 +1,32 @@
+{
+    "source_id": "src-gev-bhote-koshi-flood",
+    "name": "God's Eye View - Bhote Koshi Historical Flood Reconstruction",
+    "authority": "GeoPera / Vantor Open Data / linked public witness sources",
+    "source_type": "STATIC_HISTORICAL_FLOOD_RECONSTRUCTION",
+    "licence": "MIXED_CC_BY_NC_4_0_AND_LINKED_THIRD_PARTY_TERMS",
+    "access_method": "BUNDLED_EVENT_JSON_AND_SOURCE_MODULES",
+    "geographic_coverage": "BHOTE_KOSHI_TO_TRISHULI_CORRIDOR; SOURCE_EVENT_POINTS_AND_FLOOD_PATH",
+    "update_characteristics": "STATIC_HISTORICAL_RECONSTRUCTION; NO AUTOMATIC REFRESH SCHEDULE",
+    "reliability_limitations": "SCHEMATIC_RECONSTRUCTION_NOT_AN_OFFICIAL_HAZARD_MODEL; WITNESS CAPTURE TIMES UNVERIFIED; MEDIA IS LINKED NOT REDISTRIBUTED",
+    "attribution": "GeoPera reconstruction (CC BY-NC 4.0); Vantor Open Data imagery; linked witness posts retain their owners' terms",
+    "connector": "integrations.gods_eye_view_bhote_koshi_connector.fetch_bhote_koshi_event",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "God's Eye View / GeoPera / Vantor Open Data",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "source_files": [
+            "src/data/bhoteKoshiFloodPath.js",
+            "src/data/bhoteKoshiEvent.js",
+            "src/data/bhoteKoshiEmbeddedMedia.js",
+            "public/events/bhote-koshi-2026/event.json"
+        ],
+        "data_mode": "STATIC_HISTORICAL_RECONSTRUCTION",
+        "last_fetch_status": "NOT VERIFIED",
+        "capture_times": "UNVERIFIED_WHERE_NULL_IN_SOURCE",
+        "media_mode": "EXTERNAL_LINK_METADATA_ONLY"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:51.171469+00:00",
+    "updated_at": "2026-10-29T08:12:51.171485+00:00"
+}

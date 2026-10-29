@@ -268,5 +268,6 @@ class TestUploadModels:
     def test_upload_job_model_defaults(self):
         job = UploadJob(filename='test.csv', content_type='text/csv', file_size=100, actor='user', roles=[])
         assert job.upload_id.startswith('upl-')
-        assert job.trace_id.startswith('trace-')
+        assert len(job.trace_id) == 32
+        assert all(c in "0123456789abcdefABCDEF" for c in job.trace_id)
         assert job.status == UploadStatus.UPLOADED

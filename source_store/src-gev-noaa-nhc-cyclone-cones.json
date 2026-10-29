@@ -1,0 +1,25 @@
+{
+    "source_id": "src-gev-noaa-nhc-cyclone-cones",
+    "name": "NOAA Tropical Weather GIS - Cyclone Forecast Cones",
+    "authority": "NOAA National Hurricane Center / NOAA Weather GIS",
+    "source_type": "GEOSPATIAL_CYCLONE_FORECAST_CONE_FEATURES",
+    "licence": "US_GOVERNMENT_PUBLIC_DOMAIN",
+    "access_method": "ARCGIS_REST_GEOJSON_VIA_GODS_EYE_VIEW",
+    "geographic_coverage": "ATLANTIC_AND_EASTERN_CENTRAL_NORTH_PACIFIC; NOT_WORLDWIDE",
+    "update_characteristics": "ADVISORY_FORECAST_CONES_FROM_GIS_LAYER_7",
+    "reliability_limitations": "CONE_IS_FORECAST_TRACK_UNCERTAINTY_NOT_STORM_SIZE; MAY_BE_EMPTY",
+    "attribution": "NOAA/NWS National Hurricane Center / Central Pacific Hurricane Center",
+    "connector": "integrations.noaa_cyclone_connector.fetch_current_cyclones",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "NOAA Tropical Weather GIS",
+        "service": "NHC_tropical_weather_summary/MapServer/7",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "server/providers/cyclones.js",
+        "last_fetch_status": "NOT VERIFIED"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:51.080109+00:00",
+    "updated_at": "2026-10-29T08:12:51.080124+00:00"
+}

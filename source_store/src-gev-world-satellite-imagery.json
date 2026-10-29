@@ -1,0 +1,28 @@
+{
+    "source_id": "src-gev-world-satellite-imagery",
+    "name": "God's Eye View - World Satellite Imagery Basemap",
+    "authority": "Esri / Cesium ion / OpenStreetMap contributors",
+    "source_type": "WORLD_SATELLITE_IMAGERY_TILE_SERVICE",
+    "licence": "ESRI_WORLD_IMAGERY_TERMS; CESIUM_ION_TERMS; OSM_ODBL_1_0",
+    "access_method": "EXTERNAL_XYZ_AND_ARCGIS_TILE_SERVICES",
+    "geographic_coverage": "GLOBAL; IMAGERY AVAILABILITY AND RESOLUTION VARY BY LOCATION AND PROVIDER",
+    "update_characteristics": "PROVIDER_HOSTED_IMAGERY; REFRESHED_BY_PROVIDER",
+    "reliability_limitations": "PROVIDER_COVERAGE_AND_AVAILABILITY_VARY; CESIUM_ION_REQUIRES_TOKEN; NO_TILE_ARCHIVE_IN_MASTERDB",
+    "attribution": "Powered by Esri \u2014 Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community; fallback \u00a9 OpenStreetMap contributors. Cesium ion attribution applies when ion imagery is used.",
+    "connector": "integrations.gods_eye_view_satellite_imagery_connector.verify_satellite_imagery",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "Esri World Imagery; Cesium ion imagery fallback; OpenStreetMap Standard Tiles fallback",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "src/maps/imagery.js",
+        "esri_endpoint": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer",
+        "osm_endpoint": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "data_mode": "EXTERNAL_GEOPATIAL_TILE_SERVICE",
+        "last_fetch_status": "NOT VERIFIED",
+        "credential_values_stored": false
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:51.223276+00:00",
+    "updated_at": "2026-10-29T08:12:51.223292+00:00"
+}

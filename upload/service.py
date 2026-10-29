@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 
 from upload.models import UploadJob, UploadJobStep, UploadStatus
 from upload.store import UploadJobNotFoundError, UploadStore
+from utils.trace import generate_trace_id, normalize_trace_id
 
 logger = logging.getLogger("masterdb")
 
@@ -91,11 +92,14 @@ class UploadService:
         product_source: Optional[str] = None,
         intended_use: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        trace_id: Optional[str] = None,
     ) -> UploadJob:
         self._validate_filename(filename)
         self._validate_content_type(content_type)
         self._validate_file_size(file_size)
+        tid = normalize_trace_id(trace_id) if trace_id else generate_trace_id()
         job = UploadJob(
+            trace_id=tid,
             filename=filename, content_type=content_type, file_size=file_size,
             checksum_sha256=checksum_sha256, classification=classification,
             source_reference=source_reference, provenance_metadata=provenance_metadata or {},

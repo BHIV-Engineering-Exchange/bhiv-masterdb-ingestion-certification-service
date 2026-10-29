@@ -1,0 +1,28 @@
+{
+    "source_id": "src-gev-adsb-military",
+    "name": "God's Eye View - adsb.lol Military Aircraft Positions",
+    "authority": "adsb.lol contributors",
+    "source_type": "LIVE_ADSB_AIRCRAFT_OBSERVATIONS",
+    "licence": "ODBL_1_0",
+    "access_method": "REST_API",
+    "geographic_coverage": "MILITARY_AIRCRAFT_PUBLISHED_BY_ADSB_LOL",
+    "update_characteristics": "LIVE_SNAPSHOT_PER_INGEST_REQUEST",
+    "reliability_limitations": "COVERAGE_DEPENDS_ON_RECEIVER_NETWORK_AND_AIRCRAFT_TRANSPONDERS; NOT_AUTHORITATIVE",
+    "attribution": "adsb.lol contributors (ODbL)",
+    "connector": "integrations.adsb_military_connector.fetch_military_aircraft",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "adsb.lol",
+        "endpoint": "https://api.adsb.lol/v2/mil",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "server/providers/aircraft/adsb-lol.js",
+        "dataset_id": "adsb_military_aircraft_observations",
+        "data_mode": "LIVE_OBSERVATIONS",
+        "last_fetch_status": "PENDING",
+        "credential_values_stored": false
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:51.124135+00:00",
+    "updated_at": "2026-10-29T08:12:51.124144+00:00"
+}

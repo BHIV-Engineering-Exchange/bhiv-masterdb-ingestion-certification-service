@@ -70,18 +70,28 @@ class IngestJobStep(BaseModel):
     at: str = Field(default_factory=_utcnow)
 
 
+from utils.trace import generate_trace_id
+
+
+class IdempotencyConflictError(ValueError):
+    """Raised when an idempotency key is reused with conflicting request parameters."""
+
+
 class IngestRequest(BaseModel):
     dataset_id: str
     target_database: TargetDatabase
     source_format: IngestionFormat
     package_id: Optional[str] = None
     upload_id: Optional[str] = None
+    trace_id: Optional[str] = None
+    idempotency_key: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class IngestJob(BaseModel):
     job_id: str = Field(default_factory=lambda: _new_id("ingest"))
-    trace_id: str = Field(default_factory=lambda: _new_id("trace"))
+    trace_id: str = Field(default_factory=generate_trace_id)
+    idempotency_key: Optional[str] = None
     dataset_id: str
     target_database: TargetDatabase
     source_format: IngestionFormat
