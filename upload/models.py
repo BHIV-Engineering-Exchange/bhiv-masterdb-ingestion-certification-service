@@ -51,11 +51,14 @@ class UploadJobStep(BaseModel):
 
 
 
+from utils.trace import generate_trace_id, normalize_trace_id
+
+
 class UploadJob(BaseModel):
     """Canonical upload job model for MASTERDB."""
 
     upload_id: str = Field(default_factory=lambda: _new_id("upl"))
-    trace_id: str = Field(default_factory=lambda: _new_id("trace"))
+    trace_id: str = Field(default_factory=generate_trace_id)
     filename: str
     content_type: str
     file_size: int
@@ -100,6 +103,7 @@ class UploadInitiationRequest(BaseModel):
     schema_version: Optional[str] = None
     product_source: Optional[str] = None
     intended_use: Optional[str] = None
+    trace_id: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 

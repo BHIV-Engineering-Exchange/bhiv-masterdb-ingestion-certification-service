@@ -1,0 +1,27 @@
+{
+    "source_id": "src-gev-openinframap-dams",
+    "name": "God's Eye View - OpenInfraMap Dams Snapshot",
+    "authority": "OpenStreetMap contributors / Open Infrastructure Map",
+    "source_type": "STATIC_GEOJSONL_INFRASTRUCTURE_FEATURES",
+    "licence": "ODBL_1_0",
+    "access_method": "BUNDLED_GEOJSONL_SNAPSHOT",
+    "geographic_coverage": "GLOBAL; COVERAGE LIMITED TO FEATURES IN SOURCE SNAPSHOT",
+    "update_characteristics": "STATIC_SNAPSHOT; NO AUTOMATIC REFRESH SCHEDULE",
+    "reliability_limitations": "SOURCE SNAPSHOT MAY BE INCOMPLETE OR STALE; OSM TAGGING VARIES",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "connector": "integrations.gods_eye_view_dams_connector.fetch_dams",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "God's Eye View / OpenInfraMap",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "src/data/local_data/dams/dams.geojsonl",
+        "companion_source": "src/data/local_data/dams/dams.geojson",
+        "source_feature_count": 704,
+        "data_mode": "STATIC_SNAPSHOT",
+        "last_fetch_status": "NOT VERIFIED"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:51.149038+00:00",
+    "updated_at": "2026-10-29T08:12:51.149051+00:00"
+}

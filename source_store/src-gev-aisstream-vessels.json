@@ -1,0 +1,27 @@
+{
+    "source_id": "src-gev-aisstream-vessels",
+    "name": "God's Eye View - AISStream Vessel Positions",
+    "authority": "AISStream.io",
+    "source_type": "LIVE_AIS_POSITION_REPORTS",
+    "licence": "UNSPECIFIED",
+    "access_method": "AUTHENTICATED_WEBSOCKET",
+    "geographic_coverage": "BOUNDED_BY_REQUESTED_SUBSCRIPTION_BOXES",
+    "update_characteristics": "LIVE_POSITION_REPORTS; REQUEST_BOUNDED_BATCHES",
+    "reliability_limitations": "REQUIRES_VALID_AISSTREAM_CREDENTIAL_AND_CONFIGURED_BOUNDS; AIS_REPORTS_MAY_BE_SPARSE",
+    "attribution": "AISStream.io (courtesy)",
+    "connector": "integrations.aisstream_connector.fetch_aisstream_positions",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "AISStream.io",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "server/providers/vessels/ais-live.js",
+        "dataset_id": "aisstream_vessel_positions",
+        "data_mode": "LIVE_OBSERVATIONS",
+        "last_fetch_status": "PENDING",
+        "credential_values_stored": false
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:51.102467+00:00",
+    "updated_at": "2026-10-29T08:12:51.102473+00:00"
+}

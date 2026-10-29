@@ -1,0 +1,23 @@
+{
+    "source_id": "src-gev-tomtom-traffic",
+    "name": "God's Eye View - TomTom Live Traffic Flow",
+    "authority": "TomTom Traffic API",
+    "source_type": "TRAFFIC_FLOW_VECTOR_TILES",
+    "licence": "TOMTOM_API_TERMS",
+    "access_method": "SERVER_SIDE_REST_API_KEY",
+    "geographic_coverage": "TOMTOM_TRAFFIC_FLOW_COVERAGE; VERIFIED_PER_REQUESTED_TILE",
+    "update_characteristics": "REAL_TIME_FLOW_TILES; GODS_EYE_VIEW_120_SECOND_CACHE",
+    "reliability_limitations": "TILE_COVERAGE_VARIES_BY_ZOOM_AND_ROAD_CLASS; RELATIVE_FLOW_HAS_NO_ABSOLUTE_SPEEDS",
+    "attribution": "Traffic flow data \u00a9 TomTom",
+    "connector": "integrations.tomtom_traffic_connector",
+    "last_validation": "2026-10-29T08:12:50.835452+00:00",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "TomTom Traffic API",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "server/providers/traffic.js"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:50.835492+00:00",
+    "updated_at": "2026-10-29T08:12:50.835499+00:00"
+}

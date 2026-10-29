@@ -1,0 +1,30 @@
+{
+    "source_id": "src-gev-natural-earth-marine",
+    "name": "Natural Earth 10m Physical Marine Features",
+    "authority": "Natural Earth",
+    "source_type": "STATIC_NATURAL_EARTH_POLYGON_DATASET",
+    "licence": "PUBLIC_DOMAIN_NATURAL_EARTH",
+    "access_method": "BUNDLED_JSON_SNAPSHOT",
+    "geographic_coverage": "GLOBAL; EXTENT IS DEFINED BY VALIDATED SOURCE GEOMETRIES",
+    "update_characteristics": "STATIC_SNAPSHOT; SOURCE METADATA FETCHED 2026-07-28; NATURAL EARTH DATA COMMIT ca96624a56bd078437bca8184e78163e5039ad19",
+    "reliability_limitations": "CURATED_10M_PHYSICAL_VECTORS; OUTER_RINGS_ONLY; SOURCE FEATURES HAVE NO NATURAL_EARTH_ID",
+    "attribution": "Natural Earth (naturalearthdata.com); public domain.",
+    "connector": "integrations.natural_earth_connector.load_natural_earth_source",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "Natural Earth 10m physical vectors \u2014 ne_10m_geography_marine_polys",
+        "dataset_id": "gods_eye_view_natural_earth_marine",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "src/data/local_data/natural_earth/marine.json",
+        "upstream_url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_geography_marine_polys.geojson",
+        "upstream_commit": "ca96624a56bd078437bca8184e78163e5039ad19",
+        "feature_count_from_source_metadata": 292,
+        "data_mode": "STATIC_SNAPSHOT",
+        "last_fetch_status": "NOT VERIFIED",
+        "credential_values_stored": false
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:51.333392+00:00",
+    "updated_at": "2026-10-29T08:12:51.333409+00:00"
+}

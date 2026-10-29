@@ -1,0 +1,34 @@
+{
+    "source_id": "src-gev-google-photoreal-tiles",
+    "name": "God's Eye View - Google Photorealistic 3D Tiles",
+    "authority": "Google Maps Platform / Cesium ion",
+    "source_type": "PHOTOREALISTIC_3D_TILES_SERVICE",
+    "licence": "GOOGLE_MAPS_PLATFORM_TERMS_AND_CESIUM_ION_TERMS",
+    "access_method": "CESIUMJS_GOOGLE_DIRECT_OR_CESIUM_ION_ASSET",
+    "geographic_coverage": "GLOBAL_WHERE_GOOGLE_PHOTOREALISTIC_3D_COVERAGE_IS_AVAILABLE",
+    "update_characteristics": "PROVIDER_HOSTED_STREAMING_3D_TILES; REFRESHED_BY_PROVIDER",
+    "reliability_limitations": "COVERAGE_AND_ACCESS_DEPEND_ON_PROVIDER; GOOGLE_OR_CESIUM_CREDENTIALS_REQUIRED; NO_TILE_ARCHIVE_IN_MASTERDB",
+    "attribution": "Google Maps Platform per-tile credits must remain visible; Cesium ion attribution applies on the hosted asset route",
+    "connector": "integrations.gods_eye_view_photoreal_tiles_connector.verify_photoreal_tiles",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "Google Maps Platform Photorealistic 3D Tiles via CesiumJS",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "source_files": [
+            "src/maps/google3d.js",
+            "src/maps/defaultSources.js",
+            "src/main.js",
+            "server/standalone/vite.config.js"
+        ],
+        "google_direct_root_endpoint": "https://tile.googleapis.com/v1/3dtiles/root.json",
+        "cesium_ion_asset_id": 2275207,
+        "cesium_ion_endpoint": "https://api.cesium.com/v1/assets/2275207/endpoint",
+        "data_mode": "EXTERNAL_GEOPATIAL_TILE_SERVICE",
+        "last_fetch_status": "NOT VERIFIED",
+        "credential_values_stored": false
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:51.198274+00:00",
+    "updated_at": "2026-10-29T11:42:20.994268+00:00"
+}

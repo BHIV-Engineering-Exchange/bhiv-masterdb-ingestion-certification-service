@@ -1,0 +1,24 @@
+{
+    "source_id": "src-gev-gfs-wind",
+    "name": "God's Eye View - NOAA GFS Point Wind Forecasts",
+    "authority": "NOAA National Centers for Environmental Prediction",
+    "source_type": "GLOBAL_NUMERICAL_WEATHER_FORECAST",
+    "licence": "US_PUBLIC_DOMAIN",
+    "access_method": "GODS_EYE_VIEW_WIND_MANIFEST_AND_GRID",
+    "geographic_coverage": "GLOBAL; POINT_COVERAGE_RECORDED_PER_INGEST",
+    "update_characteristics": "6_HOURLY_GFS_FORECAST_CYCLES",
+    "reliability_limitations": "GRIDDED_MODEL_FORECAST_SAMPLED_TO_REQUESTED_POINTS; NOT_CURRENT_OBSERVATIONS",
+    "attribution": "NOAA Global Forecast System via God's Eye View",
+    "connector": "integrations.weather_connector.fetch_wind_forecasts",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "NOAA GFS via God's Eye View",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "server/providers/wind.js",
+        "last_fetch_status": "NOT VERIFIED"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:50.860083+00:00",
+    "updated_at": "2026-10-29T08:12:50.860105+00:00"
+}

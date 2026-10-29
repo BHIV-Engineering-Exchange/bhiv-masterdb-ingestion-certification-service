@@ -1,0 +1,35 @@
+{
+    "source_id": "src-gev-openfreemap-vector-basemap",
+    "name": "God's Eye View - OpenFreeMap Vector Basemap Tiles",
+    "authority": "OpenFreeMap / OpenMapTiles / OpenStreetMap contributors",
+    "source_type": "MAPBOX_VECTOR_TILE_SERVICE",
+    "licence": "OPENSTREETMAP_ODBL_1_0; OPENFREEMAP_AND_OPENMAPTILES_ATTRIBUTION_REQUIRED",
+    "access_method": "TILEJSON_AND_MAPBOX_VECTOR_TILES",
+    "geographic_coverage": "LIVE_TILEJSON_BOUNDS_AND_ZOOM_RANGE",
+    "update_characteristics": "PROVIDER_HOSTED_PLANET_TILES; TILEJSON TEMPLATE VERSIONED BY PROVIDER",
+    "reliability_limitations": "PUBLIC_TILE_SERVICE_MAY_RATE_LIMIT_OR_BE_UNAVAILABLE; NO SILENT_TILE_ORIGIN_FALLBACK",
+    "attribution": "OpenFreeMap \u00a9 OpenMapTiles; Data from OpenStreetMap",
+    "connector": "integrations.gods_eye_view_vector_basemap_connector.verify_vector_basemap",
+    "last_validation": "NOT VERIFIED",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "OpenFreeMap / OpenMapTiles",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "path": "src/sources/openFreeMap.js",
+        "tilejson_endpoint": "https://tiles.openfreemap.org/planet",
+        "tile_url_template": "RESOLVED_FROM_LIVE_TILEJSON",
+        "consumed_vector_layers": [
+            "transportation",
+            "landuse"
+        ],
+        "style_url": null,
+        "style_note": "God's Eye View decodes vector data; its OpenFreeMap source does not configure a cartographic style URL.",
+        "fallback_workflow": "OpenFreeMap roads are primary without TomTom; Hybrid uses OpenFreeMap where TomTom has no flow. The tile source does not silently switch origins.",
+        "data_mode": "EXTERNAL_GEOPATIAL_VECTOR_TILE_SERVICE",
+        "last_fetch_status": "NOT VERIFIED",
+        "credential_values_stored": false
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-29T08:12:51.277772+00:00",
+    "updated_at": "2026-10-29T08:12:51.277785+00:00"
+}

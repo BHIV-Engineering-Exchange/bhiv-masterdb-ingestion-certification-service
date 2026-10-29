@@ -29,12 +29,14 @@ states.
 from datetime import datetime, timezone
 import os
 from pathlib import Path
+import threading
 from typing import Any, Dict, List, Optional
 import uuid
 
 from auth.constants import ADMIN_ROLE
 from database_targets.models import (
     DatabaseCapability,
+    IdempotencyConflictError,
     IngestJob,
     IngestJobStep,
     IngestionFormat,
@@ -47,6 +49,7 @@ from services.artifact_store import ArtifactStore
 from upload.models import UploadStatus
 from upload.store import UploadJobNotFoundError
 from utils.loader import DatasetLoader
+from utils.trace import generate_trace_id, normalize_trace_id
 
 
 class DatasetRecordsUnresolvedError(Exception):
@@ -87,6 +90,8 @@ class DatabaseRouterService:
     ) -> None:
         self._certification_store = certification_artifact_store
         self._job_store = ArtifactStore(reports_dir=store_dir)
+        self._idempotency_store = ArtifactStore(reports_dir=str(Path(store_dir) / "_idempotency"))
+        self._lock = threading.RLock()
         self._target_store = target_store or certification_artifact_store
         self._certification_service = certification_service
         self._upload_service = upload_service
@@ -115,9 +120,88 @@ class DatabaseRouterService:
         package_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
         upload_id: Optional[str] = None,
+        trace_id: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+    ) -> IngestJob:
+        # Idempotency check: return existing job if identical request retry
+        resolved_idempotency_key = idempotency_key.strip() if idempotency_key else None
+        if not resolved_idempotency_key and metadata and metadata.get("idempotency_key"):
+            resolved_idempotency_key = str(metadata["idempotency_key"]).strip()
+
+        if resolved_idempotency_key:
+            with self._lock:
+                existing_record = self._idempotency_store.load(resolved_idempotency_key)
+                if existing_record:
+                    orig_dataset = existing_record.get("dataset_id")
+                    orig_target = existing_record.get("target_database")
+                    orig_job_id = existing_record.get("job_id")
+                    if orig_dataset != dataset_id or orig_target != target_database.value:
+                        raise IdempotencyConflictError(
+                            f"Idempotency key '{resolved_idempotency_key}' conflict: previously bound to dataset "
+                            f"'{orig_dataset}' on target '{orig_target}', cannot be reused for '{dataset_id}' on '{target_database.value}'."
+                        )
+                    if orig_job_id:
+                        try:
+                            return self.get_job(orig_job_id)
+                        except JobNotFoundError:
+                            pass
+                return self._execute_ingest(
+                    dataset_id=dataset_id,
+                    target_database=target_database,
+                    source_format=source_format,
+                    actor=actor,
+                    roles=roles,
+                    package_id=package_id,
+                    metadata=metadata,
+                    upload_id=upload_id,
+                    trace_id=trace_id,
+                    resolved_idempotency_key=resolved_idempotency_key,
+                )
+
+        return self._execute_ingest(
+            dataset_id=dataset_id,
+            target_database=target_database,
+            source_format=source_format,
+            actor=actor,
+            roles=roles,
+            package_id=package_id,
+            metadata=metadata,
+            upload_id=upload_id,
+            trace_id=trace_id,
+            resolved_idempotency_key=None,
+        )
+
+    def _execute_ingest(
+        self,
+        dataset_id: str,
+        target_database: TargetDatabase,
+        source_format: IngestionFormat,
+        actor: str,
+        roles: List[str],
+        package_id: Optional[str],
+        metadata: Optional[Dict[str, Any]],
+        upload_id: Optional[str],
+        trace_id: Optional[str],
+        resolved_idempotency_key: Optional[str],
     ) -> IngestJob:
         capability = self.get_database(target_database)
         steps: List[IngestJobStep] = []
+
+        # Trace ID continuity: explicit -> linked upload -> metadata -> fresh 32-hex
+        resolved_trace_id: Optional[str] = None
+        if trace_id:
+            resolved_trace_id = normalize_trace_id(trace_id)
+        elif upload_id and self._upload_service:
+            try:
+                upl = self._upload_service.get_upload(upload_id)
+                if upl and getattr(upl, "trace_id", None):
+                    resolved_trace_id = normalize_trace_id(upl.trace_id)
+            except Exception:
+                pass
+        if not resolved_trace_id and metadata and metadata.get("trace_id"):
+            resolved_trace_id = normalize_trace_id(str(metadata["trace_id"]))
+        if not resolved_trace_id:
+            resolved_trace_id = generate_trace_id()
 
         # 1. RBAC — database-level ingest authority.
         authorized = (
@@ -142,6 +226,8 @@ class DatabaseRouterService:
                 dataset_id, target_database, source_format, actor, roles,
                 package_id, metadata, steps,
                 rejection_reason=f"Actor '{actor}' is not authorized to ingest into {target_database.value}.",
+                trace_id=resolved_trace_id,
+                idempotency_key=resolved_idempotency_key,
             )
 
         # 2. Format contract — deterministic accept/reject per database.
@@ -163,6 +249,8 @@ class DatabaseRouterService:
                 dataset_id, target_database, source_format, actor, roles,
                 package_id, metadata, steps,
                 rejection_reason=f"Format '{source_format.value}' is not supported by {target_database.value}.",
+                trace_id=resolved_trace_id,
+                idempotency_key=resolved_idempotency_key,
             )
 
         # 3. Certification gate — only CERTIFIED datasets are eligible for MASTERDB ingestion.
@@ -193,6 +281,8 @@ class DatabaseRouterService:
                 package_id, metadata, steps,
                 rejection_reason=f"Dataset '{dataset_id}' is not CERTIFIED for MASTERDB ingestion.",
                 certification_state=state,
+                trace_id=resolved_trace_id,
+                idempotency_key=resolved_idempotency_key,
             )
 
         # 4. Target Persistence — physically persist target records into database
@@ -227,6 +317,8 @@ class DatabaseRouterService:
                 package_id, metadata, steps,
                 rejection_reason=f"Target persistence failed: {exc}",
                 certification_state=state,
+                trace_id=resolved_trace_id,
+                idempotency_key=resolved_idempotency_key,
             )
 
         # 5. Route — mark routed
@@ -258,6 +350,8 @@ class DatabaseRouterService:
                 integrity_score=report.get("integrity_score") if report else None,
                 status_override=IngestionJobStatus.PARTIAL_PERSISTENCE,
                 job_id=job_id,
+                trace_id=resolved_trace_id,
+                idempotency_key=resolved_idempotency_key,
             )
 
         return self._finalize(
@@ -267,6 +361,8 @@ class DatabaseRouterService:
             certification_state=state,
             integrity_score=report.get("integrity_score") if report else None,
             job_id=job_id,
+            trace_id=resolved_trace_id,
+            idempotency_key=resolved_idempotency_key,
         )
 
     def _attempt_auto_certify(
@@ -473,6 +569,8 @@ class DatabaseRouterService:
         integrity_score: Optional[float] = None,
         status_override: Optional[IngestionJobStatus] = None,
         job_id: Optional[str] = None,
+        trace_id: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
     ) -> IngestJob:
         if status_override:
             status = status_override
@@ -481,6 +579,8 @@ class DatabaseRouterService:
 
         job = IngestJob(
             job_id=job_id or f"ingest-{uuid.uuid4().hex[:12]}",
+            trace_id=trace_id or generate_trace_id(),
+            idempotency_key=idempotency_key,
             dataset_id=dataset_id,
             target_database=target_database,
             source_format=source_format,
@@ -496,6 +596,18 @@ class DatabaseRouterService:
             completed_at=datetime.now(timezone.utc).isoformat(),
         )
         self._job_store.save(job.job_id, job.model_dump(mode="json"))
+        if idempotency_key:
+            with self._lock:
+                self._idempotency_store.save(
+                    idempotency_key,
+                    {
+                        "job_id": job.job_id,
+                        "dataset_id": dataset_id,
+                        "target_database": target_database.value,
+                        "status": job.status.value,
+                        "completed_at": job.completed_at,
+                    },
+                )
         return job
 
     # -- target persistence querying -------------------------------------------
