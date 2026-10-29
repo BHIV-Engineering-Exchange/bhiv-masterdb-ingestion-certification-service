@@ -2601,6 +2601,23 @@ def get_access_contract_audit(
     return contract
 
 
+@app.delete("/access/{request_id}")
+def revoke_access_contract(
+    request_id: str,
+    reason: Optional[str] = Query(None),
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    """Revoke an active access contract immediately."""
+    success = capability_registry_service.revoke_access_contract(
+        request_id_or_token=request_id,
+        actor=identity.actor,
+        reason=reason or "Revoked via administrative action.",
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Access contract '{request_id}' not found.")
+    return {"status": "revoked", "request_id": request_id}
+
+
 @app.post("/geo-quest/candidates/gev.aircraft_tracking/register")
 def register_geo_quest_candidate(
     identity: AuthIdentity = Depends(get_identity),
