@@ -6,5 +6,8 @@
   "python.autoComplete.extraPaths": [
     "./MASTERDB-GEO-QUEST-01",
     "."
-  ]
+  ],
+  "git.blame.editorDecoration.enabled": false,
+  "git.blame.statusBarItem.enabled": false,
+  "github.gitAuthentication": true
 }

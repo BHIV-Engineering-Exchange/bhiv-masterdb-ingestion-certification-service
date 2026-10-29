@@ -29,9 +29,9 @@ REQUIRED_CHECKS = {
 
 
 class CandidateArtifactStore(Protocol):
-    def load(self, key: str) -> Optional[Dict[str, Any]]: ...
+    def load(self, key: str, /, *args: Any, **kwargs: Any) -> Optional[Dict[str, Any]]: ...
 
-    def save(self, key: str, value: Dict[str, Any]) -> Dict[str, Any]: ...
+    def save(self, key: str, value: Dict[str, Any], /, *args: Any, **kwargs: Any) -> Dict[str, Any]: ...
 
 
 class CandidateRegistrationError(ValueError):
@@ -59,7 +59,7 @@ class GeoQuestCandidateService:
         project_root: Path = PROJECT_ROOT,
         store: Optional[CandidateArtifactStore] = None,
     ) -> None:
-        self.store = store or ArtifactStore(reports_dir=store_dir)
+        self.store: CandidateArtifactStore = store or ArtifactStore(reports_dir=store_dir)  # type: ignore[assignment]
         self.project_root = project_root
 
     def register_candidate(self, actor: str) -> Dict[str, Any]:
