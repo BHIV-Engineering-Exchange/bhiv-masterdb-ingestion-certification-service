@@ -360,7 +360,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     logger.warning("HTTPException %s at %s: %s", exc.status_code, request.url.path, exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
-        content=_error_body(request, "http_error", str(exc.detail)),
+        content=_error_body(request, "http_error", exc.detail),
     )
 
 
@@ -2120,7 +2120,7 @@ def health() -> dict:
 
 
 @app.get("/ready")
-def ready() -> dict:
+def ready() -> JSONResponse:
     """Readiness: the process is up AND its core stores are reachable and
     responding. Deliberately does not check TANTRA/MDU/Bucket/InsightFlow —
     this service has no live connection to any of them to check (see
@@ -3012,10 +3012,11 @@ def ingest_wind_forecast(
         feed = fetch_wind_forecasts(model_key, locations)
         result = weather_observation_service.ingest(feed, forecast=True)
         read_back = [weather_observation_service.get(record_id) for record_id in result["record_ids"]]
-        if len(read_back) != len(result["record_ids"]) or any(row is None for row in read_back):
+        valid_wind: List[Dict[str, Any]] = [row for row in read_back if row is not None]
+        if len(valid_wind) != len(result["record_ids"]):
             raise RuntimeError("Weather forecast persistence read-back failed")
         verified_at = datetime.now(timezone.utc).isoformat()
-        coords = [{"latitude": row["latitude"], "longitude": row["longitude"]} for row in read_back]
+        coords = [{"latitude": row["latitude"], "longitude": row["longitude"]} for row in valid_wind]
         weather_source_state[source_id] = {"last_verified_at_utc": verified_at, "last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords}
         source_registry_service.mark_validated(source_id, verified_at, {"last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords, "last_readback_count": len(read_back), "forecast_cycle": feed["cycle"]})
         result.update({"source": feed["source"], "model": feed["model"], "record_type": "FORECAST", "readback_count": len(read_back), "forecast_cycle": feed["cycle"], "last_verified_at_utc": verified_at})
@@ -3034,7 +3035,7 @@ def ingest_wind_forecast(
 
 @app.get("/weather/wind/forecasts")
 def list_wind_forecasts(
-    model: str = Query(..., regex="^(gfs|ecmwf)$"),
+    model: str = Query(..., pattern="^(gfs|ecmwf)$"),
     limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
     identity: AuthIdentity = Depends(get_identity),
 ) -> Dict[str, Any]:
@@ -3051,13 +3052,17 @@ def ingest_open_meteo_current(
     """Fetch Open-Meteo model-derived current surface conditions for points."""
     source_id = "src-open-meteo-current-weather"
     try:
-        feed = fetch_open_meteo_current(payload.get("locations"))
+        locations = payload.get("locations")
+        if not isinstance(locations, list):
+            raise HTTPException(status_code=422, detail="'locations' must be a list of location objects")
+        feed = fetch_open_meteo_current(locations)
         result = weather_observation_service.ingest(feed, forecast=False)
         read_back = [weather_observation_service.get(record_id) for record_id in result["record_ids"]]
-        if len(read_back) != len(result["record_ids"]) or any(row is None for row in read_back):
+        valid_records: List[Dict[str, Any]] = [row for row in read_back if row is not None]
+        if len(valid_records) != len(result["record_ids"]):
             raise RuntimeError("Current weather persistence read-back failed")
         verified_at = datetime.now(timezone.utc).isoformat()
-        coords = [{"latitude": row["latitude"], "longitude": row["longitude"]} for row in read_back]
+        coords = [{"latitude": row["latitude"], "longitude": row["longitude"]} for row in valid_records]
         weather_source_state[source_id] = {"last_verified_at_utc": verified_at, "last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords}
         source_registry_service.mark_validated(source_id, verified_at, {"last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords, "last_readback_count": len(read_back)})
         result.update({"source": feed["source"], "record_type": "CURRENT_CONDITIONS", "is_forecast": False, "readback_count": len(read_back), "last_verified_at_utc": verified_at})
