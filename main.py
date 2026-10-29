@@ -2989,9 +2989,9 @@ def list_tomtom_traffic(
     x: Optional[int] = Query(default=None, ge=0), y: Optional[int] = Query(default=None, ge=0),
     identity: AuthIdentity = Depends(get_identity),
 ) -> Dict[str, Any]:
-    tile = None
+    tile: Optional[Dict[str, int]] = None
     if any(value is not None for value in (z, x, y)):
-        if any(value is None for value in (z, x, y)) or x >= 2 ** z or y >= 2 ** z:
+        if z is None or x is None or y is None or x >= (2 ** z) or y >= (2 ** z):
             raise HTTPException(status_code=422, detail="Provide a valid complete z, x, y tile coordinate")
         tile = {"z": z, "x": x, "y": y}
     records = traffic_observation_service.list(limit=limit, offset=offset, tile=tile)
@@ -3007,6 +3007,8 @@ def ingest_wind_forecast(
     if model_key not in ("gfs", "ecmwf"):
         raise HTTPException(status_code=422, detail="model must be gfs or ecmwf")
     locations = payload.get("locations")
+    if not isinstance(locations, list):
+        raise HTTPException(status_code=422, detail="'locations' must be a list of location objects")
     source_id = "src-gev-gfs-wind" if model_key == "gfs" else "src-gev-ecmwf-wind"
     try:
         feed = fetch_wind_forecasts(model_key, locations)
