@@ -1653,6 +1653,7 @@ def query_dataset(request: QueryRequest) -> dict:
         result = dataset_retrieval_service.query(
             dataset_id=request.dataset_id,
             query_params=request.query_params,
+            dataset_version=request.dataset_version,
         )
         return result
     except PackageNotFoundError as exc:
@@ -1670,6 +1671,7 @@ def export_dataset(request: ExportRequest) -> dict:
         result = dataset_retrieval_service.export_dataset(
             dataset_id=request.dataset_id,
             format=request.format,
+            dataset_version=request.dataset_version,
         )
         return result
     except PackageNotFoundError as exc:
@@ -1687,6 +1689,7 @@ def stream_dataset(request: StreamRequest) -> dict:
         result = dataset_retrieval_service.stream(
             dataset_id=request.dataset_id,
             stream_params=request.stream_params,
+            dataset_version=request.dataset_version,
         )
         return result
     except PackageNotFoundError as exc:
@@ -1701,7 +1704,10 @@ def stream_dataset(request: StreamRequest) -> dict:
 def reference_dataset(request: ReferenceRequest) -> dict:
     """Generate a stable reference/citation for a dataset."""
     try:
-        result = dataset_retrieval_service.reference(dataset_id=request.dataset_id)
+        result = dataset_retrieval_service.reference(
+            dataset_id=request.dataset_id,
+            dataset_version=request.dataset_version,
+        )
         return result
     except PackageNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

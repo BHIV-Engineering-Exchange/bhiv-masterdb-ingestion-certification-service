@@ -1,3 +1,126 @@
+# MASTERDB Sprint Review Packet — Version-Aware Dataset Retrieval
+
+**Sprint:** MASTERDB Hypervelocity Convergence Sprint<br/>
+**Target Milestone:** Version-Aware Dataset Retrieval & Default Latest Certified Resolution<br/>
+**Repository:** `bhiv-masterdb-ingestion-certification-service`<br/>
+**Platform Owner:** Kavy Changela<br/>
+**Sprint Status:** Completed Implementation & Full Regression Passed (Phase C: PASS WITH WARNINGS)<br/>
+**Date:** 2026-10-30
+
+---
+
+## A. Executive Summary
+
+This sprint delivers deterministic, version-aware dataset package selection across MASTERDB's controlled retrieval endpoints:
+- `POST /query`
+- `POST /export`
+- `POST /stream`
+- `POST /reference`
+
+Previously, retrieval endpoints always selected the very first registered package encountered in the registry (`next((p for p in packages if p.dataset_id == dataset_id), None)`), ignoring explicit caller version requirements, newer versions, and package lifecycle readiness.
+
+Under this implementation:
+1. Callers can explicitly request a specific dataset version via an optional `dataset_version` field.
+2. Callers omitting `dataset_version` automatically resolve the newest eligible certified package (`(created_at DESC, package_id DESC)`).
+3. If duplicate packages exist for the same version, eligible retrievable packages are strictly prioritized over ineligible ones, preventing shadowing.
+4. Precomputed readiness evidence is reused within each request to avoid redundant reassessment.
+5. Complete response traceability is provided: `grant["dataset_version"]` reflects the resolved version, while `grant["traceability"]["requested_version"]` captures the explicit caller input (`null` when omitted).
+6. Backward compatibility was verified for the tested legacy request contracts.
+7. Full regression testing established zero regressions: **709/709 tests passed**.
+
+---
+
+## B. Scope of Implementation
+
+1. **Optional `dataset_version` in Request Models:**
+   Added `dataset_version: Optional[str] = None` to `QueryRequest`, `ExportRequest`, `StreamRequest`, and `ReferenceRequest` in `models.py`. Callers omitting the parameter deserialize seamlessly with `dataset_version=None`.
+2. **Exact Version Matching:**
+   When `dataset_version` is provided, packages are filtered by exact string equality (`p.dataset_version == dataset_version`), adhering strictly to MASTERDB's opaque string versioning convention. If no matching package exists, a `PackageNotFoundError` is raised, mapping cleanly to HTTP 404.
+3. **Latest Eligible Default Selection:**
+   When `dataset_version is None`, candidate packages with `status in (PackageStatus.CERTIFIED, PackageStatus.RETRIEVAL_READY)` are evaluated against readiness rules. Packages passing readiness (`status != RetrievalStatus.NOT_RETRIEVABLE`) are ranked by `(created_at DESC, package_id DESC)` to select the latest retrievable package.
+4. **Duplicate-Version Shadowing Protection:**
+   When multiple packages share the same `(dataset_id, dataset_version)`, candidates are ranked using the multi-key priority rule:
+   $$\text{Priority Key} = (\text{is\_retrievable},\, \text{is\_certified},\, \text{is\_not\_deprecated},\, \text{created\_at},\, \text{package\_id})$$
+   This guarantees that an ineligible duplicate cannot shadow an eligible retrievable package.
+5. **In-Request Evidence Reuse (Zero Duplicate Writes):**
+   `_select_package()` returns `Tuple[KnowledgePackage, Optional[RetrievalEvidence]]`. `_controlled_access()` reuses precomputed evidence in memory (`if precomputed_evidence is not None:`), executing zero secondary disk writes to `retrieval_evidence_store/{package_id}.json`.
+6. **Response Traceability Contract:**
+   The output `grant` dictionary is enriched while preserving all existing fields:
+   - Root level: `"dataset_version": package.dataset_version`
+   - `traceability` level: `"requested_version": dataset_version` (`null` when omitted) and `"dataset_version": package.dataset_version`
+7. **Legacy Request Compatibility:**
+   All four endpoints (`/query`, `/export`, `/stream`, `/reference`) function identically for legacy callers omitting `dataset_version`, automatically selecting the latest certified version.
+8. **Approved Fallback Behavior:**
+   If no certified candidate is eligible (or only draft packages exist), default selection falls back to the newest non-deprecated candidate by `(created_at DESC, package_id DESC)`. If all packages are deprecated, it falls back to the newest package overall. Gated retrieval operations reject uncertified packages with HTTP 400 (`DatasetNotRetrievableError`), while `/reference` generates an audit grant with HTTP 200 under the restricted policy. Explicit requests never substitute a fallback package.
+
+---
+
+## C. Files Changed
+
+### Sprint Implementation & Test Files (5 files)
+| File | Role | Changes |
+|---|---|---|
+| `models.py` | Request model definitions | +4 lines (`dataset_version: Optional[str] = None` across 4 models) |
+| `services/dataset_retrieval_service.py` | Retrieval service & selector | +131, -8 lines (`_select_package()`, evidence reuse, grant output) |
+| `main.py` | API route wiring | +8, -2 lines (passes `dataset_version` to retrieval service) |
+| `tests/test_dataset_retrieval_service.py` | Service unit test suite | +220 lines (13 new unit tests covering selection, duplicates, evidence reuse, fallback) |
+| `tests/test_central_data_platform_api.py` | API integration test suite | +158 lines (10 new integration tests covering all 4 endpoints, 404/400 mapping, legacy compatibility) |
+
+### Pre-Existing Working-Tree Baseline (Preserved)
+- `.vscode/settings.json` (pre-existing modification preserved)
+- `source_store/src-gev-usgs-seismic.json` (pre-existing modification preserved)
+- 25 untracked `source_store/src-*.json` files (all preserved intact)
+
+---
+
+## D. Testing Evidence
+
+### 1. Test Discovery & Collection
+- **Command:** `.\.venv\Scripts\pytest --collect-only -q`
+- **Collected Scope:** **695 tests** across 89 test files in 3 directories (`tests/`, `tests/integration/`, `tests/unit/`).
+- **Collection Errors:** 0
+- **Deselected / Skipped:** 0
+
+### 2. Focused Unit & Integration Tests (Phase B Verification)
+- **Service-Level Suite:** `pytest tests/test_dataset_retrieval_service.py -v`
+  - **Result:** **28 passed**, 0 failed in 14.82s.
+- **API-Level Suite:** `pytest tests/test_central_data_platform_api.py -v`
+  - **Result:** **33 passed**, 0 failed in 13.73s.
+- **Focused Total:** **61 passed**, 0 failed.
+
+### 3. Full Repository Regression Suite (Phase C Verification)
+- **Command:** `.\.venv\Scripts\pytest -v`
+- **Result:** **709 passed, 0 failed, 0 errors, 0 skipped** (Exit code `0`).
+- **Execution Time:** **351.47s (05m 51s)**.
+- **Warnings:** 8,962 (analyzed below).
+- **Format / Whitespace Validation:** `git diff --check` passed with exit code `0` (clean, zero formatting anomalies).
+
+---
+
+## E. Known Limitations & Risks
+
+1. **Pre-Existing Rejected-Certification Open-Read Reference Governance:**
+   As analyzed in Phase A.5, if a package has `package.status == CERTIFIED` but its underlying certification report status is `REJECTED`, `_resolve_access_policy()` assigns an `open-read` policy (`allowed_consumers: ["*"]`) for `/reference` operations because policy derivation inspects only `package.status`. This is pre-existing governance behavior and was preserved without modification.
+2. **Upstream Deprecation Warnings:**
+   The full regression suite emitted 8,962 warnings. These are upstream library deprecations:
+   - `FastAPI / Starlette`: `'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16` (observed during test execution under Python 3.14.3).
+   - `FastAPI Query(..., regex=...)`: deprecated in favor of `pattern` on legacy weather route in `main.py:3068`.
+   - `AnyIO`: `BlockingPortal` alias deprecation in `starlette/testclient.py`.
+3. **PyJWT InsecureKeyLengthWarning:**
+   Emitted in test suites (`test_auth_service.py`, `test_authentication_security.py`) where intentionally short HMAC keys (3 to 18 bytes) are used in negative security test cases to verify key length rejections.
+4. **Opaque String Versioning (No SemVer Ranges):**
+   MASTERDB treats versions as opaque string labels (e.g. `"1.0"`, `"1.0.0"`, `"1.0.0-candidate"`). Range specifications (e.g. `^1.0.0`, `>=2.0.0`) are not supported.
+5. **No Live External Integration Verification:**
+   Tests were executed against mocked and local contract adapters for MDU, TANTRA, and Bucket. Live cloud production network connectivity was not tested or claimed.
+6. **No Production Deployment Verification:**
+   Verification is restricted to repository tests and integration contracts. Production deployment and load staging require platform owner approval.
+
+---
+
+
+
+# Historical Review Packets (Prior Sprints)
+
 # Review Packet
 
 ## Summary

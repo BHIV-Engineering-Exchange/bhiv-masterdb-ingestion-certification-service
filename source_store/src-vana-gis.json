@@ -1,0 +1,23 @@
+{
+    "source_id": "src-vana-gis",
+    "name": "VANA - Spatial GIS GeoJSON Layers Catalog",
+    "authority": "VANA Spatial Layer Service / Survey of India RFC 7946 Standard",
+    "source_type": "SATELLITE",
+    "licence": "GOVERNMENT_OPEN_DATA",
+    "access_method": "REST_API",
+    "geographic_coverage": "MAHARASHTRA_COASTAL_ZONES",
+    "update_characteristics": "QUARTERLY_BOUNDARY_REVALIDATION",
+    "reliability_limitations": "RFC7946_WGS84_PROJECTION_TOLERANCES",
+    "attribution": "VANA GIS Spatial Engine",
+    "connector": "vana_spatial_gis_connector",
+    "last_validation": "2026-10-28T11:06:02.316381+00:00",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "source": "VANA Spatial GIS Layer Catalog",
+        "certification": "VANA-RFC7946-GEOJSON",
+        "governance_gate": "6_TUPLE_EVALUATION_GATE"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-28T11:06:02.316400+00:00",
+    "updated_at": "2026-10-28T11:06:02.316404+00:00"
+}

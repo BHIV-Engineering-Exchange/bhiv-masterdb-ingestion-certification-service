@@ -270,3 +270,161 @@ def test_get_provenance_known_package(client):
     assert body["package_id"] == package.package_id
     assert "ancestors" in body
     assert "descendants" in body
+
+
+# -- Phase B: Version-Aware Dataset Retrieval Tests ----------------------------
+
+
+def test_api_query_with_explicit_version(client):
+    pkg1 = main.package_registry_service.register("api-v", "1.0.0", "2", "AI", "text", "en", "kavy")
+    pkg2 = main.package_registry_service.register("api-v", "2.0.0", "2", "AI", "text", "en", "kavy")
+    _promote_to_retrieval_ready(main.package_registry_service, pkg1.package_id)
+    _promote_to_retrieval_ready(main.package_registry_service, pkg2.package_id)
+
+    response = client.post("/query", json={"dataset_id": "api-v", "dataset_version": "1.0.0", "query_params": {}})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["dataset_id"] == "api-v"
+    assert body["dataset_version"] == "1.0.0"
+    assert body["package_id"] == pkg1.package_id
+    assert body["traceability"]["requested_version"] == "1.0.0"
+    assert body["traceability"]["dataset_version"] == "1.0.0"
+    assert body["granted"] is True
+
+
+def test_api_export_with_explicit_version(client):
+    pkg = main.package_registry_service.register("api-export-v", "1.0.0", "2", "AI", "text", "en", "kavy")
+    _promote_to_retrieval_ready(main.package_registry_service, pkg.package_id)
+
+    response = client.post("/export", json={"dataset_id": "api-export-v", "dataset_version": "1.0.0", "format": "json"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["dataset_version"] == "1.0.0"
+    assert body["operation"] == "export"
+    assert body["traceability"]["requested_version"] == "1.0.0"
+
+
+def test_api_stream_with_explicit_version(client):
+    pkg = main.package_registry_service.register("api-stream-v", "1.0.0", "2", "AI", "text", "en", "kavy")
+    _promote_to_retrieval_ready(main.package_registry_service, pkg.package_id)
+
+    response = client.post("/stream", json={"dataset_id": "api-stream-v", "dataset_version": "1.0.0", "stream_params": {}})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["dataset_version"] == "1.0.0"
+    assert body["operation"] == "stream"
+    assert body["traceability"]["requested_version"] == "1.0.0"
+
+
+def test_api_reference_with_explicit_version(client):
+    pkg = main.package_registry_service.register("api-ref-v", "1.0.0", "2", "AI", "text", "en", "kavy")
+    _promote_to_retrieval_ready(main.package_registry_service, pkg.package_id)
+
+    response = client.post("/reference", json={"dataset_id": "api-ref-v", "dataset_version": "1.0.0"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["dataset_version"] == "1.0.0"
+    assert body["operation"] == "reference"
+    assert body["traceability"]["requested_version"] == "1.0.0"
+
+
+def test_api_unknown_version_returns_404(client):
+    pkg = main.package_registry_service.register("api-v-404", "1.0.0", "2", "AI", "text", "en", "kavy")
+    _promote_to_retrieval_ready(main.package_registry_service, pkg.package_id)
+
+    response = client.post("/query", json={"dataset_id": "api-v-404", "dataset_version": "9.9.9"})
+    assert response.status_code == 404
+    msg = response.json().get("error", {}).get("message", "")
+    assert "version='9.9.9'" in msg
+
+
+def test_api_uncertified_version_query_returns_400(client):
+    pkg1 = main.package_registry_service.register("api-v-uncert", "1.0.0", "2", "AI", "text", "en", "kavy")
+    main.package_registry_service.register("api-v-uncert", "2.0.0", "2", "AI", "text", "en", "kavy")
+    _promote_to_retrieval_ready(main.package_registry_service, pkg1.package_id)
+
+    response = client.post("/query", json={"dataset_id": "api-v-uncert", "dataset_version": "2.0.0"})
+    assert response.status_code == 400
+    msg = response.json().get("error", {}).get("message", "")
+    assert "not retrievable" in msg.lower()
+
+
+def test_api_uncertified_version_reference_returns_200(client):
+    pkg = main.package_registry_service.register("api-v-uncert-ref", "2.0.0", "2", "AI", "text", "en", "kavy")
+
+    response = client.post("/reference", json={"dataset_id": "api-v-uncert-ref", "dataset_version": "2.0.0"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["granted"] is True
+    assert body["dataset_version"] == "2.0.0"
+    assert body["access_policy"] == "policy-api-v-uncert-ref-restricted"
+
+
+def test_api_query_omitting_version_backward_compatibility(client):
+    pkg1 = main.package_registry_service.register("api-v-compat", "1.0.0", "2", "AI", "text", "en", "kavy")
+    pkg2 = main.package_registry_service.register("api-v-compat", "2.0.0", "2", "AI", "text", "en", "kavy")
+    _promote_to_retrieval_ready(main.package_registry_service, pkg1.package_id)
+    _promote_to_retrieval_ready(main.package_registry_service, pkg2.package_id)
+
+    response = client.post("/query", json={"dataset_id": "api-v-compat", "query_params": {}})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["dataset_version"] == "2.0.0"
+    assert body["package_id"] == pkg2.package_id
+    assert body["traceability"]["requested_version"] is None
+
+
+def test_api_legacy_payload_compatibility_export_stream_reference(client):
+    pkg1 = main.package_registry_service.register("api-legacy-multi", "1.0.0", "2", "AI", "text", "en", "kavy")
+    pkg2 = main.package_registry_service.register("api-legacy-multi", "2.0.0", "2", "AI", "text", "en", "kavy")
+    _promote_to_retrieval_ready(main.package_registry_service, pkg1.package_id)
+    _promote_to_retrieval_ready(main.package_registry_service, pkg2.package_id)
+
+    # 1. /export without dataset_version
+    export_res = client.post("/export", json={"dataset_id": "api-legacy-multi", "format": "json"})
+    assert export_res.status_code == 200
+    export_body = export_res.json()
+    assert export_body["dataset_version"] == "2.0.0"
+    assert export_body["package_id"] == pkg2.package_id
+    assert export_body["traceability"]["requested_version"] is None
+    assert export_body["traceability"]["dataset_version"] == "2.0.0"
+
+    # 2. /stream without dataset_version
+    stream_res = client.post("/stream", json={"dataset_id": "api-legacy-multi", "stream_params": {}})
+    assert stream_res.status_code == 200
+    stream_body = stream_res.json()
+    assert stream_body["dataset_version"] == "2.0.0"
+    assert stream_body["package_id"] == pkg2.package_id
+    assert stream_body["traceability"]["requested_version"] is None
+    assert stream_body["traceability"]["dataset_version"] == "2.0.0"
+
+    # 3. /reference without dataset_version
+    ref_res = client.post("/reference", json={"dataset_id": "api-legacy-multi"})
+    assert ref_res.status_code == 200
+    ref_body = ref_res.json()
+    assert ref_body["dataset_version"] == "2.0.0"
+    assert ref_body["package_id"] == pkg2.package_id
+    assert ref_body["traceability"]["requested_version"] is None
+    assert ref_body["traceability"]["dataset_version"] == "2.0.0"
+
+
+def test_api_fallback_and_no_substitution_on_explicit(client):
+    pkg1 = main.package_registry_service.register("api-fallback-ds", "1.0.0", "2", "AI", "text", "en", "kavy")
+    pkg2 = main.package_registry_service.register("api-fallback-ds", "2.0.0", "2", "AI", "text", "en", "kavy")
+    # Both packages remain uncertified
+
+    # 1. Default reference resolves fallback newest (2.0.0)
+    ref_res = client.post("/reference", json={"dataset_id": "api-fallback-ds"})
+    assert ref_res.status_code == 200
+    assert ref_res.json()["dataset_version"] == "2.0.0"
+    assert ref_res.json()["traceability"]["requested_version"] is None
+
+    # 2. Explicit request for 1.0.0 resolves 1.0.0, never substituting 2.0.0
+    ref_v1 = client.post("/reference", json={"dataset_id": "api-fallback-ds", "dataset_version": "1.0.0"})
+    assert ref_v1.status_code == 200
+    assert ref_v1.json()["dataset_version"] == "1.0.0"
+    assert ref_v1.json()["traceability"]["requested_version"] == "1.0.0"
+
+    # 3. Explicit request for non-existent version returns 404, never substituting fallback
+    query_missing = client.post("/query", json={"dataset_id": "api-fallback-ds", "dataset_version": "3.0.0"})
+    assert query_missing.status_code == 404

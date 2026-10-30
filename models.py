@@ -259,21 +259,25 @@ class SharedRecordDeprecateRequest(BaseModel):
 
 class QueryRequest(BaseModel):
     dataset_id: str
+    dataset_version: Optional[str] = None
     query_params: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ExportRequest(BaseModel):
     dataset_id: str
+    dataset_version: Optional[str] = None
     format: Optional[str] = None
 
 
 class StreamRequest(BaseModel):
     dataset_id: str
+    dataset_version: Optional[str] = None
     stream_params: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ReferenceRequest(BaseModel):
     dataset_id: str
+    dataset_version: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
