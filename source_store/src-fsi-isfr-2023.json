@@ -1,0 +1,23 @@
+{
+    "source_id": "src-fsi-isfr-2023",
+    "name": "Forest Survey of India - India State of Forest Report (ISFR 2023)",
+    "authority": "Forest Survey of India (FSI) / MoEFCC",
+    "source_type": "SATELLITE",
+    "licence": "GOVERNMENT_OPEN_DATA",
+    "access_method": "REST_API",
+    "geographic_coverage": "INDIA_NATIONAL_AND_DISTRICTS",
+    "update_characteristics": "BIENNIAL_PUBLICATION_CYCLE",
+    "reliability_limitations": "REMOTE_SENSING_RESOLUTION_MINIMUM_CANOPY_10PCT",
+    "attribution": "Forest Survey of India, ISFR 2023",
+    "connector": "vana_forest_governance_connector",
+    "last_validation": "2026-10-28T11:06:02.285918+00:00",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "source": "Forest Survey of India (ISFR 2023) via VANA Governance Layer",
+        "certification": "VANA-ISFR-2023-CANONICAL",
+        "governance_gate": "6_TUPLE_EVALUATION_GATE"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-28T11:06:02.285928+00:00",
+    "updated_at": "2026-10-28T11:06:02.285931+00:00"
+}
