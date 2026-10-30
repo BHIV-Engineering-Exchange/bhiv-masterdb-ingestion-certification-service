@@ -84,3 +84,17 @@ def test_candidate_registry_does_not_resolve_arbitrary_ids(tmp_path):
 
     with pytest.raises(CandidateNotFoundError):
         service.get_candidate("../../registry_store/unknown")
+
+
+def test_retrieval_detects_attacker_sha256_rehash_without_hmac_key(tmp_path):
+    service = GeoQuestCandidateService(store_dir=str(tmp_path / "candidate-store"))
+    service.register_candidate(actor="candidate-reviewer")
+    bundle = service.store.load(CAPABILITY_ID)
+    bundle["records"][0]["callsign"] = "FORGED"
+    # Attacker recalculates standard unkeyed SHA-256
+    bundle["bundle_sha256"] = service._bundle_sha256(bundle)
+    service.store.save(CAPABILITY_ID, bundle)
+
+    # Retrieval still fails because HMAC authenticity check fails without platform secret key
+    with pytest.raises(CandidateRegistrationError, match="authenticity verification"):
+        service.retrieve(CAPABILITY_ID, CandidateRetrieveRequest())

@@ -2620,7 +2620,21 @@ def get_access_contract_audit(
     contract = capability_registry_service.get_access_contract(request_id)
     if contract is None:
         raise HTTPException(status_code=404, detail=f"Access contract with request_id '{request_id}' not found.")
-    return contract
+
+    # Restrict audit access: Only bhiv-admin or the grant owner may audit this contract
+    grant_actor = capability_registry_service.get_access_contract_actor(request_id)
+    is_admin = ADMIN_ROLE in identity.roles
+    is_owner = identity.actor in (grant_actor, contract.application_id)
+    if not (is_admin or is_owner):
+        raise HTTPException(
+            status_code=403,
+            detail="Only bhiv-admin or the grant owner may audit this access contract.",
+        )
+
+    # Redact access token from audit responses to prevent credential exposure
+    audit_contract = contract.model_copy()
+    audit_contract.access_token = "[REDACTED]"
+    return audit_contract
 
 
 @app.delete("/access/{request_id}")
@@ -2630,11 +2644,31 @@ def revoke_access_contract(
     identity: AuthIdentity = Depends(get_identity),
 ) -> dict:
     """Revoke an active access contract immediately."""
-    success = capability_registry_service.revoke_access_contract(
-        request_id_or_token=request_id,
-        actor=identity.actor,
-        reason=reason or "Revoked via administrative action.",
-    )
+    contract = capability_registry_service.get_access_contract(request_id)
+    if contract is None:
+        raise HTTPException(status_code=404, detail=f"Access contract '{request_id}' not found.")
+
+    grant_actor = capability_registry_service.get_access_contract_actor(request_id)
+    is_admin = ADMIN_ROLE in identity.roles
+    is_owner = identity.actor in (grant_actor, contract.application_id)
+    if not (is_admin or is_owner):
+        raise HTTPException(
+            status_code=403,
+            detail="Only bhiv-admin or the grant owner may revoke this access contract.",
+        )
+
+    try:
+        success = capability_registry_service.revoke_access_contract(
+            request_id_or_token=request_id,
+            actor=identity.actor,
+            reason=reason or "Revoked via administrative action.",
+        )
+    except RuntimeError as exc:
+        logger.error("Grant revocation persistence failure: %s", exc)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to persist access contract revocation to storage backend.",
+        ) from exc
     if not success:
         raise HTTPException(status_code=404, detail=f"Access contract '{request_id}' not found.")
     return {"status": "revoked", "request_id": request_id}
@@ -4436,6 +4470,35 @@ def live_feed_registry_page() -> FileResponse:
 # ---------------------------------------------------------------------------
 
 
+def _fetch_opensky_flights_data(
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
+    radius_nm: float = 100.0,
+    icao24: Optional[str] = None,
+    callsign: Optional[str] = None,
+    limit: int = 1000,
+) -> dict:
+    if (lat is not None and lon is None) or (lat is None and lon is not None):
+        raise HTTPException(
+            status_code=400,
+            detail="Both 'lat' and 'lon' query parameters must be provided together for coordinate-bounded flight tracking.",
+        )
+    try:
+        return opensky_service.get_states(
+            lat=lat,
+            lon=lon,
+            radius_nm=radius_nm,
+            icao24=icao24,
+            callsign=callsign,
+            limit=limit,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("OpenSky flight query error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed retrieving flight state vectors: {str(exc)}") from exc
+
+
 @app.get("/api/opensky", tags=["flights", "geospatial"])
 @app.get("/api/flights", tags=["flights", "geospatial"])
 def get_opensky_flights(
@@ -4457,37 +4520,14 @@ def get_opensky_flights(
     God's Eye View CesiumJS 3D Globe visualization, including automatic 60-second
     rate-limit caching and governed offline fallback.
     """
-    if hasattr(lat, "default"):
-        lat = lat.default
-    if hasattr(lon, "default"):
-        lon = lon.default
-    if hasattr(radius_nm, "default"):
-        radius_nm = radius_nm.default or 100.0
-    if hasattr(limit, "default"):
-        limit = limit.default or 1000
-    if hasattr(icao24, "default"):
-        icao24 = icao24.default
-    if hasattr(callsign, "default"):
-        callsign = callsign.default
-
-    if (lat is not None and lon is None) or (lat is None and lon is not None):
-        raise HTTPException(
-            status_code=400,
-            detail="Both 'lat' and 'lon' query parameters must be provided together for coordinate-bounded flight tracking.",
-        )
-
-    try:
-        return opensky_service.get_states(
-            lat=lat,
-            lon=lon,
-            radius_nm=radius_nm,
-            icao24=icao24,
-            callsign=callsign,
-            limit=limit,
-        )
-    except Exception as exc:
-        logger.error("OpenSky flight query error: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed retrieving flight state vectors: {str(exc)}") from exc
+    return _fetch_opensky_flights_data(
+        lat=lat,
+        lon=lon,
+        radius_nm=radius_nm,
+        icao24=icao24,
+        callsign=callsign,
+        limit=limit,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -4568,7 +4608,7 @@ def get_opensky_flight_dataset_records(
     """
     Returns authentic OpenSky flight records from datasets/opensky_states.json with optional coordinate/filtering.
     """
-    return get_opensky_flights(
+    return _fetch_opensky_flights_data(
         lat=lat,
         lon=lon,
         radius_nm=radius_nm,

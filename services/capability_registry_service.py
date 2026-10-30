@@ -37,22 +37,7 @@ from services.vana_client import (
 
 logger = logging.getLogger("masterdb")
 
-# Safely register dynamic schema extension fields at runtime to support VAJRA governed
-# access contracts and correlation without modifying models.py directly.
-if "expires_at" not in AccessContract.model_fields:
-    AccessContract.model_fields["expires_at"] = FieldInfo(annotation=Optional[str], default=None)
-    AccessContract.model_rebuild(force=True)
-
-if "trace_id" not in CapabilityRetrieveRequest.model_fields:
-    CapabilityRetrieveRequest.model_fields["trace_id"] = FieldInfo(annotation=Optional[str], default=None)
-    CapabilityRetrieveRequest.model_fields["execution_id"] = FieldInfo(annotation=Optional[str], default=None)
-    CapabilityRetrieveRequest.model_rebuild(force=True)
-
-if "trace_id" not in CapabilityRetrieveResponse.model_fields:
-    CapabilityRetrieveResponse.model_fields["trace_id"] = FieldInfo(annotation=Optional[str], default=None)
-    CapabilityRetrieveResponse.model_fields["execution_id"] = FieldInfo(annotation=Optional[str], default=None)
-    CapabilityRetrieveResponse.model_fields["content_digest_sha256"] = FieldInfo(annotation=Optional[str], default=None)
-    CapabilityRetrieveResponse.model_rebuild(force=True)
+# Schema extension fields are declared natively in models.py
 
 
 class CapabilityNotFoundError(KeyError):
@@ -917,6 +902,12 @@ class CapabilityRegistryService:
                 logger.warning("Failed to load access grant from store: %s", exc)
         return None
 
+    def get_access_contract_actor(self, request_id_or_token: str) -> Optional[str]:
+        contract = self.get_access_contract(request_id_or_token)
+        if not contract:
+            return None
+        return self._access_contract_actors.get(contract.access_token) or self._access_contract_actors.get(contract.request_id)
+
     def revoke_access_contract(self, request_id_or_token: str, actor: str, reason: str = "") -> bool:
         contract = self.get_access_contract(request_id_or_token)
         if not contract:
@@ -932,7 +923,8 @@ class CapabilityRegistryService:
                 self.grant_store.save(contract.access_token, data)
                 self.grant_store.save(contract.request_id, data)
             except Exception as exc:
-                logger.warning("Failed to persist revocation to grant store: %s", exc)
+                logger.error("Failed to persist revocation to grant store: %s", exc)
+                raise RuntimeError(f"Failed to persist grant revocation: {exc}") from exc
 
         self._access_contracts.pop(contract.access_token, None)
         self._access_contracts.pop(contract.request_id, None)
