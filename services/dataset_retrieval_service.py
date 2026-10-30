@@ -2,9 +2,9 @@
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-from models import PackageStatus, RetrievalStatus
+from models import KnowledgePackage, PackageStatus, RetrievalEvidence, RetrievalStatus
 from services.package_registry_service import PackageNotFoundError, PackageRegistryService
 from services.knowledge_object_service import KnowledgeObjectService
 from services.retrieval_readiness_service import RetrievalReadinessService
@@ -118,26 +118,124 @@ class DatasetRetrievalService:
             "mdu_source": mdu_source,
         }
 
-    def query(self, dataset_id: str, query_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        return self._controlled_access(dataset_id, "query", query_params)
+    def query(
+        self,
+        dataset_id: str,
+        query_params: Optional[Dict[str, Any]] = None,
+        dataset_version: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        return self._controlled_access(
+            dataset_id, "query", query_params, dataset_version=dataset_version
+        )
 
-    def export_dataset(self, dataset_id: str, format: Optional[str] = None) -> Dict[str, Any]:
-        return self._controlled_access(dataset_id, "export", {"format": format})
+    def export_dataset(
+        self,
+        dataset_id: str,
+        format: Optional[str] = None,
+        dataset_version: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        return self._controlled_access(
+            dataset_id, "export", {"format": format}, dataset_version=dataset_version
+        )
 
-    def stream(self, dataset_id: str, stream_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        return self._controlled_access(dataset_id, "stream", stream_params)
+    def stream(
+        self,
+        dataset_id: str,
+        stream_params: Optional[Dict[str, Any]] = None,
+        dataset_version: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        return self._controlled_access(
+            dataset_id, "stream", stream_params, dataset_version=dataset_version
+        )
 
-    def reference(self, dataset_id: str) -> Dict[str, Any]:
-        return self._controlled_access(dataset_id, "reference", None)
+    def reference(
+        self,
+        dataset_id: str,
+        dataset_version: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        return self._controlled_access(
+            dataset_id, "reference", None, dataset_version=dataset_version
+        )
+
+    def _select_package(
+        self,
+        packages: List[KnowledgePackage],
+        dataset_id: str,
+        dataset_version: Optional[str] = None,
+    ) -> Tuple[KnowledgePackage, Optional[RetrievalEvidence]]:
+        all_matching = [p for p in packages if p.dataset_id == dataset_id]
+        if not all_matching:
+            raise PackageNotFoundError(f"No dataset registered with dataset_id='{dataset_id}'.")
+
+        if dataset_version is not None:
+            matching_version = [p for p in all_matching if p.dataset_version == dataset_version]
+            if not matching_version:
+                raise PackageNotFoundError(
+                    f"No package found for dataset_id='{dataset_id}' with version='{dataset_version}'."
+                )
+
+            assessed_candidates: List[Tuple[KnowledgePackage, RetrievalEvidence]] = []
+            for p in matching_version:
+                ev = self.retrieval_readiness_service.assess(p.package_id)
+                assessed_candidates.append((p, ev))
+
+            def candidate_sort_key(item: Tuple[KnowledgePackage, RetrievalEvidence]):
+                pkg, ev = item
+                is_retrievable = 1 if ev.status != RetrievalStatus.NOT_RETRIEVABLE else 0
+                is_certified = 1 if pkg.status in (PackageStatus.CERTIFIED, PackageStatus.RETRIEVAL_READY) else 0
+                is_not_deprecated = 1 if pkg.status != PackageStatus.DEPRECATED else 0
+                return (is_retrievable, is_certified, is_not_deprecated, pkg.created_at, pkg.package_id)
+
+            assessed_candidates.sort(key=candidate_sort_key, reverse=True)
+            return assessed_candidates[0]
+
+        # dataset_version is None: Default to latest certified, retrieval-ready package
+        candidates = [
+            p for p in all_matching
+            if p.status in (PackageStatus.CERTIFIED, PackageStatus.RETRIEVAL_READY)
+        ]
+
+        assessed_map: Dict[str, RetrievalEvidence] = {}
+        eligible: List[Tuple[KnowledgePackage, RetrievalEvidence]] = []
+        for p in candidates:
+            ev = self.retrieval_readiness_service.assess(p.package_id)
+            assessed_map[p.package_id] = ev
+            if ev.status != RetrievalStatus.NOT_RETRIEVABLE:
+                eligible.append((p, ev))
+
+        if eligible:
+            eligible.sort(key=lambda item: (item[0].created_at, item[0].package_id), reverse=True)
+            return eligible[0]
+
+        # Fallback when no certified candidate is eligible:
+        # Select newest non-deprecated candidate by (created_at DESC, package_id DESC).
+        # If all are deprecated, select newest overall.
+        non_deprecated = [p for p in all_matching if p.status != PackageStatus.DEPRECATED]
+        fallback_pool = non_deprecated if non_deprecated else all_matching
+        fallback_sorted = sorted(
+            fallback_pool,
+            key=lambda p: (p.created_at, p.package_id),
+            reverse=True,
+        )
+        selected = fallback_sorted[0]
+        return selected, assessed_map.get(selected.package_id)
 
     def _controlled_access(
-        self, dataset_id: str, operation: str, params: Optional[Dict[str, Any]]
+        self,
+        dataset_id: str,
+        operation: str,
+        params: Optional[Dict[str, Any]],
+        dataset_version: Optional[str] = None,
     ) -> Dict[str, Any]:
         packages = self.registry.list_all()
-        package = next((p for p in packages if p.dataset_id == dataset_id), None)
-        if package is None:
-            raise PackageNotFoundError(f"No dataset registered with dataset_id='{dataset_id}'.")
-        evidence = self.retrieval_readiness_service.assess(package.package_id)
+        package, precomputed_evidence = self._select_package(
+            packages, dataset_id, dataset_version=dataset_version
+        )
+        evidence = (
+            precomputed_evidence
+            if precomputed_evidence is not None
+            else self.retrieval_readiness_service.assess(package.package_id)
+        )
         if evidence.status == RetrievalStatus.NOT_RETRIEVABLE and operation != "reference":
             raise DatasetNotRetrievableError(
                 f"Dataset '{dataset_id}' is not retrievable. Status: {evidence.status.value}. "
@@ -152,6 +250,7 @@ class DatasetRetrievalService:
         now = datetime.now(timezone.utc).isoformat()
         grant = {
             "dataset_id": dataset_id,
+            "dataset_version": package.dataset_version,
             "package_id": package.package_id,
             "operation": operation,
             "granted": True,
@@ -169,6 +268,8 @@ class DatasetRetrievalService:
                 "intended_use": access_policy["intended_use"],
             },
             "traceability": {
+                "dataset_version": package.dataset_version,
+                "requested_version": dataset_version,
                 "query_params": params,
                 "retrieval_evidence_id": package.package_id,
             },
