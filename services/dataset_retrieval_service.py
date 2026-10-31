@@ -241,7 +241,7 @@ class DatasetRetrievalService:
                 f"Dataset '{dataset_id}' is not retrievable. Status: {evidence.status.value}. "
                 f"Corrective actions: {evidence.corrective_actions}"
             )
-        access_policy = self._resolve_access_policy(package)
+        access_policy = self._resolve_access_policy(package, evidence=evidence)
         if operation not in access_policy["allowed_operations"]:
             raise DatasetAccessDeniedError(
                 f"Operation '{operation}' is not permitted for dataset '{dataset_id}' "
@@ -326,8 +326,14 @@ class DatasetRetrievalService:
             "retrieval_evidence": retrieval_evidence,
         }
 
-    def _resolve_access_policy(self, package: Any) -> Dict[str, Any]:
-        if package.status in (PackageStatus.CERTIFIED, PackageStatus.RETRIEVAL_READY):
+    def _resolve_access_policy(
+        self, package: Any, evidence: Optional[RetrievalEvidence] = None
+    ) -> Dict[str, Any]:
+        is_certified = package.status in (PackageStatus.CERTIFIED, PackageStatus.RETRIEVAL_READY)
+        is_retrieval_eligible = (
+            evidence is not None and evidence.status != RetrievalStatus.NOT_RETRIEVABLE
+        )
+        if is_certified and is_retrieval_eligible:
             return {
                 "policy_id": f"policy-{package.dataset_id}-open-read",
                 "classification": "BHIV-ECOSYSTEM-SHARED",
