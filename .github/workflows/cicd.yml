@@ -490,14 +490,28 @@ jobs:
 
 
           # ------------------------------------------------------
-          # Pull new API image
+          # Pull new API image (with retry & containerd recovery)
           # ------------------------------------------------------
 
           echo ""
           echo "Pulling API image..."
 
-          docker pull \
-            "${DOCKER_USERNAME}/masterdb-ingestion-certification-service:${IMAGE_TAG}"
+          PULL_SUCCESS="false"
+          for attempt in 1 2 3; do
+            echo "Pull attempt $attempt of 3..."
+            if docker pull "${DOCKER_USERNAME}/masterdb-ingestion-certification-service:${IMAGE_TAG}"; then
+              PULL_SUCCESS="true"
+              break
+            fi
+            echo "Pull attempt $attempt failed. Pruning dangling images and retrying in 5s..."
+            docker image prune -f || true
+            sleep 5
+          done
+
+          if [ "$PULL_SUCCESS" != "true" ]; then
+            echo "ERROR: Failed to pull API image after 3 attempts."
+            exit 1
+          fi
 
 
           # ------------------------------------------------------

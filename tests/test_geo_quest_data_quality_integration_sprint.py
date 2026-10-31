@@ -623,10 +623,11 @@ class TestIsolatedCandidateServiceIntegration:
         assert loaded["dataset"]["proposed_dataset_id"] == "BHIV-GEO-QUEST-01-AIRCRAFT"
 
         # Independently verify SHA-256 digest computation using hashlib
-        payload = {k: v for k, v in loaded.items() if k != "bundle_sha256"}
+        payload = {k: v for k, v in loaded.items() if k not in ("bundle_sha256", "bundle_signature_hmac")}
         serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         expected_hash = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
         assert loaded["bundle_sha256"] == expected_hash
+        assert "bundle_signature_hmac" in loaded
 
     def test_synthetic_candidate_retrieval_and_filtering(self, tmp_path):
         fake_root = _setup_isolated_synthetic_workspace(tmp_path)

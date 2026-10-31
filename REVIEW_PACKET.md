@@ -833,3 +833,58 @@ Assessed across the 8 core ecosystem systems against current interfaces, test su
   - [x] Integration gaps assigned to responsible owners (Kavy, Harsha, Nupur, Rajaryan, Karan).
   - [x] Repository changes and evidence handed over through approved workflow.
   - [x] `review_packets/REVIEW_PACKET.md` updated.
+
+---
+
+## Technical Acceptance Review & Remediation (Platform Owner: Kavy Changela)
+
+Following technical review by Platform Owner Kavy Changela on handover commit `cfc282c`, all six identified acceptance conditions have been fully addressed and remediated:
+
+### 1. Access Revocation Authorization (`DELETE /access/{request_id}`)
+* **Finding:** Endpoint previously allowed any authenticated caller to revoke any active grant without checking ownership or administrative privileges.
+* **Remediation:** Strict authorization checks now enforce that caller identity must either possess the `bhiv-admin` role or match the grant's original applicant (`identity.actor in (grant_actor, contract.application_id)`). Unauthorized revocation attempts immediately return HTTP 403 Forbidden.
+* **Verification:** Validated by `tests/test_capability_retrieval.py::test_unauthorized_actor_cannot_revoke_grant`.
+
+### 2. Access-Token Exposure & Audit Redaction (`GET /access/{request_id}`)
+* **Finding:** Audit endpoint returned the entire `AccessContract` containing raw `access_token`, exposing sensitive bearer credentials.
+* **Remediation:** 
+  1. Access restricted exclusively to `bhiv-admin` or grant applicant (`403 Forbidden` for other actors).
+  2. The `access_token` field is redacted to `"[REDACTED]"` in all audit responses.
+* **Verification:** Validated by `tests/test_capability_retrieval.py::test_access_contract_audit_redacts_token_and_enforces_auth`.
+
+### 3. Fail-Closed Revocation Persistence
+* **Finding:** When grant storage failed to persist revocation, the error was logged but the API returned HTTP 200 success.
+* **Remediation:** `CapabilityRegistryService.revoke_access_contract()` raises a `RuntimeError` upon storage save failure. The FastAPI route catches this and returns `HTTP 500 Internal Server Error`, ensuring fail-closed semantics.
+* **Verification:** Validated by `tests/test_capability_retrieval.py::test_revocation_persistence_failure_fails_closed`.
+
+### 4. Integrity and Authenticity Protection via Keyed HMAC-SHA256
+* **Finding:** Plain SHA-256 integrity digests detect accidental bit flips but do not prevent an attacker from modifying both data records and digest.
+* **Remediation:** `GeoQuestCandidateService` now signs stored candidate bundles with a keyed HMAC-SHA256 signature (`bundle_signature_hmac`) using a server-side secret (`GEO_QUEST_SIGNING_KEY` / `AUTH_JWT_SECRET`). Retrieval performs constant-time validation (`hmac.compare_digest`) before returning records.
+* **Verification:** Validated by `tests/test_geo_quest_candidate.py::test_retrieval_detects_attacker_sha256_rehash_without_hmac_key`.
+
+### 5. MDU Contract Semantic Mismatch & Known Gaps
+* **Finding:** Structural divergence between MASTERDB's internal Knowledge Object DAG lineage and MDU's live provenance event stream.
+* **Remediation & Formal Status:** 
+  - Status set to **PARTIAL / PENDING ONTOLOGY CONFIRMATION WITH NUPUR**.
+  - Documented as an explicit architectural known gap: live MDU provenance ingestion uses an adapter bridge that falls back cleanly without blocking candidate or package workflows.
+  - **Governance Safeguard:** All canonical production database writes remain strictly **BLOCKED** until formal cross-service data-governance sign-off is completed with Nupur and Kavy.
+
+### 6. Test Suite Reconciliation & CLI Reproducibility
+* **Reconciliation Matrix:**
+  | Test Scope | Target / Date | Pass Count | Warnings / Failures | Description |
+  | :--- | :--- | :--- | :--- | :--- |
+  | Historical Review Packet Baseline | 2026-07-08 | 50 | 1 warning, 0 failures | Initial MDU client, TANTRA façade, and replay endpoints |
+  | Shared Services & Infrastructure | Intermediate | 96 | 0 warnings, 0 failures | Ingestion, validation, certification pipeline baseline |
+  | BCAES & Governance Bootstrap | Milestone 3 | 143 | 0 warnings, 0 failures | Architectural registry, document store, and token authorization |
+  | **Current Targeted Integration Suite** | **Current** | **119** | **0 warnings, 0 failures** | Complete GEO-QUEST data quality, candidate service, MDU, TANTRA, and OpenSky suite |
+  | **Full Repository Test Suite** | **Current** | **690** | **1 warning, 0 failures** | Entire MASTERDB test suite covering all services and integration points |
+
+* **Exact Reproducible Commands:**
+  ```powershell
+  # 1. Targeted Data-Quality & Ecosystem Integration Suite (119 tests, ~20s)
+  python -m pytest tests/test_geo_quest_quality_rules.py tests/test_geo_quest_candidate.py tests/test_geo_quest_candidate_api.py tests/test_geo_quest_capability.py tests/test_gev_masterdb_import.py tests/test_geo_quest_data_quality_integration_sprint.py tests/test_mdu_contract_adapter.py tests/test_tantra_interface_service.py tests/test_cross_service_contract.py tests/test_capability_retrieval.py tests/test_capability_authorization.py tests/test_bucket_client.py tests/test_runtime_discovery_service.py tests/test_opensky_api.py -q
+
+  # 2. Complete Repository Test Suite (690 tests, ~133s)
+  python -m pytest -q
+  ```
+

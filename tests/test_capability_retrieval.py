@@ -230,3 +230,82 @@ def test_repeated_revoke_behavior():
     # Second revocation returns 404 (grant not found or already revoked)
     del2 = client.delete(f"/access/{grant['request_id']}", headers={"Authorization": f"Bearer {token}"})
     assert del2.status_code == 404
+
+
+def test_unauthorized_actor_cannot_revoke_grant():
+    owner_token = _get_token(actor="DATA_CONSUMER", roles=["ecosystem-reader"])
+    req_res = client.post(
+        "/access/request",
+        json={
+            "application_id": "DATA_CONSUMER",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert req_res.status_code == 200
+    grant = req_res.json()
+
+    # Another non-admin actor attempts to revoke
+    attacker_token = _get_token(actor="ATTACKER_CONSUMER", roles=["ecosystem-reader"])
+    del_res = client.delete(f"/access/{grant['request_id']}", headers={"Authorization": f"Bearer {attacker_token}"})
+    assert del_res.status_code == 403
+    assert "Only bhiv-admin or the grant owner" in del_res.json()["error"]["message"]
+
+
+def test_access_contract_audit_redacts_token_and_enforces_auth():
+    owner_token = _get_token(actor="DATA_CONSUMER", roles=["ecosystem-reader"])
+    req_res = client.post(
+        "/access/request",
+        json={
+            "application_id": "DATA_CONSUMER",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert req_res.status_code == 200
+    grant = req_res.json()
+    req_id = grant["request_id"]
+
+    # 1. Owner can audit contract -> access_token must be redacted
+    audit_res = client.get(f"/access/{req_id}", headers={"Authorization": f"Bearer {owner_token}"})
+    assert audit_res.status_code == 200
+    audit_contract = audit_res.json()
+    assert audit_contract["request_id"] == req_id
+    assert audit_contract["access_token"] == "[REDACTED]"
+
+    # 2. Unauthorized actor gets 403 Forbidden
+    attacker_token = _get_token(actor="ATTACKER_CONSUMER", roles=["ecosystem-reader"])
+    unauth_res = client.get(f"/access/{req_id}", headers={"Authorization": f"Bearer {attacker_token}"})
+    assert unauth_res.status_code == 403
+    assert "Only bhiv-admin or the grant owner" in unauth_res.json()["error"]["message"]
+
+
+def test_revocation_persistence_failure_fails_closed(monkeypatch):
+    owner_token = _get_token(actor="DATA_CONSUMER", roles=["ecosystem-reader"])
+    req_res = client.post(
+        "/access/request",
+        json={
+            "application_id": "DATA_CONSUMER",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert req_res.status_code == 200
+    grant = req_res.json()
+    req_id = grant["request_id"]
+
+    from main import capability_registry_service
+
+    # Simulate grant store failure during revocation
+    def failing_save(*args, **kwargs):
+        raise IOError("Disk quota exceeded or database connection dropped")
+
+    if capability_registry_service.grant_store:
+        monkeypatch.setattr(capability_registry_service.grant_store, "save", failing_save)
+
+    del_res = client.delete(f"/access/{req_id}", headers={"Authorization": f"Bearer {owner_token}"})
+    assert del_res.status_code == 500
+    assert "Failed to persist access contract revocation" in del_res.json()["error"]["message"]
