@@ -810,36 +810,71 @@ class CapabilityRegistryService:
             )
             raise CapabilityAccessDeniedError(reason)
 
-        # Evaluate VANA 6-tuple governance evaluation gate if configured and applicable
-        if self.vana_client and self.vana_client.is_configured():
-            if (
-                capability.capability_id.startswith("cap-vana-")
-                or capability.dataset_id.startswith("DS-FSI-")
-                or capability.dataset_id.startswith("DS-VANA-")
-            ):
-                try:
-                    primary_role = roles[0] if roles else "APPROVED_CONSUMER"
-                    self.vana_client.evaluate_governance(
-                        actor=actor,
-                        role=primary_role,
-                        dataset_id=capability.dataset_id,
-                        action="READ",
-                        purpose=request_data.purpose,
-                    )
-                except VanaGovernanceDeniedError as exc:
-                    reason = f"VANA 6-tuple governance evaluation denied access: {exc}"
-                    self._emit_audit(
-                        request_id=req_id,
-                        actor=actor,
-                        application_id=request_data.application_id,
-                        capability_id=capability.capability_id,
-                        action="ACCESS_REQUEST",
-                        result="DENIED",
-                        reason=reason,
-                    )
-                    raise CapabilityAccessDeniedError(reason) from exc
-                except Exception as exc:
-                    logger.warning("VANA governance evaluation check warning: %s", exc)
+        # Evaluate VANA 6-tuple governance evaluation gate if capability is VANA-governed
+        is_vana_governed = (
+            capability.capability_id.startswith("cap-vana-")
+            or capability.dataset_id.startswith("DS-FSI-")
+            or capability.dataset_id.startswith("DS-VANA-")
+        )
+        if is_vana_governed:
+            if not self.vana_client or not self.vana_client.is_configured():
+                reason = "VANA integration is required for governed capability but is not configured."
+                self._emit_audit(
+                    request_id=req_id,
+                    actor=actor,
+                    application_id=request_data.application_id,
+                    capability_id=capability.capability_id,
+                    action="ACCESS_REQUEST",
+                    result="DENIED",
+                    reason=reason,
+                )
+                raise VanaUnavailableError(reason)
+
+            try:
+                primary_role = roles[0] if roles else "APPROVED_CONSUMER"
+                self.vana_client.evaluate_governance(
+                    actor=actor,
+                    role=primary_role,
+                    dataset_id=capability.dataset_id,
+                    action="READ",
+                    purpose=request_data.purpose,
+                )
+            except VanaGovernanceDeniedError as exc:
+                reason = f"VANA 6-tuple governance evaluation denied access: {exc}"
+                self._emit_audit(
+                    request_id=req_id,
+                    actor=actor,
+                    application_id=request_data.application_id,
+                    capability_id=capability.capability_id,
+                    action="ACCESS_REQUEST",
+                    result="DENIED",
+                    reason=reason,
+                )
+                raise CapabilityAccessDeniedError(reason) from exc
+            except VanaUnavailableError as exc:
+                reason = f"VANA governance evaluation service unavailable: {exc}"
+                self._emit_audit(
+                    request_id=req_id,
+                    actor=actor,
+                    application_id=request_data.application_id,
+                    capability_id=capability.capability_id,
+                    action="ACCESS_REQUEST",
+                    result="DENIED",
+                    reason=reason,
+                )
+                raise VanaUnavailableError(reason) from exc
+            except Exception as exc:
+                reason = f"VANA governance evaluation failed unexpectedly: {exc}"
+                self._emit_audit(
+                    request_id=req_id,
+                    actor=actor,
+                    application_id=request_data.application_id,
+                    capability_id=capability.capability_id,
+                    action="ACCESS_REQUEST",
+                    result="DENIED",
+                    reason=reason,
+                )
+                raise VanaUnavailableError(reason) from exc
 
         expires_at = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
         access_contract = AccessContract(
@@ -880,7 +915,7 @@ class CapabilityRegistryService:
             capability_id=capability.capability_id,
             action="ACCESS_REQUEST",
             result="GRANTED",
-            reason=access_contract.reason,
+            reason=access_contract.reason or "Access authorized based on authenticated application identity, role, and matching purpose.",
         )
 
         return access_contract
@@ -1312,7 +1347,7 @@ class CapabilityRegistryService:
         capability_id: str,
         action: str,
         result: str,
-        reason: str,
+        reason: Optional[str],
         trace_id: Optional[str] = None,
         execution_id: Optional[str] = None,
     ) -> None:

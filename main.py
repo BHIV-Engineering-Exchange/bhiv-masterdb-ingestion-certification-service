@@ -2588,6 +2588,8 @@ def request_capability_access(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except CapabilityAccessDeniedError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except VanaUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.post("/capabilities/{capability_id}/retrieve", response_model=CapabilityRetrieveResponse)
@@ -2609,6 +2611,8 @@ def retrieve_capability_data(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except CapabilityAccessDeniedError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except VanaUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.get("/access/{request_id}", response_model=AccessContract)

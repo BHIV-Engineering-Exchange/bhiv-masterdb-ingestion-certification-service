@@ -21,8 +21,6 @@ import httpx
 
 logger = logging.getLogger("masterdb")
 
-DEFAULT_VANA_API_KEY = "2b899caf7e3aea924c96761326bdded5162da31a9d1fdba59a2a451d2335c778"
-
 
 class VanaUnavailableError(RuntimeError):
     """Raised when VANA is unreachable, unconfigured, or returns an error."""
@@ -49,7 +47,7 @@ class VanaClient:
         self.api_key = (
             api_key
             if api_key is not None
-            else (os.environ.get("VANA_API_KEY") or DEFAULT_VANA_API_KEY)
+            else (os.environ.get("VANA_API_KEY") or "")
         )
         self.timeout_seconds = timeout_seconds
 
@@ -62,8 +60,8 @@ class VanaClient:
         )
 
     def is_configured(self) -> bool:
-        """Returns True if base_url is configured."""
-        return bool(self.base_url)
+        """Returns True if both base_url and api_key are configured."""
+        return bool(self.base_url and self.api_key)
 
     # -------------------------------------------------------------------------
     # 1. 6-Tuple Governance Evaluation Gate
@@ -82,6 +80,9 @@ class VanaClient:
         Evaluate 6-tuple governance gate via POST /api/v1/governance/evaluate.
         Returns decision (ALLOWED, CONTROLLED, REQUIRES_APPROVAL, DENIED) with rule codes and audit trail.
         """
+        if not self.is_configured():
+            raise VanaUnavailableError("VANA client is not configured; cannot evaluate governance.")
+
         payload = {
             "actor": actor,
             "role": role,
@@ -92,10 +93,17 @@ class VanaClient:
         }
         res = self._post("/api/v1/governance/evaluate", payload)
         decision = (res.get("decision") or res.get("status") or "").upper()
+        if decision == "ALLOWED":
+            return res
         if decision == "DENIED":
             reason = res.get("reason") or res.get("detail") or "Access denied by VANA 6-tuple governance policy."
             raise VanaGovernanceDeniedError(reason)
-        return res
+        reason = (
+            res.get("reason")
+            or res.get("detail")
+            or f"Access not permitted by VANA governance policy (decision: {decision or 'EMPTY'})."
+        )
+        raise VanaGovernanceDeniedError(reason)
 
     # -------------------------------------------------------------------------
     # 2. Governed Datasets Catalog
@@ -169,7 +177,7 @@ class VanaClient:
 
     def _get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if not self.is_configured():
-            raise VanaUnavailableError("VANA_BASE_URL is not configured; cannot call VANA API.")
+            raise VanaUnavailableError("VANA client is not configured; cannot call VANA API.")
 
         url = f"{self.base_url}{path}"
         try:
@@ -188,7 +196,7 @@ class VanaClient:
 
     def _post(self, path: str, json_body: Dict[str, Any]) -> Dict[str, Any]:
         if not self.is_configured():
-            raise VanaUnavailableError("VANA_BASE_URL is not configured; cannot call VANA API.")
+            raise VanaUnavailableError("VANA client is not configured; cannot call VANA API.")
 
         url = f"{self.base_url}{path}"
         try:
