@@ -224,8 +224,8 @@ from services import backup_service
 from services import startup_config
 from auth.constants import ADMIN_ROLE
 from auth.dependencies import build_identity_dependency
-from auth.models import AuthIdentity, TokenRequest, TokenResponse
-from auth.service import AuthService, AuthTokenError
+from auth.models import AuthIdentity, TokenRequest, TokenResponse, ADMIN_ROLES, OPERATOR_ROLES
+from auth.service import AuthService, AuthTokenError, log_security_decision
 
 from canonical_repository.models import DocumentCategory as CanonicalDocumentCategory
 from canonical_repository.models import PublishVersionRequest as CanonicalPublishVersionRequest
@@ -376,6 +376,15 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=422,
         content=_error_body(request, "validation_error", msg or "Request validation failed."),
+    )
+
+
+@app.exception_handler(PermissionError)
+async def permission_error_handler(request: Request, exc: PermissionError) -> JSONResponse:
+    logger.warning("PermissionError at %s: %s", request.url.path, exc)
+    return JSONResponse(
+        status_code=403,
+        content=_error_body(request, "auth_error", str(exc) or "DENY:FORBIDDEN"),
     )
 
 
@@ -895,7 +904,7 @@ def _shared_service(service_name: str) -> SharedRecordStore:
 
 
 @app.post("/validate")
-def validate_dataset(request: ValidationRequest) -> dict:
+def validate_dataset(request: ValidationRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     try:
         report = validation_service.validate(
             dataset_path=request.dataset_path,
@@ -912,7 +921,7 @@ def validate_dataset(request: ValidationRequest) -> dict:
 
 
 @app.post("/certify")
-def certify_dataset(request: CertificationRequest) -> dict:
+def certify_dataset(request: CertificationRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     try:
         report = certification_service.certify(
             dataset_id=request.dataset_id,
@@ -1194,7 +1203,7 @@ def cancel_upload(upload_id: str, reason: UploadCancelRequest,
 
 
 @app.post("/packages/register")
-def register_package(request: PackageRegisterRequest) -> dict:
+def register_package(request: PackageRegisterRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     try:
         package = package_registry_service.register(
             dataset_id=request.dataset_id,
@@ -1204,7 +1213,7 @@ def register_package(request: PackageRegisterRequest) -> dict:
             medium=request.medium,
             language=request.language,
             owner=request.owner,
-            actor=request.actor,
+            actor=identity.actor,
             reason=request.reason,
             package_id=request.package_id,
         )
@@ -1214,12 +1223,21 @@ def register_package(request: PackageRegisterRequest) -> dict:
 
 
 @app.post("/packages/promote")
-def promote_package(request: PackagePromoteRequest) -> dict:
+def promote_package(request: PackagePromoteRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    if not (set(identity.roles) & (ADMIN_ROLES | OPERATOR_ROLES)):
+        log_security_decision(
+            logger=logger,
+            outcome="DENY",
+            reason_code="DENY:INSUFFICIENT_ROLE",
+            policy_reference="/packages/promote",
+            actor_reference=identity.actor,
+        )
+        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     try:
         package = package_registry_service.promote(
             package_id=request.package_id,
             to_status=request.to_status,
-            actor=request.actor,
+            actor=identity.actor,
             reason=request.reason,
         )
         return package.model_dump(mode="json")
@@ -1230,11 +1248,11 @@ def promote_package(request: PackagePromoteRequest) -> dict:
 
 
 @app.post("/packages/deprecate")
-def deprecate_package(request: PackageDeprecateRequest) -> dict:
+def deprecate_package(request: PackageDeprecateRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     try:
         package = package_registry_service.deprecate(
             package_id=request.package_id,
-            actor=request.actor,
+            actor=identity.actor,
             reason=request.reason,
         )
         return package.model_dump(mode="json")
@@ -1294,7 +1312,7 @@ def audit_package(package_id: str) -> dict:
 
 
 @app.post("/packages/{package_id}/knowledge-object")
-def register_knowledge_object(package_id: str, request: KnowledgeObjectRegisterRequest) -> dict:
+def register_knowledge_object(package_id: str, request: KnowledgeObjectRegisterRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     if request.package_id != package_id:
         raise HTTPException(
             status_code=400,
@@ -1501,13 +1519,13 @@ def shared_version_compatibility(local_version: str, remote_version: str) -> dic
 
 
 @app.post("/shared/{service_name}/register")
-def register_shared_record(service_name: str, request: SharedRecordRegisterRequest) -> dict:
+def register_shared_record(service_name: str, request: SharedRecordRegisterRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     service = _shared_service(service_name)
     try:
         record = service.register(
             record_id=request.record_id,
             payload=request.payload,
-            actor=request.actor,
+            actor=identity.actor,
             reason=request.reason,
         )
         return record.model_dump(mode="json")
@@ -1518,13 +1536,13 @@ def register_shared_record(service_name: str, request: SharedRecordRegisterReque
 
 
 @app.put("/shared/{service_name}/{record_id}")
-def update_shared_record(service_name: str, record_id: str, request: SharedRecordUpdateRequest) -> dict:
+def update_shared_record(service_name: str, record_id: str, request: SharedRecordUpdateRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     service = _shared_service(service_name)
     try:
         record = service.update(
             record_id=record_id,
             payload=request.payload,
-            actor=request.actor,
+            actor=identity.actor,
             reason=request.reason,
         )
         return record.model_dump(mode="json")
@@ -1537,10 +1555,10 @@ def update_shared_record(service_name: str, record_id: str, request: SharedRecor
 
 
 @app.post("/shared/{service_name}/{record_id}/deprecate")
-def deprecate_shared_record(service_name: str, record_id: str, request: SharedRecordDeprecateRequest) -> dict:
+def deprecate_shared_record(service_name: str, record_id: str, request: SharedRecordDeprecateRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     service = _shared_service(service_name)
     try:
-        record = service.deprecate(record_id=record_id, actor=request.actor, reason=request.reason)
+        record = service.deprecate(record_id=record_id, actor=identity.actor, reason=request.reason)
         return record.model_dump(mode="json")
     except SharedRecordNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -1647,7 +1665,7 @@ def get_dataset_provenance(dataset_id: str) -> dict:
 
 
 @app.post("/query")
-def query_dataset(request: QueryRequest) -> dict:
+def query_dataset(request: QueryRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Execute a structured query against a dataset."""
     try:
         result = dataset_retrieval_service.query(
@@ -1665,7 +1683,7 @@ def query_dataset(request: QueryRequest) -> dict:
 
 
 @app.post("/export")
-def export_dataset(request: ExportRequest) -> dict:
+def export_dataset(request: ExportRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Request an asynchronous or synchronous export of a dataset."""
     try:
         result = dataset_retrieval_service.export_dataset(
@@ -1683,7 +1701,7 @@ def export_dataset(request: ExportRequest) -> dict:
 
 
 @app.post("/stream")
-def stream_dataset(request: StreamRequest) -> dict:
+def stream_dataset(request: StreamRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Request a streaming connection to a dataset."""
     try:
         result = dataset_retrieval_service.stream(
@@ -1723,7 +1741,7 @@ def reference_dataset(request: ReferenceRequest) -> dict:
 
 
 @app.post("/evidence/{evidence_id}")
-def store_evidence(evidence_id: str, request: dict) -> dict:
+def store_evidence(evidence_id: str, request: dict, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Persist an evidence record to the configured bucket (Phase 8).
 
     The evidence_id is placed in the path per spec §4.1. The request body
@@ -1745,7 +1763,7 @@ def retrieve_evidence(evidence_id: str) -> dict:
 
 
 @app.post("/provenance/{dataset_id}")
-def store_provenance(dataset_id: str, request: dict) -> dict:
+def store_provenance(dataset_id: str, request: dict, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Persist a provenance record for a dataset to the configured bucket (Phase 8)."""
     try:
         return bucket_client.store_provenance(dataset_id=dataset_id, provenance=request)
@@ -2126,7 +2144,8 @@ def issue_token(request: TokenRequest) -> dict:
             access_token=token, actor=request.actor, roles=trusted_roles, expires_at=expires_at
         ).model_dump(mode="json")
     except AuthTokenError as exc:
-        raise HTTPException(status_code=401, detail=str(exc)) from exc
+        status_code = 403 if str(exc) == "DENY:MISSING_ADMIN_PASSWORD" else 401
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -2204,10 +2223,10 @@ def ready() -> JSONResponse:
 # ---------------------------------------------------------------------------
 
 
-@app.get("/admin/backup")
+@app.api_route("/admin/backup", methods=["GET", "POST"])
 def create_backup(identity: AuthIdentity = Depends(get_identity)) -> dict:
     if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail=f"Requires the '{ADMIN_ROLE}' role.")
+        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     snapshot = backup_service.export_snapshot({
         "bcaes_registry": bcaes_registry_service.artifact_store,
         "canonical_repository": canonical_repository_service.artifact_store,
@@ -2224,7 +2243,7 @@ def create_backup(identity: AuthIdentity = Depends(get_identity)) -> dict:
 @app.post("/admin/restore")
 def restore_backup(snapshot: dict, identity: AuthIdentity = Depends(get_identity)) -> dict:
     if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail=f"Requires the '{ADMIN_ROLE}' role.")
+        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     try:
         counts = backup_service.restore_snapshot(snapshot, {
             "bcaes_registry": bcaes_registry_service.artifact_store,
@@ -2248,7 +2267,7 @@ def get_configuration_report(identity: AuthIdentity = Depends(get_identity)) -> 
     log line, callable on demand rather than only visible in process logs.
     Never returns actual secret values (see services/startup_config.py)."""
     if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail=f"Requires the '{ADMIN_ROLE}' role.")
+        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     return startup_config.validate_configuration()
 
 
@@ -2405,7 +2424,7 @@ def upsert_review_reference(
             "parikshak.upsert actor=%s external_review_id=%s", identity.actor, request.external_review_id
         )
         return record.model_dump(mode="json")
-    except SyncPermissionDeniedError as exc:
+    except (SyncPermissionDeniedError, PermissionError) as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
@@ -2440,7 +2459,7 @@ def upsert_operational_task_state(
             "niyantran.upsert actor=%s external_task_id=%s", identity.actor, request.external_task_id
         )
         return record.model_dump(mode="json")
-    except SyncPermissionDeniedError as exc:
+    except (SyncPermissionDeniedError, PermissionError) as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 

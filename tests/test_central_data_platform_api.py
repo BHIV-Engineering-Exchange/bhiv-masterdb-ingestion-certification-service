@@ -37,7 +37,8 @@ def _fresh_services(tmp_path):
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(main.app)
+    token, _ = main.auth_service.issue_token("kavy", ["bhiv-admin", "operator"])
+    return TestClient(main.app, headers={"Authorization": f"Bearer {token}"})
 
 
 def _register_package(registry, dataset_id="api-ds-1"):

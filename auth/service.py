@@ -3,10 +3,12 @@ Auth — JWT issuance and verification.
 """
 from datetime import datetime, timedelta, timezone
 import hmac
+import json
 import logging
 import os
 import secrets
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
+import uuid
 
 import jwt
 
@@ -20,6 +22,33 @@ _DEFAULT_EXPIRY_MINUTES = 60
 
 class AuthTokenError(Exception):
     """Raised for a missing, malformed, expired, or badly-signed token."""
+
+
+def log_security_decision(
+    logger: logging.Logger,
+    outcome: str,
+    reason_code: str,
+    policy_reference: str,
+    actor_reference: Optional[str] = None,
+    correlation_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Structured security decision logger following MASTERDB audit conventions."""
+    cid = correlation_id or uuid.uuid4().hex
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "correlation_id": cid,
+        "request_id": cid,
+        "outcome": outcome,
+        "reason_code": reason_code,
+        "policy_reference": policy_reference,
+        "actor_reference": actor_reference or "anonymous",
+    }
+    msg = json.dumps(record, sort_keys=True)
+    if outcome == "DENY":
+        logger.warning("SECURITY_DECISION: %s", msg)
+    else:
+        logger.info("SECURITY_DECISION: %s", msg)
+    return record
 
 
 class AuthService:
@@ -145,6 +174,13 @@ class AuthService:
         admin_pw = os.environ.get("ADMIN_PASSWORD")
 
         if not auth_pw and not admin_pw:
+            log_security_decision(
+                logger=logger,
+                outcome="DENY",
+                reason_code="DENY:SERVER_AUTH_NOT_CONFIGURED",
+                policy_reference="auth.service.authenticate",
+                actor_reference=actor,
+            )
             raise AuthTokenError(
                 "Authentication is not configured on the server. Privileged token issuance requires a configured server authentication password."
             )
@@ -160,16 +196,37 @@ class AuthService:
             if actor_clean in admin_actors_clean:
                 is_admin_auth = True
         elif auth_pw and password and hmac.compare_digest(str(password), str(auth_pw)):
-            authenticated = True
             if not admin_pw and actor_clean in admin_actors_clean:
-                is_admin_auth = True
+                log_security_decision(
+                    logger=logger,
+                    outcome="DENY",
+                    reason_code="DENY:MISSING_ADMIN_PASSWORD",
+                    policy_reference="auth.service.authenticate",
+                    actor_reference=actor,
+                )
+                raise AuthTokenError("DENY:MISSING_ADMIN_PASSWORD")
+            authenticated = True
 
         if not authenticated:
+            log_security_decision(
+                logger=logger,
+                outcome="DENY",
+                reason_code="DENY:INVALID_CREDENTIALS",
+                policy_reference="auth.service.authenticate",
+                actor_reference=actor,
+            )
             raise AuthTokenError("Invalid credentials.")
 
         # Ignore caller-supplied roles for public authentication; obtain trusted server-side roles
         trusted_roles = self.resolve_roles(actor, is_admin=is_admin_auth)
         token, expires_at = self.issue_token(actor.strip(), trusted_roles)
+        log_security_decision(
+            logger=logger,
+            outcome="ALLOW",
+            reason_code="ALLOW:AUTHENTICATED",
+            policy_reference="auth.service.authenticate",
+            actor_reference=actor,
+        )
         return token, expires_at, trusted_roles
 
     def issue_token(self, actor: str, roles: List[str]) -> tuple:

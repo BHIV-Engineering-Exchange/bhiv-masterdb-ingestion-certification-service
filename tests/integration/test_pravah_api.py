@@ -6,8 +6,10 @@ from fastapi.testclient import TestClient
 
 from main import app
 from models import PackageStatus
+import main
 
-client = TestClient(app)
+_token, _ = main.auth_service.issue_token("kavy", ["bhiv-admin", "operator"])
+client = TestClient(app, headers={"Authorization": f"Bearer {_token}"})
 
 
 def test_api_ingest_event_success():
