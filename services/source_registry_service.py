@@ -694,6 +694,7 @@ class SourceRegistryService:
             record.provenance_reference = {**record.provenance_reference, **metadata}
             if metadata.get("last_fetch_status") == "LIVE_VERIFIED":
                 record.provenance_reference.pop("last_http_status", None)
+                record.provenance_reference.pop("last_error", None)
         self.store.save(source_id, record.model_dump(mode="json"))
         return record
 

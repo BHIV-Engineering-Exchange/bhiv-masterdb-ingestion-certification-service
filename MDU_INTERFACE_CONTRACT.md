@@ -15,7 +15,7 @@ base URL, auth header, and paths. Configure it via environment variables —
 credentials are never hardcoded:
 
 ```
-MDU_BASE_URL=https://bhiv-mdu-api.onrender.com
+MDU_BASE_URL=https://parakosha.blackholeinfiverse.com
 MDU_API_KEY=<the shared key>
 ```
 
@@ -28,6 +28,10 @@ Endpoints it calls, mapped 1:1 to what MDU publishes:
 | `fetch_canonical_dataset`        | `GET /api/v1/datasets/canonical/{dataset_id}`          |
 | (client) `validate_all_provenance` | `GET /api/v1/discovery/provenance/validate-all`      |
 | (client) `get_discovery_summary`   | `GET /api/v1/discovery/summary`                      |
+
+MASTERDB's `ds-gev-seismic-events` identifier maps to MDU's registered
+canonical ID `BHIV-DS-GEV-SEISMIC-EVENTS-001`; MDU requires canonical IDs
+to use its `BHIV-DS-{DOMAIN}-{NAME}-{NUMBER}` format.
 
 Exposed over HTTP for ops visibility at `GET /mdu/status`,
 `GET /mdu/schema/{dataset_id}`, `GET /mdu/provenance/{dataset_id}`, and
