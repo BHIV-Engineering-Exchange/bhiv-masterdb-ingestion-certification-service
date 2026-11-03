@@ -1155,3 +1155,48 @@ New files added (safe to delete if reverting):
 
 To revert a file to original:
   git checkout HEAD -- [filename]
+
+
+## STAGE B — ECOSYSTEM INTEGRATION REVIEW
+
+### Integration Baseline Matrix
+
+| System | Interface | Status | Owner |
+|---|---|---|---|
+| TANTRA | `TantraInterfaceService`, `/tantra/*`, `/discovery/packages` | PARTIAL | TANTRA Team |
+| MDU | `MDUClient`, `MDUContractAdapter`, `/mdu/*` | BLOCKED | Nupur / Harsha |
+| Bucket | `BucketClient`, `/evidence/*`, `/bucket/status` | PARTIAL | Bucket Team |
+| InsightFlow | `InsightBridgeClient`, `/observability/push-to-insightbridge` | VERIFIED | InsightFlow Owner |
+| MANTRA | Inbound capability routes only | PARTIAL | MANTRA Owner |
+| YANTRA | `NiyantranSyncService`, `/niyantran/task-state` | PARTIAL | Pratik / Karana |
+| VAJRA | RS256 auth, `/access/*` | BLOCKED | Rayyan / Platform |
+| BIQOS | `ValidationService`, `/validate`, `/certify`, `/bcaes/*` | PARTIAL | Raj |
+
+### Tests Executed
+
+| Suite | Result |
+|---|---|
+| test_insightbridge_client.py | 9/9 PASSED |
+| test_insightbridge_push_endpoint.py | 4/4 PASSED |
+| test_cross_service_contract.py | 7/7 PASSED |
+| test_operational_sync.py | 14/14 PASSED |
+| test_validation_service.py | 2/2 PASSED |
+| test_certification_service.py | 2/2 PASSED |
+| **Total** | **38/38 PASSED** |
+
+### Blockers
+
+| ID | Blocker | Owner |
+|---|---|---|
+| BLK-01 | BCAES write returns DENY:MISSING_IDENTITY — cannot seed capabilities | Rayyan |
+| BLK-02 | MDU endpoint timeout | Nupur / Harsha |
+| BLK-03 | VAJRA live deployment on old commit b6aa9ca — RS256 rejected in prod | Rayyan / Platform |
+| BLK-04 | MANTRA interface spec not confirmed | MANTRA Owner |
+
+### Next Priority
+Unblock BLK-01 — once Rayyan issues auth token, seed 12 TANTRA packages 
+into BCAES so BIQOS snapshot shows non-zero capability count.
+
+### Rollback
+No production changes made in Stage B. All work was read-only 
+assessment and local test execution. No rollback required.
