@@ -529,6 +529,8 @@ earthquake_observation_service = EarthquakeObservationService(
     store=_sql_store("earthquake_observations"),
     store_dir=_persist_path("earthquake_observations") or "earthquake_observation_store",
 )
+capability_registry_service.earthquake_observation_service = earthquake_observation_service
+
 dam_feature_service = DamFeatureService(
     attribute_store=_sql_store("dam_attributes"),
     geometry_store=_sql_store("dam_geometries"),

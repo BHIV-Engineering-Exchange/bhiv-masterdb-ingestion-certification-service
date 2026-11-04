@@ -1,8 +1,13 @@
 """
 Tests for Governed Capability Data Retrieval & Provenance.
 """
+from datetime import datetime, timedelta, timezone
+
 from fastapi.testclient import TestClient
+import main
 from main import app
+from services.artifact_store import ArtifactStore
+from services.earthquake_observation_service import EarthquakeObservationService
 
 client = TestClient(app)
 
@@ -55,6 +60,84 @@ def test_retrieve_capability_data_success():
     audit_contract = audit_res.json()
     assert audit_contract["request_id"] == req_id
     assert audit_contract["authorized"] is True
+
+
+def test_earthquake_retrieval_returns_filtered_seismic_observations(tmp_path, monkeypatch):
+    observations = EarthquakeObservationService(ArtifactStore(str(tmp_path / "earthquakes")))
+    now = datetime.now(timezone.utc)
+    observations.ingest({
+        "source": "USGS",
+        "observations": [
+            {
+                "event_id": "us-test-recent-strong",
+                "source": "USGS",
+                "place": "Recent event",
+                "magnitude": 3.2,
+                "longitude": 151.2,
+                "latitude": -33.8,
+                "depth_km": 12.0,
+                "event_time_utc": now.isoformat(),
+                "source_url": "https://earthquake.usgs.gov/test/recent",
+            },
+            {
+                "event_id": "us-test-recent-weak",
+                "source": "USGS",
+                "place": "Recent weak event",
+                "magnitude": 2.0,
+                "longitude": 151.2,
+                "latitude": -33.8,
+                "depth_km": 12.0,
+                "event_time_utc": now.isoformat(),
+                "source_url": "https://earthquake.usgs.gov/test/weak",
+            },
+            {
+                "event_id": "us-test-old-strong",
+                "source": "USGS",
+                "place": "Older event",
+                "magnitude": 4.0,
+                "longitude": 151.2,
+                "latitude": -33.8,
+                "depth_km": 12.0,
+                "event_time_utc": (now - timedelta(days=2)).isoformat(),
+                "source_url": "https://earthquake.usgs.gov/test/old",
+            },
+        ],
+    })
+    monkeypatch.setattr(main.capability_registry_service, "earthquake_observation_service", observations)
+    capability = main.capability_registry_service.get_capability("cap-gev-earthquake-monitoring")
+    assert capability.dataset_id == "ds-gev-seismic-events"
+
+    token = _get_token(actor="EARTHQUAKE_TEST_CONSUMER", roles=["ecosystem-reader"])
+    grant_response = client.post(
+        "/access/request",
+        json={
+            "application_id": "EARTHQUAKE_TEST_CONSUMER",
+            "capability_id": "cap-gev-earthquake-monitoring",
+            "purpose": "seismic_hazard_monitoring",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert grant_response.status_code == 200
+
+    response = client.post(
+        "/capabilities/cap-gev-earthquake-monitoring/retrieve",
+        json={
+            "application_id": "EARTHQUAKE_TEST_CONSUMER",
+            "access_token": grant_response.json()["access_token"],
+            "query_params": {"min_magnitude": 2.5, "time_window": "24h"},
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["capability"]["dataset_id"] == "ds-gev-seismic-events"
+    assert result["data"]["dataset_id"] == "ds-gev-seismic-events"
+    assert result["data"]["count"] == 1
+    assert [item["event_id"] for item in result["data"]["observations"]] == ["us-test-recent-strong"]
+    assert result["data"]["observations"][0]["source"] == "USGS"
+    assert "canopy_density_pct" not in result["data"]
+    assert result["provenance"]["is_synthetic"] is False
 
 
 def test_access_grant_cannot_be_reused_for_another_capability_or_application():

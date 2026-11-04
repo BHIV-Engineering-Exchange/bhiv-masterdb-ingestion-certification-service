@@ -6,9 +6,11 @@ from services.dataset_retrieval_service import (
     DatasetNotRetrievableError,
     DatasetRetrievalService,
 )
+from services.artifact_store import ArtifactStore
 from services.knowledge_object_service import KnowledgeObjectService
 from services.mdu_contract_adapter import MDUContractAdapter
 from services.package_registry_service import PackageNotFoundError, PackageRegistryService
+from services.report_service import ReportService
 from services.retrieval_readiness_service import RetrievalReadinessService
 
 
@@ -429,3 +431,156 @@ def test_fallback_selection_all_deprecated(tmp_path):
     ref = dataset_retrieval.reference("ds-all-dep")
     assert ref["package_id"] == pkg2.package_id
     assert ref["dataset_version"] == "2.0.0"
+
+
+def test_reference_policy_restricted_when_certification_report_rejected(tmp_path):
+    registry, knowledge_objects, retrieval, dataset_retrieval = make_services(tmp_path)
+    store = ArtifactStore(reports_dir=str(tmp_path / "artifacts"))
+    reporter = ReportService(artifact_store=store)
+    retrieval.report_service = reporter
+
+    package = register_package(registry, "ds-rejected-ref")
+    knowledge_objects.register_object(
+        package_id=package.package_id,
+        source_reference="s3://bucket/source.csv",
+    )
+    promote_to(
+        registry,
+        package.package_id,
+        PackageStatus.INGESTED,
+        PackageStatus.VALIDATED,
+        PackageStatus.VERIFIED,
+        PackageStatus.CERTIFIED,
+    )
+
+    store.save("ds-rejected-ref", {
+        "dataset_id": "ds-rejected-ref",
+        "state": "REJECTED",
+        "ingestion_decision": {"eligible_for_masterdb": False},
+    })
+
+    result = dataset_retrieval.reference("ds-rejected-ref")
+
+    assert result["granted"] is True
+    assert result["retrieval_status"] == "NOT_RETRIEVABLE"
+    assert result["access_policy"] == "policy-ds-rejected-ref-restricted"
+    assert result["governance"]["classification"] == "BHIV-INTERNAL"
+    assert result["governance"]["allowed_consumers"] == [package.owner]
+    assert "*" not in result["governance"]["allowed_consumers"]
+    assert result["governance"]["intended_use"] == "Internal review only"
+    resolved_policy = dataset_retrieval._resolve_access_policy(
+        package, evidence=retrieval.assess(package.package_id)
+    )
+    assert resolved_policy["allowed_operations"] == ["reference"]
+
+
+def test_data_access_rejected_when_certification_report_rejected(tmp_path):
+    registry, knowledge_objects, retrieval, dataset_retrieval = make_services(tmp_path)
+    store = ArtifactStore(reports_dir=str(tmp_path / "artifacts"))
+    reporter = ReportService(artifact_store=store)
+    retrieval.report_service = reporter
+
+    package = register_package(registry, "ds-rejected-data")
+    knowledge_objects.register_object(
+        package_id=package.package_id,
+        source_reference="s3://bucket/source.csv",
+    )
+    promote_to(
+        registry,
+        package.package_id,
+        PackageStatus.INGESTED,
+        PackageStatus.VALIDATED,
+        PackageStatus.VERIFIED,
+        PackageStatus.CERTIFIED,
+    )
+
+    store.save("ds-rejected-data", {
+        "dataset_id": "ds-rejected-data",
+        "state": "REJECTED",
+        "ingestion_decision": {"eligible_for_masterdb": False},
+    })
+
+    with pytest.raises(DatasetNotRetrievableError):
+        dataset_retrieval.query("ds-rejected-data", {"select": "*"})
+
+    with pytest.raises(DatasetNotRetrievableError):
+        dataset_retrieval.export_dataset("ds-rejected-data", format="json")
+
+    with pytest.raises(DatasetNotRetrievableError):
+        dataset_retrieval.stream("ds-rejected-data")
+
+
+def test_reference_open_read_for_valid_certified_package_with_accepted_report(tmp_path):
+    registry, knowledge_objects, retrieval, dataset_retrieval = make_services(tmp_path)
+    store = ArtifactStore(reports_dir=str(tmp_path / "artifacts"))
+    reporter = ReportService(artifact_store=store)
+    retrieval.report_service = reporter
+
+    package = register_package(registry, "ds-valid-cert")
+    knowledge_objects.register_object(
+        package_id=package.package_id,
+        source_reference="s3://bucket/source.csv",
+    )
+    promote_to(
+        registry,
+        package.package_id,
+        PackageStatus.INGESTED,
+        PackageStatus.VALIDATED,
+        PackageStatus.VERIFIED,
+        PackageStatus.CERTIFIED,
+    )
+
+    store.save("ds-valid-cert", {
+        "dataset_id": "ds-valid-cert",
+        "state": "CERTIFIED",
+        "ingestion_decision": {"eligible_for_masterdb": True},
+    })
+
+    result = dataset_retrieval.reference("ds-valid-cert")
+
+    assert result["granted"] is True
+    assert result["retrieval_status"] == "RETRIEVABLE"
+    assert result["access_policy"] == "policy-ds-valid-cert-open-read"
+    assert result["governance"]["classification"] == "BHIV-ECOSYSTEM-SHARED"
+    assert result["governance"]["allowed_consumers"] == ["*"]
+
+
+def test_reference_open_read_for_partially_retrievable_package(tmp_path):
+    registry, _, _, dataset_retrieval = make_services(tmp_path)
+    package = register_package(registry, "ds-partial")
+    promote_to(
+        registry,
+        package.package_id,
+        PackageStatus.INGESTED,
+        PackageStatus.VALIDATED,
+        PackageStatus.VERIFIED,
+        PackageStatus.CERTIFIED,
+    )
+
+    result = dataset_retrieval.reference("ds-partial")
+
+    assert result["granted"] is True
+    assert result["retrieval_status"] == "PARTIALLY_RETRIEVABLE"
+    assert result["access_policy"] == "policy-ds-partial-open-read"
+    assert result["governance"]["classification"] == "BHIV-ECOSYSTEM-SHARED"
+    assert result["governance"]["allowed_consumers"] == ["*"]
+
+
+def test_missing_readiness_evidence_cannot_grant_open_read(tmp_path):
+    registry, _, _, dataset_retrieval = make_services(tmp_path)
+    package = register_package(registry, "ds-missing-ev")
+    promote_to(
+        registry,
+        package.package_id,
+        PackageStatus.INGESTED,
+        PackageStatus.VALIDATED,
+        PackageStatus.VERIFIED,
+        PackageStatus.CERTIFIED,
+    )
+
+    policy = dataset_retrieval._resolve_access_policy(package, evidence=None)
+
+    assert policy["policy_id"] == "policy-ds-missing-ev-restricted"
+    assert policy["classification"] == "BHIV-INTERNAL"
+    assert policy["allowed_consumers"] == [package.owner]
+    assert "*" not in policy["allowed_consumers"]
