@@ -124,3 +124,38 @@ def test_replay_detects_stored_status_drift(tmp_path):
 
     with pytest.raises(InvalidTransitionError):
         service.replay(package.package_id)
+
+def test_package_registry_persists_lifecycle_and_history_across_instances(tmp_path):
+    store_dir = str(tmp_path / "registry")
+    service_a = PackageRegistryService(store_dir=store_dir)
+    package = register_sample(service_a, dataset_id="ds-persist-1")
+
+    # Progress through lifecycle transitions on first service instance
+    service_a.promote(package.package_id, PackageStatus.INGESTED, actor="pipeline", reason="Ingestion complete")
+    service_a.promote(package.package_id, PackageStatus.VALIDATED, actor="validator", reason="Validation passed")
+    service_a.promote(package.package_id, PackageStatus.VERIFIED, actor="verifier", reason="Verification verified")
+
+    # Simulate process restart: destroy service_a and construct a fresh service_b pointing to the same storage
+    del service_a
+    service_b = PackageRegistryService(store_dir=store_dir)
+
+    # Verify reloaded package status and history on the fresh instance
+    reloaded = service_b.get(package.package_id)
+    assert reloaded.package_id == package.package_id
+    assert reloaded.dataset_id == "ds-persist-1"
+    assert reloaded.status == PackageStatus.VERIFIED
+    assert len(reloaded.history) == 4  # REGISTERED -> INGESTED -> VALIDATED -> VERIFIED
+    assert reloaded.history[-1].to_status == PackageStatus.VERIFIED
+    assert reloaded.history[-1].actor == "verifier"
+
+    # Verify transition replay remains consistent from disk
+    assert service_b.replay(package.package_id) == PackageStatus.VERIFIED
+
+    # Verify further mutations on the new instance succeed and persist
+    promoted = service_b.promote(package.package_id, PackageStatus.CERTIFIED, actor="certifier", reason="Certified")
+    assert promoted.status == PackageStatus.CERTIFIED
+
+    # Verify reload on a third service instance
+    service_c = PackageRegistryService(store_dir=store_dir)
+    assert service_c.get(package.package_id).status == PackageStatus.CERTIFIED
+    assert len(service_c.history(package.package_id)) == 5

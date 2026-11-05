@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_token
 """
 Tests for MASTERDB ↔ VANA Forest & Mangrove Governance Integration.
 
@@ -34,17 +35,7 @@ client = TestClient(app)
 
 
 def _get_token(actor="vana-tester", roles=None):
-    import os
-    res = client.post(
-        "/auth/token",
-        json={
-            "actor": actor,
-            "password": os.environ.get("AUTH_PASSWORD", "test-auth-password"),
-            "roles": roles or ["ecosystem-reader"],
-        },
-    )
-    assert res.status_code == 200
-    return res.json()["access_token"]
+    return get_test_token(actor=actor, roles=roles)
 
 
 # =============================================================================
@@ -208,9 +199,21 @@ def test_capability_registry_vana_live_retrieval_when_configured():
 
     service = CapabilityRegistryService(vana_client=mock_vana)
 
+    acc_req = CapabilityAccessRequest(
+        application_id="masterdb-consumer",
+        capability_id="cap-vana-forest-cover",
+        purpose="district_canopy_analysis",
+    )
+    grant = service.request_access(
+        actor="masterdb-consumer",
+        roles=["ecosystem-reader"],
+        request_data=acc_req,
+    )
+    assert grant.authorized is True
+
     ret_req = CapabilityRetrieveRequest(
         application_id="masterdb-consumer",
-        purpose="district_canopy_analysis",
+        access_token=grant.access_token,
     )
     response = service.retrieve(
         actor="masterdb-consumer",
@@ -224,22 +227,35 @@ def test_capability_registry_vana_live_retrieval_when_configured():
 
 
 def test_capability_registry_vana_fallback_when_unconfigured():
-    """Under D3 fail-closed governance, accessing a VANA-governed capability without VANA configured raises VanaUnavailableError."""
+    """Under D3 fail-closed governance, accessing a VANA-governed capability without VANA configured raises VanaUnavailableError during grant creation."""
     unconfigured_vana = VanaClient(base_url="")
     service = CapabilityRegistryService(vana_client=unconfigured_vana)
 
-    ret_req = CapabilityRetrieveRequest(
+    acc_req = CapabilityAccessRequest(
         application_id="masterdb-consumer",
+        capability_id="cap-vana-forest-cover",
         purpose="district_canopy_analysis",
     )
     with pytest.raises(VanaUnavailableError) as exc_info:
+        service.request_access(
+            actor="masterdb-consumer",
+            roles=["ecosystem-reader"],
+            request_data=acc_req,
+        )
+    assert "not configured" in str(exc_info.value).lower()
+
+    # D2: Tokenless retrieval fails closed with CapabilityAccessDeniedError
+    ret_req = CapabilityRetrieveRequest(
+        application_id="masterdb-consumer",
+    )
+    with pytest.raises(CapabilityAccessDeniedError) as exc_denied:
         service.retrieve(
             actor="masterdb-consumer",
             roles=["ecosystem-reader"],
             capability_id="cap-vana-forest-cover",
             retrieve_req=ret_req,
         )
-    assert "not configured" in str(exc_info.value).lower()
+    assert "valid access grant required" in str(exc_denied.value).lower()
 
 
 # =============================================================================

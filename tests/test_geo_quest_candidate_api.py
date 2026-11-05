@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_token
 from fastapi.testclient import TestClient
 
 import main
@@ -8,12 +9,7 @@ client = TestClient(app)
 
 
 def _token(actor, roles):
-    response = client.post(
-        "/auth/token",
-        json={"actor": actor, "roles": roles, "password": "test-admin-password"},
-    )
-    assert response.status_code == 200
-    return response.json()["access_token"]
+    return get_test_token(actor=actor, roles=roles)
 
 
 def test_geo_quest_registration_and_end_to_end_retrieval(tmp_path, monkeypatch):

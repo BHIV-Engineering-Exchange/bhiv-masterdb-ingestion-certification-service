@@ -39,7 +39,7 @@ def test_firms_endpoints_readback_and_live_registry(tmp_path, monkeypatch):
     monkeypatch.setattr(main, "fetch_active_fires", lambda: {"source": "NASA FIRMS", "record_count": 1,
         "observations": [{"source_id": "firms:sample", "source": "NASA FIRMS", "latitude": 12.3, "longitude": 45.6,
                           "observation_time_utc": "2026-10-24T08:12:00+00:00", "satellite": "N", "confidence": "h", "brightness": 300}]})
-    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["viewer"])
+    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["operator"])
     try:
         client = TestClient(main.app)
         response = client.post("/wildfires/firms/ingest")

@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_auth_headers
 from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
@@ -50,18 +51,7 @@ def test_real_e2e_full_lifecycle(tmp_path, monkeypatch):
 
     # Step 1: Authentication - Login / Token Request
     monkeypatch.setenv("AUTH_PASSWORD", "test-admin-password")
-    token_resp = client.post(
-        "/auth/token",
-        json={
-            "actor": "kavy",
-            "roles": ["ingest:relationaldb", "operator"],
-            "password": "test-admin-password",
-        },
-    )
-    assert token_resp.status_code == 200
-    token_data = token_resp.json()
-    token = token_data["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = get_test_auth_headers("kavy", ["operator", "ingest:operator", "bcaes-editor"])
 
     # Step 2: Upload Initiation
     sample_bytes = (ROOT / "datasets" / "certifiable_sample.csv").read_bytes()
@@ -106,6 +96,7 @@ def test_real_e2e_full_lifecycle(tmp_path, monkeypatch):
             "dataset_path": str(ds_file),
             "metadata_path": str(ROOT / "datasets" / "metadata.json"),
         },
+        headers=headers,
     )
     assert cert_resp.status_code == 200
     assert cert_resp.json()["state"] == "CERTIFIED"

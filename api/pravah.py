@@ -7,9 +7,11 @@ idempotent replaying, deterministic state verification, and pipeline automation.
 import time
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from auth.dependencies import require_internal_or_operator, require_operator_or_admin
+from auth.models import AuthIdentity
 from models import PackageStatus
 from models_pravah import (
     DeterministicVerificationResult,
@@ -67,6 +69,7 @@ class DeterministicRunRequest(BaseModel):
 async def ingest_event(
     event: PravahEvent,
     request: Request,
+    identity: AuthIdentity = Depends(require_internal_or_operator),
 ) -> EventIngestResponse:
     """
     Ingest a validated event into the Pravah replay ledger and execute
@@ -101,6 +104,7 @@ async def ingest_event(
 async def get_event(
     event_id: str,
     request: Request,
+    identity: AuthIdentity = Depends(require_internal_or_operator),
 ) -> PravahLedgerEntry:
     """Retrieve an event record from the replay ledger by event_id."""
     pipeline = _get_pipeline(request)
@@ -122,6 +126,7 @@ async def query_ledger(
     entity_id: Optional[str] = Query(default=None),
     event_status: Optional[PravahEventStatus] = Query(default=None),
     limit: int = Query(default=50, ge=1, le=1000),
+    identity: AuthIdentity = Depends(require_internal_or_operator),
 ) -> List[PravahLedgerEntry]:
     """Query entries from the append-only Pravah replay ledger."""
     pipeline = _get_pipeline(request)
@@ -139,6 +144,7 @@ async def query_ledger(
 async def replay_events(
     body: ReplayRequest,
     request: Request,
+    identity: AuthIdentity = Depends(require_internal_or_operator),
 ) -> ReplayResponse:
     """Replay events from the Pravah replay ledger with idempotent deduplication."""
     pipeline = _get_pipeline(request)
@@ -149,6 +155,7 @@ async def replay_events(
 async def get_entity_state(
     entity_id: str,
     request: Request,
+    identity: AuthIdentity = Depends(require_internal_or_operator),
 ) -> EntityStateResponse:
     """Retrieve canonical business state and SHA-256 state hash for an entity."""
     pipeline = _get_pipeline(request)
@@ -173,6 +180,7 @@ async def get_entity_state(
 async def verify_determinism(
     request: Request,
     body: Optional[DeterministicRunRequest] = None,
+    identity: AuthIdentity = Depends(require_operator_or_admin),
 ) -> DeterministicVerificationResult:
     """
     Execute 50 consecutive runs from an identical initial logical state
@@ -199,12 +207,14 @@ async def verify_determinism(
 async def execute_pipeline_route(
     body: PipelineExecutionRequest,
     request: Request,
+    identity: AuthIdentity = Depends(require_internal_or_operator),
 ) -> PipelineExecutionResponse:
     """
     Automate pipeline progression across lifecycle states with strict concurrency
     control, Pravah replay ledger recording, and cryptographic auditing.
     """
     pipeline = _get_pipeline(request)
+    body.actor = identity.actor
     try:
         return await pipeline.execute_pipeline(body)
     except InvalidStateTransitionError as exc:

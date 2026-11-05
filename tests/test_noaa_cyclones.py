@@ -105,7 +105,7 @@ def test_cyclone_api_storage_readback_and_registry(monkeypatch, tmp_path):
     monkeypatch.setattr(main, "fetch_current_cyclones", normalized_feed)
     for name in ("earthquake_observation_service", "ais_observation_service", "aircraft_observation_service", "fire_observation_service", "traffic_observation_service", "weather_observation_service"):
         monkeypatch.setattr(getattr(main, name), "list", lambda *args, **kwargs: [])
-    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="cyclone-test", roles=["viewer"])
+    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="cyclone-test", roles=["operator"])
     try:
         client = TestClient(main.app)
         ingest = client.post("/cyclones/nhc/ingest")
@@ -139,7 +139,7 @@ def test_cyclone_upstream_error_does_not_mark_live(monkeypatch):
     def fail():
         raise CycloneUpstreamError("upstream unavailable")
     monkeypatch.setattr(main, "fetch_current_cyclones", fail)
-    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="cyclone-error-test", roles=["viewer"])
+    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="cyclone-error-test", roles=["operator"])
     try:
         response = TestClient(main.app).post("/cyclones/nhc/ingest")
         assert response.status_code == 502

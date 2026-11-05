@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_token
 """
 Tests for MASTERDB Capability Access Authorization & Policy Evaluation.
 """
@@ -10,9 +11,7 @@ client = TestClient(main.app)
 
 
 def _get_token(actor="auth-tester", roles=None):
-    res = client.post("/auth/token", json={"actor": actor, "password": "test-auth-password", "roles": roles or ["ecosystem-reader"]})
-    assert res.status_code == 200
-    return res.json()["access_token"]
+    return get_test_token(actor=actor, roles=roles)
 
 
 def test_request_access_success():
@@ -230,3 +229,187 @@ def test_rs256_token_access_request_authorization(monkeypatch):
         assert res_no_roles.status_code == 401
     finally:
         auth_service.public_key_pem = old_pubkey
+
+
+# =============================================================================
+# D4: Server-Side Actor-to-Application Entitlement Regression Suite
+# =============================================================================
+
+def test_d4_actor_equals_application_id_without_explicit_entitlement_denied():
+    # Remediation A: Self-representation alone is NOT sufficient proof of entitlement.
+    # An actor whose name matches application_id but lacks explicit entitlement MUST be denied.
+    token = _get_token(actor="unentitled-direct-consumer", roles=["ecosystem-reader"])
+    res = client.post(
+        "/access/request",
+        json={
+            "application_id": "unentitled-direct-consumer",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 403
+    error_msg = res.json().get("detail") or res.json().get("error", {}).get("message", "")
+    assert "not entitled to represent application" in error_msg.lower()
+
+
+def test_d4_actor_with_explicit_env_entitlement_allowed(monkeypatch):
+    # Legitimate entitlement explicitly configured via environment is authorized
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_EXPLICIT_CONSUMER", "explicit-consumer")
+    token = _get_token(actor="explicit-consumer", roles=["ecosystem-reader"])
+    res = client.post(
+        "/access/request",
+        json={
+            "application_id": "explicit-consumer",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["authorized"] is True
+    assert body["application_id"] == "explicit-consumer"
+
+
+def test_d4_actor_with_explicit_injected_entitlement_case_insensitive(tmp_path):
+    from services.capability_registry_service import CapabilityRegistryService
+    from models import CapabilityAccessRequest
+
+    service = CapabilityRegistryService(
+        store_dir=str(tmp_path / "d4_injected_case_store"),
+        actor_application_entitlements={"agent-worker": ["MANAGED-CONSUMER-APP"]},
+    )
+    acc_req = CapabilityAccessRequest(
+        application_id="managed-consumer-app",
+        capability_id="cap-mangrove-monitoring",
+        purpose="environmental_monitoring",
+    )
+    contract = service.request_access(
+        actor="AGENT-WORKER",
+        roles=["ecosystem-reader"],
+        request_data=acc_req,
+    )
+    assert contract.authorized is True
+    assert contract.application_id == "managed-consumer-app" 
+
+
+def test_d4_actor_delegation_via_env_allowed(monkeypatch):
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_SPECIAL_AGENT", "CUSTOM_DELEGATED_APP,ANOTHER_APP")
+    token = _get_token(actor="special-agent", roles=["ecosystem-reader"])
+    res = client.post(
+        "/access/request",
+        json={
+            "application_id": "CUSTOM_DELEGATED_APP",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 200
+    assert res.json()["authorized"] is True
+
+
+def test_d4_actor_delegation_via_injected_mapping_allowed(tmp_path):
+    from services.capability_registry_service import CapabilityRegistryService
+    from models import CapabilityAccessRequest
+
+    service = CapabilityRegistryService(
+        store_dir=str(tmp_path / "d4_injected_store"),
+        actor_application_entitlements={"worker-bot": ["managed-service-app", "cluster-app"]},
+    )
+    acc_req = CapabilityAccessRequest(
+        application_id="managed-service-app",
+        capability_id="cap-mangrove-monitoring",
+        purpose="environmental_monitoring",
+    )
+    contract = service.request_access(
+        actor="worker-bot",
+        roles=["ecosystem-reader"],
+        request_data=acc_req,
+    )
+    assert contract.authorized is True
+    assert contract.application_id == "managed-service-app"
+
+
+def test_d4_unauthorized_impersonation_denied():
+    token = _get_token(actor="rogue-caller", roles=["ecosystem-reader"])
+    res = client.post(
+        "/access/request",
+        json={
+            "application_id": "UNAUTHORIZED_TARGET_APP",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 403
+    error_msg = res.json().get("detail") or res.json().get("error", {}).get("message", "")
+    assert "not entitled to represent application" in error_msg.lower()
+
+
+def test_d4_admin_role_cannot_bypass_application_entitlement():
+    # Admin roles (admin / bhiv-admin) cannot claim arbitrary application identity without entitlement
+    token = _get_token(actor="super-admin-user", roles=["admin", "bhiv-admin"])
+    res = client.post(
+        "/access/request",
+        json={
+            "application_id": "ARBITRARY_UNENTITLED_APP",
+            "capability_id": "cap-mangrove-monitoring",
+            "purpose": "environmental_monitoring",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 403
+    error_msg = res.json().get("detail") or res.json().get("error", {}).get("message", "")
+    assert "not entitled to represent application" in error_msg.lower()
+
+
+def test_d4_missing_or_empty_actor_fails_closed(tmp_path):
+    from services.capability_registry_service import CapabilityRegistryService, CapabilityAccessDeniedError
+    from models import CapabilityAccessRequest
+    import pytest
+
+    service = CapabilityRegistryService(store_dir=str(tmp_path / "d4_empty_actor_store"))
+    acc_req = CapabilityAccessRequest(
+        application_id="some-app",
+        capability_id="cap-mangrove-monitoring",
+        purpose="environmental_monitoring",
+    )
+    with pytest.raises(CapabilityAccessDeniedError) as exc_info:
+        service.request_access(actor="", roles=["ecosystem-reader"], request_data=acc_req)
+    assert "actor identity is required" in str(exc_info.value).lower()
+
+
+def test_d4_audit_emission_on_entitlement_denial(tmp_path):
+    from services.capability_registry_service import CapabilityRegistryService, CapabilityAccessDeniedError
+    from services.crypto_audit_emitter import CryptoAuditEmitter
+    from models import CapabilityAccessRequest
+    import pytest
+
+    audit_emitter = CryptoAuditEmitter()
+    service = CapabilityRegistryService(
+        store_dir=str(tmp_path / "d4_audit_cap_store"),
+        audit_emitter=audit_emitter,
+    )
+    acc_req = CapabilityAccessRequest(
+        application_id="impersonated-app",
+        capability_id="cap-mangrove-monitoring",
+        purpose="environmental_monitoring",
+    )
+    with pytest.raises(CapabilityAccessDeniedError):
+        service.request_access(
+            actor="unentitled-actor",
+            roles=["ecosystem-reader"],
+            request_data=acc_req,
+        )
+
+    chain = audit_emitter.get_chain()
+    denial_entries = [
+        e for e in chain
+        if e.payload.get("action") == "ACCESS_REQUEST"
+        and e.payload.get("result") == "DENIED"
+        and e.actor == "unentitled-actor"
+    ]
+    assert len(denial_entries) >= 1
+    assert "not entitled" in denial_entries[-1].payload.get("reason", "").lower()

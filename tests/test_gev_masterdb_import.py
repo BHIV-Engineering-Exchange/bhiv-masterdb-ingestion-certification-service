@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_token
 import json
 
 import pytest
@@ -106,12 +107,7 @@ def _service(tmp_path, *, invalid_schema=False, provenance_mismatch=False, inval
 
 
 def _token(actor, roles):
-    response = client.post(
-        "/auth/token",
-        json={"actor": actor, "roles": roles, "password": "test-admin-password"},
-    )
-    assert response.status_code == 200
-    return response.json()["access_token"]
+    return get_test_token(actor=actor, roles=roles)
 
 
 def test_valid_export_stages_noncanonical_candidate_and_is_not_discoverable(tmp_path, monkeypatch):
