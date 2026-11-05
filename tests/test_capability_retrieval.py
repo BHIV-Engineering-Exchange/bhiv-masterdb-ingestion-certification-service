@@ -103,6 +103,7 @@ def test_earthquake_retrieval_returns_filtered_seismic_observations(tmp_path, mo
         ],
     })
     monkeypatch.setattr(main.capability_registry_service, "earthquake_observation_service", observations)
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_EARTHQUAKE_TEST_CONSUMER", "EARTHQUAKE_TEST_CONSUMER")
     capability = main.capability_registry_service.get_capability("cap-gev-earthquake-monitoring")
     assert capability.dataset_id == "ds-gev-seismic-events"
 
