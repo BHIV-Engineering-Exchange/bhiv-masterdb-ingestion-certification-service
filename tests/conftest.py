@@ -14,10 +14,19 @@ autouse fixture here instead of being repeated in every file.
 """
 import pytest
 
-import main
-
-
 import os
+
+# main.py loads the developer's .env during normal application startup. Keep
+# that out of pytest's initial import so integration tests start from a clean,
+# reproducible environment (individual tests can still set env values).
+_previous_pytest_marker = os.environ.get("PYTEST_CURRENT_TEST")
+os.environ["PYTEST_CURRENT_TEST"] = "pytest collection"
+import main
+if _previous_pytest_marker is None:
+    os.environ.pop("PYTEST_CURRENT_TEST", None)
+else:
+    os.environ["PYTEST_CURRENT_TEST"] = _previous_pytest_marker
+
 
 TEST_AUTH_PASSWORD = "test-auth-password"
 TEST_ADMIN_PASSWORD = "test-admin-password"
@@ -127,6 +136,7 @@ def _reset_capability_registry(tmp_path):
         package_registry=pkg_registry,
         retrieval_service=ret_service,
         audit_emitter=main.production_audit_emitter,
+        earthquake_observation_service=main.earthquake_observation_service,
     )
     kobj_service = main.KnowledgeObjectService(registry=pkg_registry, store_dir=str(sub_dir / "test_kobj_store"))
     ret_readiness = main.RetrievalReadinessService(registry=pkg_registry, knowledge_object_service=kobj_service, store_dir=str(sub_dir / "test_ret_readiness_store"))

@@ -28,6 +28,9 @@ from services.mdu_client import MDUClient, MDUUnavailableError
 _UUID_RE = re.compile(
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 )
+_MDU_CANONICAL_ID_ALIASES = {
+    "ds-gev-seismic-events": "BHIV-DS-GEV-SEISMIC-EVENTS-001",
+}
 
 
 @dataclass
@@ -121,6 +124,10 @@ class MDUContractAdapter:
         # resolve through that once per process and cache the result.
         self._id_resolution_cache: Dict[str, str] = {}
 
+    @staticmethod
+    def _mdu_canonical_id(dataset_id: str) -> str:
+        return _MDU_CANONICAL_ID_ALIASES.get(dataset_id, dataset_id)
+
     def _resolve_mdu_id(self, dataset_id: str, trace_id: Optional[str] = None) -> str:
         """
         Resolve a MASTERDB dataset_id (canonical string or already a UUID)
@@ -135,7 +142,9 @@ class MDUContractAdapter:
         if dataset_id in self._id_resolution_cache:
             return self._id_resolution_cache[dataset_id]
 
-        canonical = self.client.get_canonical_dataset(dataset_id, trace_id=trace_id)
+        canonical = self.client.get_canonical_dataset(
+            self._mdu_canonical_id(dataset_id), trace_id=trace_id
+        )
         resolved = canonical.get("id")
         if not resolved:
             raise MDUUnavailableError(
@@ -207,7 +216,9 @@ class MDUContractAdapter:
         return relationships if isinstance(relationships, list) else []
 
     def fetch_canonical_dataset(self, dataset_id: str, trace_id: Optional[str] = None) -> Dict[str, Any]:
-        return self.client.get_canonical_dataset(dataset_id, trace_id=trace_id)
+        return self.client.get_canonical_dataset(
+            self._mdu_canonical_id(dataset_id), trace_id=trace_id
+        )
 
     # -- Provenance and Lineage Mutation --------------------------------------
 

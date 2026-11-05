@@ -71,6 +71,7 @@ class CapabilityRegistryService:
         grant_store: Optional[Any] = None,
         sql_store: Optional[Any] = None,
         actor_application_entitlements: Optional[Dict[str, List[str]]] = None,
+        earthquake_observation_service: Optional[Any] = None,
     ) -> None:
         self.store = ArtifactStore(reports_dir=store_dir)
         self.version_store = ArtifactStore(reports_dir=os.path.join(store_dir, "versions"))
@@ -89,6 +90,7 @@ class CapabilityRegistryService:
             if actor_application_entitlements
             else {}
         )
+        self.earthquake_observation_service = earthquake_observation_service
         self._access_contracts: Dict[str, AccessContract] = {}
         self._access_contract_actors: Dict[str, str] = {}
         self._seed_default_capabilities_if_empty()
@@ -1323,7 +1325,15 @@ class CapabilityRegistryService:
         is_synthetic = False
         payload_data = None
 
-        if self.sql_store is not None:
+        is_earthquake_capability = (
+            capability.capability_id == "cap-gev-earthquake-monitoring"
+            or capability.dataset_id == "ds-gev-seismic-events"
+        )
+        if is_earthquake_capability:
+            payload_data = self._get_earthquake_payload(retrieve_req.query_params or {})
+            is_synthetic = self.earthquake_observation_service is None
+
+        if payload_data is None and self.sql_store is not None:
             try:
                 records = self.sql_store.list_target_records(target_database="relational_db", dataset_id=capability.dataset_id, limit=100)
                 if not records:
@@ -1418,6 +1428,51 @@ class CapabilityRegistryService:
 
         return response
 
+    def _get_earthquake_payload(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        observations = (
+            self.earthquake_observation_service.list(limit=1000)
+            if self.earthquake_observation_service is not None
+            else []
+        )
+
+        min_magnitude = params.get("min_magnitude")
+        if min_magnitude is not None:
+            minimum = float(min_magnitude)
+            observations = [
+                item for item in observations
+                if float(item.get("magnitude", float("-inf"))) >= minimum
+            ]
+
+        time_window = params.get("time_window")
+        if time_window is not None:
+            match = re.fullmatch(r"(\d+)([hd])", str(time_window).strip().lower())
+            if not match:
+                raise ValueError("time_window must be specified in hours or days, such as '24h' or '7d'.")
+            amount = int(match.group(1))
+            window = timedelta(hours=amount) if match.group(2) == "h" else timedelta(days=amount)
+            cutoff = datetime.now(timezone.utc) - window
+            recent_observations = []
+            for item in observations:
+                event_time = datetime.fromisoformat(item["event_time_utc"].replace("Z", "+00:00"))
+                if event_time.tzinfo is None:
+                    event_time = event_time.replace(tzinfo=timezone.utc)
+                if event_time >= cutoff:
+                    recent_observations.append(item)
+            observations = recent_observations
+
+        limit = min(max(int(params.get("limit", 100)), 1), 1000)
+        offset = max(int(params.get("offset", 0)), 0)
+        filtered_count = len(observations)
+        observations = observations[offset:offset + limit]
+        return {
+            "dataset_id": "ds-gev-seismic-events",
+            "capability_id": "cap-gev-earthquake-monitoring",
+            "count": filtered_count,
+            "limit": limit,
+            "offset": offset,
+            "observations": observations,
+        }
+
     def _generate_canonical_domain_payload(self, capability: Capability, params: Dict[str, Any]) -> Dict[str, Any]:
         """Generate domain payload proving generic capability model works for any domain."""
         domain = capability.domain.lower()
@@ -1469,13 +1524,23 @@ class CapabilityRegistryService:
                     ],
                     "timestamp": now,
                 }
+            elif capability.capability_id == "cap-mangrove-monitoring" or capability.dataset_id == "ds-mangrove-001":
+                return {
+                    "dataset_type": "mangrove_cover_index",
+                    "region": params.get("region", "Sundarbans-Zone-A"),
+                    "canopy_density_pct": 84.5,
+                    "biomass_index": 0.92,
+                    "observation_timestamp": now,
+                    "coordinates": {"lat": 21.9497, "lon": 88.9439},
+                }
             return {
-                "dataset_type": "mangrove_cover_index",
-                "region": params.get("region", "Sundarbans-Zone-A"),
-                "canopy_density_pct": 84.5,
-                "biomass_index": 0.92,
-                "observation_timestamp": now,
-                "coordinates": {"lat": 21.9497, "lon": 88.9439},
+                "dataset_type": "geospatial_canonical_records",
+                "dataset_id": capability.dataset_id,
+                "domain": domain,
+                "parameters": params,
+                "record_count": 0,
+                "records": [],
+                "timestamp": now,
             }
         elif domain == "maritime":
             return {
