@@ -37,7 +37,9 @@ def _fresh_services(tmp_path):
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(main.app)
+    from tests.test_identity_fixtures import get_test_auth_headers
+    headers = get_test_auth_headers(actor="kavy", roles=["admin", "operator"])
+    return TestClient(main.app, headers=headers)
 
 
 def _register_package(registry, dataset_id="api-ds-1"):

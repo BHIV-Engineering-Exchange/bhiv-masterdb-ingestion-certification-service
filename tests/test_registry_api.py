@@ -1,6 +1,9 @@
 from fastapi.testclient import TestClient
 
 import main
+from tests.test_identity_fixtures import get_test_auth_headers
+
+AUTH_HEADERS = get_test_auth_headers(actor="kavy", roles=["admin", "operator"])
 
 
 def make_client(tmp_path):
@@ -10,7 +13,7 @@ def make_client(tmp_path):
     main.knowledge_object_service.store.reports_dir.mkdir(parents=True, exist_ok=True)
     main.retrieval_readiness_service.store.reports_dir = tmp_path / "retrieval_evidence"
     main.retrieval_readiness_service.store.reports_dir.mkdir(parents=True, exist_ok=True)
-    return TestClient(main.app)
+    return TestClient(main.app, headers=AUTH_HEADERS)
 
 
 def register_payload(dataset_id="ds-api-1"):

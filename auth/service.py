@@ -8,6 +8,8 @@ import os
 import secrets
 from typing import List, Optional
 
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 import jwt
 
 from auth.models import AuthIdentity
@@ -22,6 +24,25 @@ class AuthTokenError(Exception):
     """Raised for a missing, malformed, expired, or badly-signed token."""
 
 
+def validate_rsa_public_key(pem_str: str) -> None:
+    """Validates that a PEM string contains a valid RSA public key of at least 2048 bits."""
+    if not pem_str or not pem_str.strip():
+        raise RuntimeError("Authoritative RS256 public key is empty.")
+    try:
+        key = load_pem_public_key(pem_str.encode("utf-8"))
+    except Exception as exc:
+        raise RuntimeError(f"Authoritative RS256 public key is malformed or invalid: {exc}") from exc
+
+    if not isinstance(key, rsa.RSAPublicKey):
+        raise RuntimeError("Authoritative public key must be an RSA public key (RS256).")
+
+    if key.key_size < 2048:
+        raise RuntimeError(
+            f"Authoritative RS256 public key size ({key.key_size} bits) is insufficient. "
+            "Minimum 2048 bits required."
+        )
+
+
 class AuthService:
     def __init__(
         self,
@@ -29,29 +50,28 @@ class AuthService:
         expiry_minutes: Optional[int] = None,
         public_key_pem: Optional[str] = None,
     ) -> None:
-        self._public_key_pem = public_key_pem
+        self._explicit_secret_key: Optional[str] = None
+        if secret_key is not None:
+            if not str(secret_key).strip():
+                raise RuntimeError("JWT secret key cannot be empty.")
+            self._explicit_secret_key = str(secret_key).strip()
+
+        self._public_key_pem = public_key_pem.strip() if public_key_pem else None
         if not self._public_key_pem:
             env_pubkey = (os.environ.get("AUTH_JWT_PUBLIC_KEY") or "").replace("\\n", "\n").strip()
             if env_pubkey:
                 self._public_key_pem = env_pubkey
             else:
-                key_path = os.environ.get("AUTH_JWT_PUBLIC_KEY_PATH")
-                if not key_path or not os.path.exists(key_path):
-                    sibling_key_path = os.path.abspath(
-                        os.path.join(
-                            os.path.dirname(__file__),
-                            "..", "..", "..", "Tantra", "TANTRA-Gated-Bridge-Infrastructure", "services", "sarathi", "keys", "public.pem"
-                        )
-                    )
-                    if os.path.exists(sibling_key_path):
-                        key_path = sibling_key_path
-
-                if key_path and os.path.exists(key_path):
-                    try:
-                        with open(key_path, "r", encoding="utf-8") as fh:
-                            self._public_key_pem = fh.read().strip()
-                    except Exception as exc:
-                        logger.warning("Could not read AUTH_JWT_PUBLIC_KEY_PATH: %s", exc)
+                key_path = (os.environ.get("AUTH_JWT_PUBLIC_KEY_PATH") or "").strip()
+                if key_path:
+                    if os.path.exists(key_path):
+                        try:
+                            with open(key_path, "r", encoding="utf-8") as fh:
+                                self._public_key_pem = fh.read().strip()
+                        except Exception as exc:
+                            logger.warning("Could not read AUTH_JWT_PUBLIC_KEY_PATH: %s", exc)
+                    else:
+                        logger.warning("Configured AUTH_JWT_PUBLIC_KEY_PATH does not exist: %s", key_path)
 
         env_secret = (os.environ.get("AUTH_JWT_SECRET") or os.environ.get("JWT_SECRET") or "").strip()
         env_mode = (
@@ -62,19 +82,22 @@ class AuthService:
         ).strip().lower()
         is_production = env_mode in ("production", "prod")
 
-        if secret_key is not None:
-            if not str(secret_key).strip():
-                raise RuntimeError("JWT secret key cannot be empty.")
-            self._secret_key = secret_key
-        elif env_secret:
-            self._secret_key = env_secret
-        else:
-            if is_production:
+        if is_production and not (self._explicit_secret_key or env_secret):
+            raise RuntimeError(
+                "AUTH_JWT_SECRET must be configured in production mode. "
+                "Refusing to start with an ephemeral random secret."
+            )
+
+        if is_production:
+            if not self._public_key_pem:
                 raise RuntimeError(
-                    "AUTH_JWT_SECRET must be configured in production mode. "
-                    "Refusing to start with an ephemeral random secret."
+                    "AUTH_JWT_PUBLIC_KEY or AUTH_JWT_PUBLIC_KEY_PATH must be configured in production mode. "
+                    "Refusing to start without authoritative RS256 public key."
                 )
-            self._secret_key = secrets.token_hex(32)
+            validate_rsa_public_key(self._public_key_pem)
+
+        self._ephemeral_secret = secrets.token_hex(32)
+        if not (self._explicit_secret_key or env_secret) and not is_production:
             logger.warning(
                 "AUTH_JWT_SECRET not set — generated a random per-process secret (non-production mode only). "
                 "Tokens issued by this process instance will not validate after a "
@@ -92,12 +115,72 @@ class AuthService:
                 self._expiry_minutes = _DEFAULT_EXPIRY_MINUTES
 
     @property
+    def env_mode(self) -> str:
+        return (
+            os.environ.get("ENVIRONMENT")
+            or os.environ.get("APP_ENV")
+            or os.environ.get("MASTERDB_ENV")
+            or ""
+        ).strip().lower()
+
+    @property
+    def is_production(self) -> bool:
+        return self.env_mode in ("production", "prod")
+
+    @property
+    def is_dev_or_test(self) -> bool:
+        return self.env_mode in ("development", "dev", "test", "testing", "local")
+
+    @property
+    def has_explicit_secret(self) -> bool:
+        if self._explicit_secret_key:
+            return True
+        env_secret = (os.environ.get("AUTH_JWT_SECRET") or os.environ.get("JWT_SECRET") or "").strip()
+        return bool(env_secret)
+
+    @property
+    def secret_key(self) -> str:
+        if self._explicit_secret_key:
+            return self._explicit_secret_key
+        env_secret = (os.environ.get("AUTH_JWT_SECRET") or os.environ.get("JWT_SECRET") or "").strip()
+        if env_secret:
+            return env_secret
+        if self.is_production:
+            raise RuntimeError(
+                "AUTH_JWT_SECRET must be configured in production mode. "
+                "Refusing to use an ephemeral random secret."
+            )
+        return self._ephemeral_secret
+
+    @property
+    def _secret_key(self) -> str:
+        return self.secret_key
+
+    @property
     def public_key_pem(self) -> Optional[str]:
-        return self._public_key_pem
+        if self._public_key_pem:
+            return self._public_key_pem
+        env_pubkey = (os.environ.get("AUTH_JWT_PUBLIC_KEY") or "").replace("\\n", "\n").strip()
+        if env_pubkey:
+            return env_pubkey
+        key_path = (os.environ.get("AUTH_JWT_PUBLIC_KEY_PATH") or "").strip()
+        if key_path:
+            if os.path.exists(key_path):
+                try:
+                    with open(key_path, "r", encoding="utf-8") as fh:
+                        return fh.read().strip()
+                except Exception as exc:
+                    logger.warning("Could not read AUTH_JWT_PUBLIC_KEY_PATH: %s", exc)
+            else:
+                logger.warning("Configured AUTH_JWT_PUBLIC_KEY_PATH does not exist: %s", key_path)
+        return None
 
     @public_key_pem.setter
     def public_key_pem(self, value: Optional[str]) -> None:
-        self._public_key_pem = value.strip() if value else None
+        cleaned = value.strip() if value else None
+        if self.is_production and cleaned:
+            validate_rsa_public_key(cleaned)
+        self._public_key_pem = cleaned
 
     def resolve_roles(self, actor: str, is_admin: bool = False) -> List[str]:
         """Resolves trusted server-side roles for an actor from environment configuration or defaults.
@@ -137,10 +220,51 @@ class AuthService:
         Fails closed if authentication password environment variables are not configured.
         Caller-supplied roles are ignored; roles are assigned only via verified server-side mechanisms.
         """
+        # 1. Reject local token issuance in production mode
+        if self.is_production:
+            raise AuthTokenError(
+                "Local token issuance is prohibited in production mode. "
+                "Production callers must use TANTRA Sarathi RS256 authentication."
+            )
+
+        # 2. Reject if environment is not explicitly development or test
+        if not self.is_dev_or_test:
+            raise AuthTokenError(
+                "Local token issuance is permitted only in explicitly configured development or test environments."
+            )
+
+        # 3. Reject if local signing secret is not explicitly configured
+        if not self.has_explicit_secret:
+            raise AuthTokenError(
+                "AUTH_JWT_SECRET is not explicitly configured. "
+                "Local token issuance requires an explicit secret."
+            )
+
         if not actor or not str(actor).strip():
             raise AuthTokenError("Actor/username cannot be empty.")
 
         actor_clean = actor.strip().lower()
+
+        # 4. Server-side actor allowlist check with normalized variant matching
+        allowed_actors_env = (os.environ.get("AUTH_ALLOWED_ACTORS") or "").strip()
+        if not allowed_actors_env:
+            raise AuthTokenError(
+                "AUTH_ALLOWED_ACTORS must be configured for local token issuance."
+            )
+        allowed_actors = {a.strip().lower() for a in allowed_actors_env.split(",") if a.strip()}
+        actor_variants = {
+            actor_clean,
+            actor_clean.replace("-", "_"),
+            actor_clean.replace("_", "-"),
+            actor_clean.replace(" ", "_"),
+            actor_clean.replace(" ", "-"),
+        }
+        if not any(v in allowed_actors for v in actor_variants):
+            raise AuthTokenError(
+                f"Actor '{actor}' is not authorized for local token issuance."
+            )
+
+        # 5. Server authentication credentials check
         auth_pw = os.environ.get("AUTH_PASSWORD") or os.environ.get("MASTERDB_AUTH_PASSWORD")
         admin_pw = os.environ.get("ADMIN_PASSWORD")
 
@@ -181,10 +305,11 @@ class AuthService:
         payload = {
             "sub": str(actor).strip(),
             "roles": roles or [],
+            "iss": "masterdb-local",
             "exp": expires_at,
             "iat": datetime.now(timezone.utc),
         }
-        token = jwt.encode(payload, self._secret_key, algorithm=_ALGORITHM)
+        token = jwt.encode(payload, self.secret_key, algorithm=_ALGORITHM)
         return token, expires_at.isoformat()
 
     def decode_token(self, token: str) -> AuthIdentity:
@@ -198,7 +323,7 @@ class AuthService:
             raise AuthTokenError("Token is invalid or badly signed.") from exc
 
         if alg == "RS256":
-            public_key = self._public_key_pem or os.environ.get("AUTH_JWT_PUBLIC_KEY")
+            public_key = self.public_key_pem
             if not public_key:
                 raise AuthTokenError("Asymmetric RS256 token received but AUTH_JWT_PUBLIC_KEY is not configured.")
             try:
@@ -206,49 +331,118 @@ class AuthService:
                     token,
                     public_key,
                     algorithms=["RS256"],
-                    options={"verify_aud": False},
+                    options={"verify_aud": False, "verify_iss": False},
                 )
             except jwt.ExpiredSignatureError as exc:
                 raise AuthTokenError("Token has expired.") from exc
+            except jwt.ImmatureSignatureError as exc:
+                raise AuthTokenError(f"Token is not yet valid: {exc}") from exc
             except jwt.InvalidTokenError as exc:
                 raise AuthTokenError(f"Token is invalid or badly signed: {exc}") from exc
 
+            # Validate temporal claims (nbf and iat clock skew)
+            now = datetime.now(timezone.utc).timestamp()
+            nbf = payload.get("nbf")
+            if nbf is not None:
+                try:
+                    if float(nbf) > now + 1:
+                        raise AuthTokenError("Token is not yet valid (nbf in future).")
+                except (ValueError, TypeError):
+                    raise AuthTokenError("Token contains malformed nbf claim.")
+
+            iat = payload.get("iat")
+            if iat is not None:
+                try:
+                    if float(iat) > now + 300:
+                        raise AuthTokenError("Token issued in the future (iat clock skew > 300s).")
+                except (ValueError, TypeError):
+                    raise AuthTokenError("Token contains malformed iat claim.")
+
+            # Validate Issuer
+            env_issuer = (os.environ.get("AUTH_ISSUER") or "").strip()
+            default_issuers = {"tantra-sarathi", "masterdb", "masterdb-production"}
+            if env_issuer:
+                allowed_issuers = {i.strip() for i in env_issuer.split(",") if i.strip()} | default_issuers
+            else:
+                allowed_issuers = default_issuers
+
             iss = payload.get("iss")
-            if not iss or iss not in ("tantra-sarathi", "masterdb", "masterdb-production"):
+            if not iss:
+                raise AuthTokenError("Untrusted or missing token issuer: None")
+            if self.is_production and iss == "masterdb-test-fixture":
+                raise AuthTokenError(f"Test token issuer '{iss}' is prohibited in production mode.")
+            if iss not in allowed_issuers:
                 raise AuthTokenError(f"Untrusted or missing token issuer: {iss}")
+
+            # Validate Audience
+            env_aud = (os.environ.get("AUTH_AUDIENCE") or "").strip()
+            default_audiences = {"masterdb", "tantra-bridge"}
+            if env_aud:
+                allowed_audiences = {a.strip() for a in env_aud.split(",") if a.strip()} | default_audiences
+            else:
+                allowed_audiences = default_audiences
 
             aud = payload.get("aud")
             if not aud:
                 raise AuthTokenError("Token is missing required audience claim.")
-            aud_list = [aud] if isinstance(aud, str) else [aud]
-            if not any(a in ("masterdb", "tantra-bridge") for a in aud_list):
+            aud_list = [aud] if isinstance(aud, str) else list(aud)
+            if not any(a in allowed_audiences for a in aud_list):
                 raise AuthTokenError(f"Untrusted or invalid token audience: {aud}")
 
-            actor = payload.get("sub") or payload.get("actor") or payload.get("trace_id")
-            if not actor or not str(actor).strip():
-                raise AuthTokenError("Token is missing a subject (actor).")
+            sub = payload.get("sub")
+            if sub is None or not isinstance(sub, str) or not sub.strip():
+                raise AuthTokenError("Token is missing a subject: 'sub' claim must exist and be a non-empty string.")
+            actor = sub.strip()
 
             roles = payload.get("roles")
-            if not roles or not isinstance(roles, list):
+            if roles is None or not isinstance(roles, list):
                 raise AuthTokenError("Token is missing required roles claim.")
 
-            safe_roles = [r for r in roles if r in ("ecosystem-reader", "viewer", "operator", "APPROVED_CONSUMER")]
+            safe_roles = [r for r in roles if r in (
+                "ecosystem-reader", "viewer", "dashboard-viewer",
+                "operator", "bcaes-editor", "ingest:operator", "engineer",
+                "APPROVED_CONSUMER", "admin", "bhiv-admin"
+            )]
             if not safe_roles:
                 raise AuthTokenError("Token contains no valid roles.")
 
-            return AuthIdentity(actor=str(actor).strip(), roles=safe_roles)
+            return AuthIdentity(
+                actor=str(actor).strip(),
+                roles=safe_roles,
+                auth_method="RS256",
+                issuer=str(iss),
+                is_tantra_verified=True,
+            )
 
         elif alg == _ALGORITHM:
+            if self.is_production:
+                raise AuthTokenError(
+                    "HS256 symmetric tokens are rejected in production mode. "
+                    "Cryptographically verified TANTRA RS256 token required."
+                )
+
             try:
-                payload = jwt.decode(token, self._secret_key, algorithms=[_ALGORITHM])
+                payload = jwt.decode(token, self.secret_key, algorithms=[_ALGORITHM])
             except jwt.ExpiredSignatureError as exc:
                 raise AuthTokenError("Token has expired.") from exc
             except jwt.InvalidTokenError as exc:
                 raise AuthTokenError("Token is invalid or badly signed.") from exc
 
-            actor = payload.get("sub")
-            if not actor or not str(actor).strip():
-                raise AuthTokenError("Token is missing a subject (actor).")
-            return AuthIdentity(actor=actor, roles=payload.get("roles", []))
+            sub = payload.get("sub")
+            if sub is None or not isinstance(sub, str) or not sub.strip():
+                raise AuthTokenError("Token is missing a subject: 'sub' claim must exist and be a non-empty string.")
+            actor = sub.strip()
+
+            roles = payload.get("roles", [])
+            if not isinstance(roles, list):
+                roles = []
+
+            return AuthIdentity(
+                actor=str(actor).strip(),
+                roles=roles,
+                auth_method="HS256",
+                issuer=payload.get("iss", "masterdb-local"),
+                is_tantra_verified=False,
+            )
         else:
             raise AuthTokenError(f"Unsupported algorithm: {alg}")

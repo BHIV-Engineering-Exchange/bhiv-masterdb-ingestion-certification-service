@@ -30,16 +30,77 @@ else:
 
 TEST_AUTH_PASSWORD = "test-auth-password"
 TEST_ADMIN_PASSWORD = "test-admin-password"
+TEST_JWT_SECRET = "test-jwt-secret-key-configured-for-testing-only-32chars!!"
+TEST_ALLOWED_ACTORS = (
+    "a,actor-a,actor-b,actor_a,actor_b,admin,admin_user,admin-user,bhiv-admin,bhiv_admin,agent-worker,agent_worker,alias-user,alias_user,alice,"
+    "arbitrary-unauthorized-actor,arbitrary_unauthorized_actor,attacker,attacker_consumer,attacker-consumer,auth-tester,auth_tester,"
+    "authorized-actor,authorized_actor,bharat-mala,bharat-mala-app,bharat_mala,bharat_mala_app,bharat mala,candidate-reviewer,"
+    "candidate_reviewer,certifier,consumer-app,consumer_app,contract-tester,contract_tester,cyclone-error-test,cyclone_error_test,"
+    "cyclone-test,cyclone_test,data-consumer,data_consumer,data-engineer,data_engineer,delegated-actor,delegated_actor,"
+    "domain-tester,domain_tester,entitled-agent,entitled_agent,explicit-consumer,explicit_consumer,fin,gcowner,geo-quest-tester,"
+    "geo_quest_tester,grant-owner,grant_owner,impostor-actor,impostor_actor,kavy,kavy-operator,kavy_operator,kavy-engineer,"
+    "kavy_engineer,legit-user,legit_user,mallory,marine,marine-analyst,marine_analyst,marine-intel-app,marine_intel_app,"
+    "masterdb,masterdb-consumer,masterdb_consumer,masterdb-test-consumer,masterdb_test_consumer,ops,other-actor,other_actor,"
+    "outsider,owner,persist-tester,persist_tester,pipeline,prod-actor,prod_actor,radar-test,radar_test,rahil,retrieval-tester,"
+    "retrieval_tester,rogue-caller,rogue_caller,satellite-error-test,satellite_error_test,satellite-test,satellite_test,someone,"
+    "someoneelse,special-agent,special_agent,super-admin-user,super_admin_user,synthetic-runner,synthetic_runner,tantra-execution,"
+    "tantra_execution,tantra-execution-agent,tantra_execution_agent,tantrabot,tasklead,test,test-actor,test_actor,test-admin,"
+    "test_admin,test-agent,test_agent,test-app,test_app,test-consumer,test_consumer,test-operator,test_operator,test-runner,"
+    "test_runner,test-user,test_user,test-viewer,test_viewer,tester,unauthorized,unentitled-actor,unentitled_actor,"
+    "unentitled-direct-consumer,unentitled_direct_consumer,user,user1,valid-consumer,valid_consumer,validator,vana-fin-app,"
+    "vana_fin_app,vana-tester,vana_tester,verifier,weather-test,weather_test,worker-actor,worker_actor,worker-bot,worker_bot,"
+    "bcaes-editor-user,candidate-viewer,candidate_viewer,gev-viewer,gev_viewer,viewer,domain-tester,domain_tester,tantra-execution,tantra_execution,legit-actor,legit_actor,spoofed-actor,spoofed_actor,victim-account,victim_account"
+)
 
 
 @pytest.fixture(autouse=True)
 def _ensure_test_auth_env(monkeypatch):
-    # Keep credentials deterministic even when a developer's shell or .env
-    # supplies real application credentials. Tests that exercise missing or
-    # alternate credentials can override these values with monkeypatch.
-    monkeypatch.setenv("AUTH_PASSWORD", TEST_AUTH_PASSWORD)
-    monkeypatch.delenv("MASTERDB_AUTH_PASSWORD", raising=False)
-    monkeypatch.setenv("ADMIN_PASSWORD", TEST_ADMIN_PASSWORD)
+    from tests.test_identity_fixtures import (
+        TEST_RSA_PUBLIC_KEY_PEM,
+        TEST_TOKEN_ISSUER,
+        get_test_token,
+        get_test_auth_headers,
+    )
+    monkeypatch.setenv("AUTH_JWT_PUBLIC_KEY", TEST_RSA_PUBLIC_KEY_PEM)
+    current_issuers = os.environ.get("AUTH_ISSUER", "")
+    if TEST_TOKEN_ISSUER not in current_issuers:
+        monkeypatch.setenv("AUTH_ISSUER", f"{TEST_TOKEN_ISSUER},{current_issuers}".strip(","))
+    if hasattr(main, "auth_service"):
+        main.auth_service._public_key_pem = None
+
+    if not (
+        os.environ.get("AUTH_PASSWORD")
+        or os.environ.get("MASTERDB_AUTH_PASSWORD")
+    ):
+        monkeypatch.setenv("AUTH_PASSWORD", TEST_AUTH_PASSWORD)
+    if not os.environ.get("ADMIN_PASSWORD"):
+        monkeypatch.setenv("ADMIN_PASSWORD", TEST_ADMIN_PASSWORD)
+    if not (os.environ.get("ENVIRONMENT") or os.environ.get("APP_ENV") or os.environ.get("MASTERDB_ENV")):
+        monkeypatch.setenv("ENVIRONMENT", "test")
+    if not (os.environ.get("AUTH_JWT_SECRET") or os.environ.get("JWT_SECRET")):
+        monkeypatch.setenv("AUTH_JWT_SECRET", TEST_JWT_SECRET)
+    if not os.environ.get("AUTH_ALLOWED_ACTORS"):
+        monkeypatch.setenv("AUTH_ALLOWED_ACTORS", TEST_ALLOWED_ACTORS)
+    # Explicit test actor-to-application entitlements for test consumers (D4 explicit delegation)
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_TANTRA_EXECUTION_AGENT", "VALID_CONSUMER")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_GRANT_OWNER", "SHARED_CONSUMER_APP")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_TEST_ACTOR", "consumer-app,unauthorized-app")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_MARINE_ANALYST", "marine-consumer")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_PERSIST_TESTER", "PERSIST_APP")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_GEO_QUEST_TESTER", "BHARAT_MALA_ENV,MARINE_INTELLIGENCE_APP")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_VALID_CONSUMER", "VALID_CONSUMER")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_DATA_CONSUMER", "DATA_CONSUMER")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_MASTERDB_TEST_CONSUMER", "MASTERDB_TEST_CONSUMER")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_FIN", "FIN")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_BHARAT_MALA", "Bharat Mala")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_MARINE", "Marine")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_BHARAT_MALA_APP", "BHARAT_MALA_APP")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_VANA_FIN_APP", "VANA_FIN_APP")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_MARINE_INTEL_APP", "MARINE_INTEL_APP")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_MASTERDB_CONSUMER", "masterdb-consumer")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_VANA_TESTER", "vana-tester")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_TANTRA_EXECUTION", "app-tantra-gated-bridge,app-tantra-original")
+    monkeypatch.setenv("AUTH_ENTITLED_APPS_DOMAIN_TESTER", "APP-EDUCATION,APP-ROBOTICS,APP-XR")
 
 
 @pytest.fixture(autouse=True)
@@ -93,8 +154,21 @@ def _reset_capability_registry(tmp_path):
     main.knowledge_object_service = kobj_service
     main.retrieval_readiness_service = ret_readiness
     main.tantra_interface_service = tantra_service
+    main.auth_service = main.AuthService()
     main.geospatial_connector.source_registry = src_registry
     main.geospatial_connector.package_registry = pkg_registry
     main.geospatial_connector.capability_registry = cap_service
     yield
     shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+@pytest.fixture
+def test_token():
+    from tests.test_identity_fixtures import get_test_token
+    return get_test_token
+
+
+@pytest.fixture
+def test_auth_headers():
+    from tests.test_identity_fixtures import get_test_auth_headers
+    return get_test_auth_headers

@@ -31,7 +31,6 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (
-    Column,
     DateTime,
     Integer,
     String,
@@ -40,7 +39,7 @@ from sqlalchemy import (
     delete as sql_delete,
     select,
 )
-from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 
 class _Base(DeclarativeBase):
@@ -50,35 +49,35 @@ class _Base(DeclarativeBase):
 class ArtifactRecord(_Base):
     __tablename__ = "artifact_records"
 
-    store_name: str = Column(String(128), primary_key=True)
-    key: str = Column(String(256), primary_key=True)
-    value_json: str = Column(Text, nullable=False)
-    updated_at: str = Column(DateTime, nullable=False)
+    store_name: Mapped[str] = mapped_column(String(128), primary_key=True)
+    key: Mapped[str] = mapped_column(String(256), primary_key=True)
+    value_json: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
 class TargetDatasetSummary(_Base):
     __tablename__ = "target_datasets"
 
-    id: str = Column(String(256), primary_key=True)  # f"{target_database}:{dataset_id}"
-    target_database: str = Column(String(64), index=True, nullable=False)
-    dataset_id: str = Column(String(128), index=True, nullable=False)
-    record_count: int = Column(Integer, nullable=False)
-    source_format: str = Column(String(32), nullable=False)
-    status: str = Column(String(32), nullable=False, default="PERSISTED")
-    metadata_json: Optional[str] = Column(Text, nullable=True)
-    created_at = Column(DateTime, nullable=False)
-    updated_at = Column(DateTime, nullable=False)
+    id: Mapped[str] = mapped_column(String(256), primary_key=True)  # f"{target_database}:{dataset_id}"
+    target_database: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    dataset_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    record_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_format: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="PERSISTED")
+    metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
 class TargetDatasetRecord(_Base):
     __tablename__ = "target_dataset_records"
 
-    id: str = Column(String(256), primary_key=True)  # f"{target_database}:{dataset_id}:{row_index}"
-    target_database: str = Column(String(64), index=True, nullable=False)
-    dataset_id: str = Column(String(128), index=True, nullable=False)
-    row_index: int = Column(Integer, nullable=False)
-    record_json: str = Column(Text, nullable=False)
-    created_at = Column(DateTime, nullable=False)
+    id: Mapped[str] = mapped_column(String(256), primary_key=True)  # f"{target_database}:{dataset_id}:{row_index}"
+    target_database: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    dataset_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    row_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    record_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
 class SqlArtifactStore:

@@ -58,7 +58,9 @@ def make_test_client(tmp_path):
     main.certification_service = env["certifier"]
     main.report_service = env["reporter"]
     main.validation_service = env["validator"]
-    return TestClient(main.app), env
+    from tests.test_identity_fixtures import get_test_auth_headers
+    headers = get_test_auth_headers(actor="kavy", roles=["admin", "operator"])
+    return TestClient(main.app, headers=headers), env
 
 
 # ---------------------------------------------------------------------------

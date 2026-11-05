@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_token
 """
 BHIV vNEXT MASTERDB Data-Quality Integration Sprint Tests
 Assigned to: Hariom Upadhyay
@@ -45,21 +46,11 @@ client = TestClient(app)
 
 
 def _get_admin_token(client_instance: TestClient) -> str:
-    response = client_instance.post(
-        "/auth/token",
-        json={"actor": "admin", "roles": ["bhiv-admin"], "password": "test-admin-password"},
-    )
-    assert response.status_code == 200, f"Token request failed: {response.text}"
-    return response.json()["access_token"]
+    return get_test_token("admin", ["bhiv-admin", "admin", "operator"])
 
 
 def _get_viewer_token(client_instance: TestClient) -> str:
-    response = client_instance.post(
-        "/auth/token",
-        json={"actor": "test-viewer", "roles": ["ecosystem-reader"], "password": "test-admin-password"},
-    )
-    assert response.status_code == 200, f"Token request failed: {response.text}"
-    return response.json()["access_token"]
+    return get_test_token("test-viewer", ["ecosystem-reader", "viewer"])
 
 
 # ==============================================================================

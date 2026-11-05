@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_token
 """
 Tests for MASTERDB ↔ VANA Forest & Mangrove Governance Integration.
 
@@ -9,6 +10,7 @@ Validates:
 """
 from unittest.mock import MagicMock, patch
 import pytest
+import httpx
 from fastapi.testclient import TestClient
 
 from main import app
@@ -33,17 +35,7 @@ client = TestClient(app)
 
 
 def _get_token(actor="vana-tester", roles=None):
-    import os
-    res = client.post(
-        "/auth/token",
-        json={
-            "actor": actor,
-            "password": os.environ.get("AUTH_PASSWORD", "test-auth-password"),
-            "roles": roles or ["ecosystem-reader"],
-        },
-    )
-    assert res.status_code == 200
-    return res.json()["access_token"]
+    return get_test_token(actor=actor, roles=roles)
 
 
 # =============================================================================
@@ -76,7 +68,7 @@ def test_vana_evaluate_governance_allowed(mock_post):
     }
     mock_post.return_value = mock_resp
 
-    vc = VanaClient(base_url="http://localhost:8001")
+    vc = VanaClient(base_url="http://localhost:8001", api_key="test-api-key")
     res = vc.evaluate_governance(
         actor="MASTERDB",
         role="APPROVED_CONSUMER",
@@ -98,7 +90,7 @@ def test_vana_evaluate_governance_denied(mock_post):
     }
     mock_post.return_value = mock_resp
 
-    vc = VanaClient(base_url="http://localhost:8001")
+    vc = VanaClient(base_url="http://localhost:8001", api_key="test-api-key")
     with pytest.raises(VanaGovernanceDeniedError) as exc_info:
         vc.evaluate_governance(
             actor="UNAUTHORIZED",
@@ -117,7 +109,7 @@ def test_vana_data_retrieval_methods(mock_get):
     mock_resp.json.return_value = {"status": "ok", "records": [1, 2, 3]}
     mock_get.return_value = mock_resp
 
-    vc = VanaClient(base_url="http://localhost:8001")
+    vc = VanaClient(base_url="http://localhost:8001", api_key="test-api-key")
     
     assert vc.get_governed_datasets()["status"] == "ok"
     assert vc.get_real_observations()["status"] == "ok"
@@ -207,9 +199,21 @@ def test_capability_registry_vana_live_retrieval_when_configured():
 
     service = CapabilityRegistryService(vana_client=mock_vana)
 
+    acc_req = CapabilityAccessRequest(
+        application_id="masterdb-consumer",
+        capability_id="cap-vana-forest-cover",
+        purpose="district_canopy_analysis",
+    )
+    grant = service.request_access(
+        actor="masterdb-consumer",
+        roles=["ecosystem-reader"],
+        request_data=acc_req,
+    )
+    assert grant.authorized is True
+
     ret_req = CapabilityRetrieveRequest(
         application_id="masterdb-consumer",
-        purpose="district_canopy_analysis",
+        access_token=grant.access_token,
     )
     response = service.retrieve(
         actor="masterdb-consumer",
@@ -223,23 +227,35 @@ def test_capability_registry_vana_live_retrieval_when_configured():
 
 
 def test_capability_registry_vana_fallback_when_unconfigured():
-    # When unconfigured, should return structured canonical domain payload
+    """Under D3 fail-closed governance, accessing a VANA-governed capability without VANA configured raises VanaUnavailableError during grant creation."""
     unconfigured_vana = VanaClient(base_url="")
     service = CapabilityRegistryService(vana_client=unconfigured_vana)
 
-    ret_req = CapabilityRetrieveRequest(
+    acc_req = CapabilityAccessRequest(
         application_id="masterdb-consumer",
+        capability_id="cap-vana-forest-cover",
         purpose="district_canopy_analysis",
     )
-    response = service.retrieve(
-        actor="masterdb-consumer",
-        roles=["ecosystem-reader"],
-        capability_id="cap-vana-forest-cover",
-        retrieve_req=ret_req,
+    with pytest.raises(VanaUnavailableError) as exc_info:
+        service.request_access(
+            actor="masterdb-consumer",
+            roles=["ecosystem-reader"],
+            request_data=acc_req,
+        )
+    assert "not configured" in str(exc_info.value).lower()
+
+    # D2: Tokenless retrieval fails closed with CapabilityAccessDeniedError
+    ret_req = CapabilityRetrieveRequest(
+        application_id="masterdb-consumer",
     )
-    assert response.data["dataset_id"] == "DS-FSI-ISFR-2023-FOREST-COVER"
-    assert response.data["governance_status"] == "CANONICAL_ISFR_2023"
-    assert len(response.data["records"]) >= 1
+    with pytest.raises(CapabilityAccessDeniedError) as exc_denied:
+        service.retrieve(
+            actor="masterdb-consumer",
+            roles=["ecosystem-reader"],
+            capability_id="cap-vana-forest-cover",
+            retrieve_req=ret_req,
+        )
+    assert "valid access grant required" in str(exc_denied.value).lower()
 
 
 # =============================================================================
@@ -269,24 +285,266 @@ def test_http_api_vana_access_request_and_retrieve():
     token = _get_token()
     headers = {"Authorization": f"Bearer {token}"}
 
-    # Request Access
+    # When VANA is configured and grants ALLOWED, access and retrieval succeed
+    with patch.object(VanaClient, "is_configured", return_value=True), \
+         patch.object(VanaClient, "evaluate_governance", return_value={"decision": "ALLOWED"}):
+        # Request Access
+        access_req = {
+            "application_id": "vana-tester",
+            "capability_id": "cap-vana-forest-cover",
+            "purpose": "district_canopy_analysis",
+        }
+        res = client.post("/access/request", json=access_req, headers=headers)
+        assert res.status_code == 200
+        access_token = res.json()["access_token"]
+        assert access_token is not None
+
+        # Retrieve Data
+        ret_req = {
+            "application_id": "vana-tester",
+            "access_token": access_token,
+        }
+        res = client.post("/capabilities/cap-vana-forest-cover/retrieve", json=ret_req, headers=headers)
+        assert res.status_code == 200
+        ret_data = res.json()
+        assert ret_data["capability"]["capability_id"] == "cap-vana-forest-cover"
+        assert "data" in ret_data
+
+
+# =============================================================================
+# 5. D3 & D6 Fail-Closed Governance & Credential Hygiene Regression Tests
+# =============================================================================
+
+def test_credential_hygiene_missing_api_key_unconfigured():
+    """D6: When VANA_API_KEY is missing or empty, is_configured() must return False."""
+    vc = VanaClient(base_url="http://localhost:8001", api_key="")
+    assert not vc.is_configured()
+
+    with patch.dict("os.environ", {}, clear=True):
+        vc_clean = VanaClient(base_url="http://localhost:8001", api_key=None)
+        assert not vc_clean.is_configured()
+        assert vc_clean.api_key == ""
+
+
+@pytest.mark.parametrize("decision", ["PENDING", "UNKNOWN", "FLAGGED", "CONTROLLED", "REQUIRES_APPROVAL", ""])
+@patch("httpx.Client.post")
+def test_vana_evaluate_governance_non_allowed_decisions_fail_closed(mock_post, decision):
+    """D3: Any decision other than explicit ALLOWED raises VanaGovernanceDeniedError."""
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"decision": decision, "reason": f"Status is {decision}"}
+    mock_post.return_value = mock_resp
+
+    vc = VanaClient(base_url="http://localhost:8001", api_key="test-api-key")
+    with pytest.raises(VanaGovernanceDeniedError) as exc_info:
+        vc.evaluate_governance(
+            actor="MASTERDB",
+            role="APPROVED_CONSUMER",
+            dataset_id="DS-FSI-ISFR-2023-FOREST-COVER",
+            action="READ",
+            purpose="DISTRICT_CANOPY_ANALYSIS",
+        )
+    assert "not permitted by VANA governance policy" in str(exc_info.value) or f"Status is {decision}" in str(exc_info.value)
+
+
+@patch("httpx.Client.post", side_effect=httpx.ConnectTimeout("Connection timed out to VANA"))
+def test_vana_evaluate_governance_timeout_raises_unavailable(mock_post):
+    """D3: Network timeout calling VANA raises VanaUnavailableError."""
+    vc = VanaClient(base_url="http://localhost:8001", api_key="test-api-key")
+    with pytest.raises(VanaUnavailableError) as exc_info:
+        vc.evaluate_governance(
+            actor="MASTERDB",
+            role="APPROVED_CONSUMER",
+            dataset_id="DS-FSI-ISFR-2023-FOREST-COVER",
+            action="READ",
+            purpose="DISTRICT_CANOPY_ANALYSIS",
+        )
+    assert "failed" in str(exc_info.value).lower()
+
+
+@patch("httpx.Client.post", side_effect=httpx.ConnectError("Connection refused by VANA host"))
+def test_vana_evaluate_governance_connect_error_raises_unavailable(mock_post):
+    """D3: Connection refused calling VANA raises VanaUnavailableError."""
+    vc = VanaClient(base_url="http://localhost:8001", api_key="test-api-key")
+    with pytest.raises(VanaUnavailableError) as exc_info:
+        vc.evaluate_governance(
+            actor="MASTERDB",
+            role="APPROVED_CONSUMER",
+            dataset_id="DS-FSI-ISFR-2023-FOREST-COVER",
+            action="READ",
+            purpose="DISTRICT_CANOPY_ANALYSIS",
+        )
+    assert "failed" in str(exc_info.value).lower()
+
+
+@patch("httpx.Client.post")
+def test_vana_evaluate_governance_http_500_raises_unavailable(mock_post):
+    """D3: HTTP 500 error from VANA raises VanaUnavailableError."""
+    mock_resp = MagicMock()
+    mock_resp.status_code = 500
+    mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError("500 Internal Server Error", request=MagicMock(), response=mock_resp)
+    mock_post.return_value = mock_resp
+
+    vc = VanaClient(base_url="http://localhost:8001", api_key="test-api-key")
+    with pytest.raises(VanaUnavailableError) as exc_info:
+        vc.evaluate_governance(
+            actor="MASTERDB",
+            role="APPROVED_CONSUMER",
+            dataset_id="DS-FSI-ISFR-2023-FOREST-COVER",
+            action="READ",
+            purpose="DISTRICT_CANOPY_ANALYSIS",
+        )
+    assert "failed" in str(exc_info.value).lower()
+
+
+def test_capability_registry_unconfigured_vana_denies_governed_capability_and_audits():
+    """D3 & D6: Unconfigured VANA client on governed capability raises VanaUnavailableError, audits failure, and creates no contract."""
+    unconfigured_vana = VanaClient(base_url="", api_key="")
+    service = CapabilityRegistryService(vana_client=unconfigured_vana)
+
+    initial_contracts_count = len(service._access_contracts)
+    req = CapabilityAccessRequest(
+        application_id="consumer-app",
+        capability_id="cap-vana-forest-cover",
+        purpose="district_canopy_analysis",
+    )
+    with pytest.raises(VanaUnavailableError) as exc_info:
+        service.request_access(actor="test-actor", roles=["ecosystem-reader"], request_data=req)
+    assert "not configured" in str(exc_info.value)
+
+    # Verify no contract was created
+    assert len(service._access_contracts) == initial_contracts_count
+
+    # Verify audit record created with result="DENIED"
+    audits = service.audit_emitter.get_chain()
+    denial_audits = [
+        e for e in audits
+        if e.payload.get("action") == "ACCESS_REQUEST"
+        and e.payload.get("result") == "DENIED"
+        and e.payload.get("capability_id") == "cap-vana-forest-cover"
+        and e.actor == "test-actor"
+    ]
+    assert len(denial_audits) >= 1
+    assert "not configured" in denial_audits[-1].payload["reason"]
+
+
+@pytest.mark.parametrize("decision", ["PENDING", "UNKNOWN", "FLAGGED", "CONTROLLED"])
+def test_capability_registry_unexpected_decision_denies_governed_capability(decision):
+    """D3: Unexpected decision from VANA raises CapabilityAccessDeniedError and creates no contract."""
+    mock_vana = MagicMock(spec=VanaClient)
+    mock_vana.is_configured.return_value = True
+    mock_vana.evaluate_governance.side_effect = VanaGovernanceDeniedError(f"Access not permitted by VANA governance policy (decision: {decision}).")
+
+    service = CapabilityRegistryService(vana_client=mock_vana)
+    initial_contracts_count = len(service._access_contracts)
+
+    req = CapabilityAccessRequest(
+        application_id="consumer-app",
+        capability_id="cap-vana-forest-cover",
+        purpose="district_canopy_analysis",
+    )
+    with pytest.raises(CapabilityAccessDeniedError) as exc_info:
+        service.request_access(actor="test-actor", roles=["ecosystem-reader"], request_data=req)
+    assert "VANA 6-tuple governance evaluation denied access" in str(exc_info.value)
+    assert len(service._access_contracts) == initial_contracts_count
+
+
+def test_capability_registry_timeout_or_error_denies_governed_capability():
+    """D3: VANA timeout or error raises VanaUnavailableError and creates no contract."""
+    mock_vana = MagicMock(spec=VanaClient)
+    mock_vana.is_configured.return_value = True
+    mock_vana.evaluate_governance.side_effect = VanaUnavailableError("VANA call to /api/v1/governance/evaluate timed out")
+
+    service = CapabilityRegistryService(vana_client=mock_vana)
+    initial_contracts_count = len(service._access_contracts)
+
+    req = CapabilityAccessRequest(
+        application_id="consumer-app",
+        capability_id="cap-vana-forest-cover",
+        purpose="district_canopy_analysis",
+    )
+    with pytest.raises(VanaUnavailableError) as exc_info:
+        service.request_access(actor="test-actor", roles=["ecosystem-reader"], request_data=req)
+    assert "unavailable" in str(exc_info.value).lower()
+    assert len(service._access_contracts) == initial_contracts_count
+
+    # Check audit record
+    audits = service.audit_emitter.get_chain()
+    denial_audits = [
+        e for e in audits
+        if e.payload.get("action") == "ACCESS_REQUEST"
+        and e.payload.get("result") == "DENIED"
+        and e.payload.get("capability_id") == "cap-vana-forest-cover"
+    ]
+    assert len(denial_audits) >= 1
+
+
+def test_capability_registry_non_governed_capability_unaffected_when_vana_unconfigured_or_down():
+    """D3: Non-governed capabilities (e.g. cap-mangrove-monitoring) succeed even if VANA is unconfigured or down."""
+    mock_vana = MagicMock(spec=VanaClient)
+    mock_vana.is_configured.return_value = False
+    mock_vana.evaluate_governance.side_effect = RuntimeError("VANA is completely down")
+
+    service = CapabilityRegistryService(vana_client=mock_vana)
+
+    # cap-mangrove-monitoring has dataset DS-MANGROVE-CANOPY-2024 (not DS-FSI- or DS-VANA-)
+    req = CapabilityAccessRequest(
+        application_id="marine-consumer",
+        capability_id="cap-mangrove-monitoring",
+        purpose="environmental_monitoring",
+    )
+    contract = service.request_access(actor="marine-analyst", roles=["ecosystem-reader"], request_data=req)
+    assert contract.authorized is True
+    assert contract.capability_id == "cap-mangrove-monitoring"
+    assert contract.access_token is not None
+
+
+def test_http_api_governed_capability_unconfigured_returns_503():
+    """D3 & D6: When VANA is unconfigured, HTTP access request for governed capability returns HTTP 503."""
+    token = _get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
     access_req = {
         "application_id": "vana-tester",
         "capability_id": "cap-vana-forest-cover",
         "purpose": "district_canopy_analysis",
     }
-    res = client.post("/access/request", json=access_req, headers=headers)
-    assert res.status_code == 200
-    access_token = res.json()["access_token"]
-    assert access_token is not None
+    with patch.object(VanaClient, "is_configured", return_value=False):
+        res = client.post("/access/request", json=access_req, headers=headers)
+        assert res.status_code == 503
+        err_msg = res.json().get("detail") or res.json().get("error", {}).get("message", "")
+        assert "not configured" in err_msg.lower()
 
-    # Retrieve Data
-    ret_req = {
+
+def test_http_api_governed_capability_denied_returns_403():
+    """D3: When VANA denies governance evaluation, HTTP access request returns HTTP 403."""
+    token = _get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    access_req = {
         "application_id": "vana-tester",
-        "access_token": access_token,
+        "capability_id": "cap-vana-forest-cover",
+        "purpose": "district_canopy_analysis",
     }
-    res = client.post("/capabilities/cap-vana-forest-cover/retrieve", json=ret_req, headers=headers)
-    assert res.status_code == 200
-    ret_data = res.json()
-    assert ret_data["capability"]["capability_id"] == "cap-vana-forest-cover"
-    assert "data" in ret_data
+    with patch.object(VanaClient, "is_configured", return_value=True),          patch.object(VanaClient, "evaluate_governance", side_effect=VanaGovernanceDeniedError("Clearance revoked")):
+        res = client.post("/access/request", json=access_req, headers=headers)
+        assert res.status_code == 403
+        err_msg = res.json().get("detail") or res.json().get("error", {}).get("message", "")
+        assert "denied" in err_msg.lower()
+
+
+def test_http_api_governed_capability_unavailable_returns_503():
+    """D3: When VANA encounters network failure/timeout, HTTP access request returns HTTP 503."""
+    token = _get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    access_req = {
+        "application_id": "vana-tester",
+        "capability_id": "cap-vana-forest-cover",
+        "purpose": "district_canopy_analysis",
+    }
+    with patch.object(VanaClient, "is_configured", return_value=True),          patch.object(VanaClient, "evaluate_governance", side_effect=VanaUnavailableError("VANA connection timeout")):
+        res = client.post("/access/request", json=access_req, headers=headers)
+        assert res.status_code == 503
+        err_msg = res.json().get("detail") or res.json().get("error", {}).get("message", "")
+        assert "timeout" in err_msg.lower()

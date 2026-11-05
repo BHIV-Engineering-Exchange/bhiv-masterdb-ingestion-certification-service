@@ -138,3 +138,38 @@ def test_evidence_is_replayable_from_store(tmp_path):
     assert replayed is not None
     assert replayed.status == RetrievalStatus.NOT_RETRIEVABLE
     assert replayed.package_id == package.package_id
+
+def test_retrieval_readiness_evidence_persists_across_instances(tmp_path):
+    registry_1, knowledge_objects_1, retrieval_1 = make_services(tmp_path)
+    package = register_package(registry_1, dataset_id="ds-evidence-persist")
+    knowledge_objects_1.register_object(
+        package_id=package.package_id, source_reference="s3://bucket/source.csv"
+    )
+    promote_to(
+        registry_1,
+        package.package_id,
+        PackageStatus.INGESTED,
+        PackageStatus.VALIDATED,
+        PackageStatus.VERIFIED,
+        PackageStatus.CERTIFIED,
+    )
+
+    # Initial assessment on instance 1 (status: RETRIEVABLE)
+    evidence_1 = retrieval_1.assess(package.package_id)
+    assert evidence_1.status == RetrievalStatus.RETRIEVABLE
+    assert len(evidence_1.rules) > 0
+
+    # Simulate process restart: discard instance 1 and construct fresh instance 2 against the same directory
+    del retrieval_1
+    del knowledge_objects_1
+    del registry_1
+
+    registry_2, _, retrieval_2 = make_services(tmp_path)
+
+    # Verify latest evidence artifact reloads cleanly on fresh instance without re-running assess
+    reloaded = retrieval_2.get_latest(package.package_id)
+    assert reloaded is not None
+    assert reloaded.package_id == package.package_id
+    assert reloaded.status == RetrievalStatus.RETRIEVABLE
+    assert len(reloaded.rules) == len(evidence_1.rules)
+    assert reloaded.corrective_actions == evidence_1.corrective_actions
