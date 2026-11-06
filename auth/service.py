@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives.serialization import load_pem_public_key
 import jwt
 
 from auth.models import AuthIdentity
+from security.public_key import load_rsa_public_key
 
 logger = logging.getLogger("masterdb.auth")
 
@@ -327,9 +328,10 @@ class AuthService:
             if not public_key:
                 raise AuthTokenError("Asymmetric RS256 token received but AUTH_JWT_PUBLIC_KEY is not configured.")
             try:
+                rsa_public_key = load_rsa_public_key(public_key)
                 payload = jwt.decode(
                     token,
-                    public_key,
+                    rsa_public_key,
                     algorithms=["RS256"],
                     options={"verify_aud": False, "verify_iss": False},
                 )
@@ -339,6 +341,8 @@ class AuthService:
                 raise AuthTokenError(f"Token is not yet valid: {exc}") from exc
             except jwt.InvalidTokenError as exc:
                 raise AuthTokenError(f"Token is invalid or badly signed: {exc}") from exc
+            except (TypeError, ValueError) as exc:
+                raise AuthTokenError(f"RS256 public key is invalid: {exc}") from exc
 
             # Validate temporal claims (nbf and iat clock skew)
             now = datetime.now(timezone.utc).timestamp()
