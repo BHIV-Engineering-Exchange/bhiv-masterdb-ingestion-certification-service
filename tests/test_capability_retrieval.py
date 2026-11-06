@@ -134,10 +134,69 @@ def test_earthquake_retrieval_returns_filtered_seismic_observations(tmp_path, mo
     assert result["capability"]["dataset_id"] == "ds-gev-seismic-events"
     assert result["data"]["dataset_id"] == "ds-gev-seismic-events"
     assert result["data"]["count"] == 1
+    assert result["data"]["returned_count"] == 1
     assert [item["event_id"] for item in result["data"]["observations"]] == ["us-test-recent-strong"]
     assert result["data"]["observations"][0]["source"] == "USGS"
     assert "canopy_density_pct" not in result["data"]
     assert result["provenance"]["is_synthetic"] is False
+    assert result["provenance"]["content_digest_sha256"] == result["content_digest_sha256"]
+    assert len(result["content_digest_sha256"]) == 64
+    assert "mdu_provenance" in result["provenance"]
+    invalid_response = client.post(
+        "/capabilities/cap-gev-earthquake-monitoring/retrieve",
+        json={
+            "application_id": "EARTHQUAKE_TEST_CONSUMER",
+            "access_token": grant_response.json()["access_token"],
+            "query_params": {"min_magnitude": "not-a-number"},
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert invalid_response.status_code == 422
+    invalid_window_response = client.post(
+        "/tantra/capabilities/cap-gev-earthquake-monitoring/retrieve",
+        json={
+            "application_id": "EARTHQUAKE_TEST_CONSUMER",
+            "access_token": grant_response.json()["access_token"],
+            "query_params": {"time_window": "last day"},
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert invalid_window_response.status_code == 422
+
+
+def test_earthquake_filters_windows_limits_and_invalid_magnitudes(tmp_path, monkeypatch):
+    observations = EarthquakeObservationService(ArtifactStore(str(tmp_path / "earthquakes-query")))
+    now = datetime.now(timezone.utc)
+    observations.ingest({
+        "source": "USGS",
+        "observations": [
+            {
+                "event_id": f"query-{days}-{magnitude}", "source": "USGS", "place": "Fixture",
+                "magnitude": magnitude, "longitude": 10.0, "latitude": 20.0, "depth_km": 5.0,
+                "event_time_utc": (now - timedelta(days=days)).isoformat(),
+                "source_url": "https://earthquake.usgs.gov/test/query",
+            }
+            for days, magnitude in ((0, 2.0), (0.5, 4.0), (8, 6.0))
+        ],
+    })
+    monkeypatch.setattr(main.capability_registry_service, "earthquake_observation_service", observations)
+    query = main.capability_registry_service._get_earthquake_payload
+
+    assert query({"min_magnitude": 3, "max_magnitude": 5, "time_window": "24h"})["returned_count"] == 1
+    assert query({"time_window": "7d", "limit": 100})["returned_count"] == 2
+    assert query({"limit": "all"})["returned_count"] == 3
+    assert query({"limit": None})["returned_count"] == 3
+    assert query({"limit": 100})["returned_count"] == 3
+    assert query({"min_magnitude": 5, "limit": 1})["count"] == 1
+    assert query({"min_magnitude": 2.5, "limit": 1})["returned_count"] == 1
+
+    for params in ({"min_magnitude": "bad"}, {"min_magnitude": 11}, {"max_magnitude": -3}, {"min_magnitude": 5, "max_magnitude": 2}):
+        try:
+            query(params)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"invalid magnitude query should fail: {params}")
 
 
 def test_access_grant_cannot_be_reused_for_another_capability_or_application():

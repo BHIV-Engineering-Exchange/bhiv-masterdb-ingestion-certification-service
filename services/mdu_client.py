@@ -11,7 +11,7 @@ Configuration is read from environment variables so no credentials are
 hardcoded in source:
     MDU_BASE_URL           e.g. https://parakosha.blackholeinfiverse.com/
     MDU_API_KEY            the X-API-Key header value
-    MDU_TIMEOUT_SECONDS    client timeout (default: 60s for cold starts)
+    MDU_TIMEOUT_SECONDS    client timeout (default: 10s; increase only if MDU cold starts require it)
 
 If MDU_BASE_URL / MDU_API_KEY are not set, every method raises
 MDUUnavailableError rather than silently falling back to placeholder data —
@@ -42,12 +42,13 @@ class MDUClient:
     ) -> None:
         self.base_url = (base_url or os.environ.get("MDU_BASE_URL") or "").rstrip("/")
         self.api_key = api_key or os.environ.get("MDU_API_KEY")
-        # MDU may be hosted on a scale-to-zero service; its first request can
-        # take longer than the usual API timeout while the instance starts.
+        # Keep optional MDU enrichment from tying up retrieval requests for a
+        # full minute during an upstream outage. Deployments with documented
+        # scale-to-zero cold starts can opt into a longer timeout explicitly.
         self.timeout_seconds = (
             timeout_seconds
             if timeout_seconds is not None
-            else float(os.environ.get("MDU_TIMEOUT_SECONDS", "60"))
+            else float(os.environ.get("MDU_TIMEOUT_SECONDS", "10"))
         )
 
         # Circuit breaker to prevent cascading failures if MDU is down.

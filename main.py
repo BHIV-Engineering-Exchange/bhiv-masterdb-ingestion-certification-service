@@ -1347,8 +1347,13 @@ def get_package_retrieval(package_id: str, identity: AuthIdentity = Depends(get_
 
 @app.get("/mdu/status")
 def mdu_status(identity: AuthIdentity = Depends(require_internal_or_operator)) -> dict:
+    configured = mdu_contract_adapter.is_live()
     return {
-        "live": mdu_contract_adapter.is_live(),
+        # Configuration is not proof of upstream reachability. This endpoint
+        # deliberately does not make a slow MDU request as a health probe.
+        "live": None,
+        "configured": configured,
+        "reachability": "not_checked",
         "contract_finalized": mdu_contract_adapter.is_contract_finalized(),
         "known_gaps": mdu_contract_adapter.known_gaps(),
     }
@@ -2635,6 +2640,9 @@ def retrieve_capability_data(
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except VanaUnavailableError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        # Invalid capability query filters are client errors, not server failures.
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.get("/access/{request_id}", response_model=AccessContract)

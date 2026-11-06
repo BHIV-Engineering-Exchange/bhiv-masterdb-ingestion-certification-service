@@ -7,6 +7,7 @@ and authorization/access evaluation for TANTRA runtime integration.
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import uuid
@@ -1430,23 +1431,39 @@ class CapabilityRegistryService:
 
     def _get_earthquake_payload(self, params: Dict[str, Any]) -> Dict[str, Any]:
         observations = (
-            self.earthquake_observation_service.list(limit=1000)
+            self.earthquake_observation_service.list(limit=None)
             if self.earthquake_observation_service is not None
             else []
         )
 
         min_magnitude = params.get("min_magnitude")
-        if min_magnitude is not None:
-            minimum = float(min_magnitude)
+        max_magnitude = params.get("max_magnitude")
+        try:
+            if isinstance(min_magnitude, bool) or isinstance(max_magnitude, bool):
+                raise ValueError("boolean is not a magnitude")
+            minimum = float(min_magnitude) if min_magnitude is not None else None
+            maximum = float(max_magnitude) if max_magnitude is not None else None
+        except (TypeError, ValueError) as exc:
+            raise ValueError("magnitude filters must be numeric") from exc
+        if any(value is not None and (not math.isfinite(value) or not (-2 <= value <= 10)) for value in (minimum, maximum)):
+            raise ValueError("magnitude filters must be between -2 and 10")
+        if minimum is not None and maximum is not None and minimum > maximum:
+            raise ValueError("min_magnitude must not exceed max_magnitude")
+        if minimum is not None:
             observations = [
                 item for item in observations
                 if float(item.get("magnitude", float("-inf"))) >= minimum
+            ]
+        if maximum is not None:
+            observations = [
+                item for item in observations
+                if float(item.get("magnitude", float("inf"))) <= maximum
             ]
 
         time_window = params.get("time_window")
         if time_window is not None:
             match = re.fullmatch(r"(\d+)([hd])", str(time_window).strip().lower())
-            if not match:
+            if not match or int(match.group(1)) < 1:
                 raise ValueError("time_window must be specified in hours or days, such as '24h' or '7d'.")
             amount = int(match.group(1))
             window = timedelta(hours=amount) if match.group(2) == "h" else timedelta(days=amount)
@@ -1460,14 +1477,22 @@ class CapabilityRegistryService:
                     recent_observations.append(item)
             observations = recent_observations
 
-        limit = min(max(int(params.get("limit", 100)), 1), 1000)
-        offset = max(int(params.get("offset", 0)), 0)
+        raw_limit = params.get("limit", 100)
+        all_observations = raw_limit is None or (isinstance(raw_limit, str) and raw_limit.strip().lower() == "all") or params.get("all") is True
+        try:
+            limit = len(observations) if all_observations else int(raw_limit)
+            offset = int(params.get("offset", 0))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("limit must be an integer from 1 to 1000 or 'all'; offset must be a non-negative integer") from exc
+        if (not all_observations and not 1 <= limit <= 1000) or offset < 0:
+            raise ValueError("limit must be an integer from 1 to 1000 or 'all'; offset must be a non-negative integer")
         filtered_count = len(observations)
         observations = observations[offset:offset + limit]
         return {
             "dataset_id": "ds-gev-seismic-events",
             "capability_id": "cap-gev-earthquake-monitoring",
             "count": filtered_count,
+            "returned_count": len(observations),
             "limit": limit,
             "offset": offset,
             "observations": observations,
