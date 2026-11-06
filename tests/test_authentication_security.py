@@ -335,6 +335,69 @@ def test_rs256_asymmetric_token_verification_success():
     assert "operator" in identity.roles
 
 
+def test_rs256_base64_der_public_key_verification_success():
+    """TANTRA may provide SubjectPublicKeyInfo DER as base64 instead of PEM."""
+    import base64
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+    from auth.service import AuthService
+
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_der_base64 = base64.b64encode(
+        private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+    ).decode("ascii")
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+    token = jwt.encode(
+        {
+            "sub": "tantra-execution-worker",
+            "roles": ["ecosystem-reader"],
+            "iss": "tantra-sarathi",
+            "aud": "tantra-bridge",
+            "exp": int(time.time()) + 3600,
+        },
+        private_pem,
+        algorithm="RS256",
+    )
+
+    identity = AuthService(secret_key="test-secret", public_key_pem=public_der_base64).decode_token(token)
+    assert identity.actor == "tantra-execution-worker"
+    assert identity.roles == ["ecosystem-reader"]
+
+
+def test_rs256_malformed_public_key_returns_auth_error():
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+    from auth.service import AuthService, AuthTokenError
+
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+    token = jwt.encode(
+        {
+            "sub": "tantra-execution-worker",
+            "roles": ["ecosystem-reader"],
+            "iss": "tantra-sarathi",
+            "aud": "tantra-bridge",
+            "exp": int(time.time()) + 3600,
+        },
+        private_pem,
+        algorithm="RS256",
+    )
+
+    with pytest.raises(AuthTokenError, match="RS256 public key is invalid"):
+        AuthService(secret_key="test-secret", public_key_pem="not-a-public-key").decode_token(token)
+
+
 def test_rs256_asymmetric_token_invalid_signature_rejected():
     from cryptography.hazmat.primitives.asymmetric import rsa
     from cryptography.hazmat.primitives import serialization

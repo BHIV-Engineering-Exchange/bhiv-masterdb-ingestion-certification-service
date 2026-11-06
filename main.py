@@ -1,12 +1,13 @@
 import logging
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
 
 if "PYTEST_CURRENT_TEST" not in os.environ:
-    load_dotenv()
+    load_dotenv(Path(__file__).resolve().with_name(".env"))
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
