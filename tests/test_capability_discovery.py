@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_token
 """
 Tests for MASTERDB Capability Discovery API.
 """
@@ -10,9 +11,7 @@ client = TestClient(app)
 
 
 def _get_token(actor="test-app", roles=None):
-    res = client.post("/auth/token", json={"actor": actor, "password": "test-auth-password", "roles": roles or ["ecosystem-reader"]})
-    assert res.status_code == 200
-    return res.json()["access_token"]
+    return get_test_token(actor=actor, roles=roles)
 
 
 def test_list_capabilities_requires_auth():

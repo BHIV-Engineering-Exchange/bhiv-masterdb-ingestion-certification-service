@@ -51,6 +51,21 @@ def log_security_decision(
     return record
 
 
+def validate_rsa_public_key(pem_str: str) -> None:
+    if not pem_str or not pem_str.strip():
+        raise RuntimeError("Authoritative RS256 public key is empty.")
+    try:
+        from cryptography.hazmat.primitives.serialization import load_pem_public_key
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        key = load_pem_public_key(pem_str.encode("utf-8"))
+    except Exception as exc:
+        raise RuntimeError(f"Invalid RSA public key: {exc}") from exc
+    if not isinstance(key, rsa.RSAPublicKey):
+        raise RuntimeError("Key must be RSA.")
+    if key.key_size < 2048:
+        raise RuntimeError("RSA key must be at least 2048 bits.")
+
+
 class AuthService:
     def __init__(
         self,

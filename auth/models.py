@@ -33,3 +33,6 @@ class TokenResponse(BaseModel):
 class AuthIdentity(BaseModel):
     actor: str
     roles: List[str] = Field(default_factory=list)
+    auth_method: str = "HS256"
+    issuer: Optional[str] = None
+    is_tantra_verified: bool = False

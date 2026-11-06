@@ -239,7 +239,7 @@ def test_9_bcaes_self_authorization_defect_verified():
 # Verify whether auto-grant still occurs — document as defect if confirmed
 # ---------------------------------------------------------------------------
 def test_10_capability_contract_bypass_defect_verified():
-    from services.capability_registry_service import CapabilityRegistryService
+    from services.capability_registry_service import CapabilityRegistryService, CapabilityAccessDeniedError
     from services.package_registry_service import PackageRegistryService
 
     pkg_reg = PackageRegistryService()
@@ -254,18 +254,12 @@ def test_10_capability_contract_bypass_defect_verified():
         request_id=None,
     )
 
-    # Calling retrieve directly without prior access token or request_id
-    response = cap_service.retrieve(
-        actor="anonymous-actor",
-        roles=["ecosystem-reader"],
-        capability_id=capability_id,
-        retrieve_req=retrieve_req,
-    )
-
-    # Defect confirmation (GAP 12):
-    # Instead of failing closed with 401/403 or rejecting the missing credential,
-    # the retrieve method executes the `if not has_explicit_credential` branch
-    # and automatically grants an AccessContract on the fly.
-    assert response is not None
-    assert response.request_id is not None
-    assert response.request_id.startswith("req-ret-")
+    # GAP 12 fix verified: Calling retrieve directly without prior access token
+    # or request_id fails closed with CapabilityAccessDeniedError.
+    with pytest.raises(CapabilityAccessDeniedError):
+        cap_service.retrieve(
+            actor="anonymous-actor",
+            roles=["ecosystem-reader"],
+            capability_id=capability_id,
+            retrieve_req=retrieve_req,
+        )

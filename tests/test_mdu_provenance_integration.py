@@ -65,6 +65,22 @@ def test_mdu_client_unconfigured(monkeypatch):
     assert "not configured" in str(exc_info.value)
 
 
+def test_mdu_client_default_timeout_is_bounded(monkeypatch):
+    monkeypatch.delenv("MDU_TIMEOUT_SECONDS", raising=False)
+    client = MDUClient(base_url="https://mdu.test", api_key="test-key")
+    assert client.timeout_seconds == 10
+
+
+def test_mdu_status_does_not_mistake_configuration_for_health(monkeypatch):
+    import main
+
+    monkeypatch.setattr(main.mdu_contract_adapter, "is_live", lambda: True)
+    status = main.mdu_status()
+    assert status["configured"] is True
+    assert status["live"] is None
+    assert status["reachability"] == "not_checked"
+
+
 def test_mdu_client_headers_and_trace_propagation(monkeypatch):
     captured_requests = []
 

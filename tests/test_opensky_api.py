@@ -8,7 +8,9 @@ from services.opensky_service import OpenSkyService
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    from tests.test_identity_fixtures import get_test_auth_headers
+    headers = get_test_auth_headers(actor="kavy", roles=["admin", "operator"])
+    return TestClient(app, headers=headers)
 
 
 def test_opensky_global_query(client):

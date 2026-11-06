@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_token
 """
 Tests for Domain Independence — Proving the integration contract does NOT change across domains.
 """
@@ -9,9 +10,7 @@ client = TestClient(main.app)
 
 
 def _get_token(actor="domain-tester"):
-    res = client.post("/auth/token", json={"actor": actor, "password": "test-auth-password", "roles": ["ecosystem-reader"]})
-    assert res.status_code == 200
-    return res.json()["access_token"]
+    return get_test_token(actor=actor, roles=["ecosystem-reader"])
 
 
 def test_domain_independence_across_varied_domains():
