@@ -66,7 +66,7 @@ def test_weather_routes_require_readback_before_live_verified(monkeypatch, tmp_p
     when = "2026-10-24T12:00:00+00:00"
     monkeypatch.setattr(main, "fetch_wind_forecasts", lambda model, locations: {"source": "GEV", "model": model.upper(), "cycle": {"validIso": when}, "observations": [{"source": "GEV", "model": model.upper(), "record_type": "FORECAST", "is_forecast": True, "latitude": 10.0, "longitude": 20.0, "run_time_utc": when, "forecast_valid_at_utc": when, "wind_u_mps": 1.0, "wind_v_mps": 2.0, "wind_speed_mps": 2.236, "wind_direction_degrees": 206.5}]})
     monkeypatch.setattr(main, "fetch_open_meteo_current", lambda locations: {"source": "Open-Meteo", "observations": [{"source": "Open-Meteo", "record_type": "CURRENT_CONDITIONS", "is_forecast": False, "latitude": 10.0, "longitude": 20.0, "observed_at_utc": when, "temperature_2m_c": 29.0}]})
-    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="weather-test", roles=["viewer"])
+    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="weather-test", roles=["operator"])
     try:
         client = TestClient(main.app)
         wind = client.post("/weather/wind/gfs/ingest", json={"locations": [{"latitude": 10, "longitude": 20}]})

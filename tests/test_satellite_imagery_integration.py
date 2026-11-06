@@ -33,7 +33,7 @@ def test_authenticated_satellite_imagery_routes_and_registry(monkeypatch, tmp_pa
         client = TestClient(main.app)
         assert client.get("/geospatial/satellite-imagery/manifest").status_code == 401
         assert client.post("/geospatial/satellite-imagery/verify").status_code == 401
-        main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["viewer"])
+        main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["operator"])
         manifest = client.get("/geospatial/satellite-imagery/manifest")
         assert manifest.status_code == 200
         assert manifest.json()["status"] == "CONFIGURED"

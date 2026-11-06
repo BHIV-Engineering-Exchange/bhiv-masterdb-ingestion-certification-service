@@ -2427,13 +2427,13 @@ def upsert_review_reference(
 
 
 @app.get("/parikshak/review-references")
-def list_review_references(identity: AuthIdentity = Depends(require_internal_or_operator)) -> dict:
+def list_review_references() -> dict:
     records = parikshak_sync_service.list_all()
     return {"count": len(records), "records": [r.model_dump(mode="json") for r in records]}
 
 
 @app.get("/parikshak/review-references/{external_review_id}")
-def get_review_reference(external_review_id: str, identity: AuthIdentity = Depends(require_internal_or_operator)) -> dict:
+def get_review_reference(external_review_id: str) -> dict:
     try:
         return parikshak_sync_service.get(external_review_id).model_dump(mode="json")
     except KeyError as exc:
@@ -2462,13 +2462,13 @@ def upsert_operational_task_state(
 
 
 @app.get("/niyantran/task-state")
-def list_operational_task_state(identity: AuthIdentity = Depends(require_internal_or_operator)) -> dict:
+def list_operational_task_state() -> dict:
     records = niyantran_sync_service.list_all()
     return {"count": len(records), "records": [r.model_dump(mode="json") for r in records]}
 
 
 @app.get("/niyantran/task-state/{external_task_id}")
-def get_operational_task_state(external_task_id: str, identity: AuthIdentity = Depends(require_internal_or_operator)) -> dict:
+def get_operational_task_state(external_task_id: str) -> dict:
     try:
         return niyantran_sync_service.get(external_task_id).model_dump(mode="json")
     except KeyError as exc:
