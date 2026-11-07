@@ -12,7 +12,14 @@ from bcaes_registry.service import BCAESRegistryService, DependencyNotFoundError
 
 @pytest.fixture
 def service() -> BCAESRegistryService:
-    return BCAESRegistryService()
+    svc = BCAESRegistryService()
+    orig_reg = svc.register
+    orig_upd = svc.update
+    orig_del = svc.delete
+    svc.register = lambda rt, req, actor="Kavy", actor_roles=None: orig_reg(rt, req, actor=actor, actor_roles=actor_roles or ["bhiv-admin"])
+    svc.update = lambda rt, oid, req, actor="Kavy", actor_roles=None: orig_upd(rt, oid, req, actor=actor, actor_roles=actor_roles or ["bhiv-admin"])
+    svc.delete = lambda rt, oid, actor="Kavy", actor_roles=None: orig_del(rt, oid, actor=actor, actor_roles=actor_roles or ["bhiv-admin"])
+    return svc
 
 
 def _req(name="Ingestion Certification", owner="Kavy", **overrides) -> RegisterObjectRequest:

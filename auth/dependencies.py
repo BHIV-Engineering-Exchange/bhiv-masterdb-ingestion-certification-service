@@ -1,59 +1,75 @@
 """FastAPI dependency wiring for auth. Kept separate from auth/service.py
 so the service class has no FastAPI import and stays unit-testable on its
 own."""
-from typing import Set
-from fastapi import Depends, HTTPException
+import logging
+from typing import Optional
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from auth.constants import ADMIN_ROLE
 from auth.models import AuthIdentity
-from auth.service import AuthService, AuthTokenError
+from auth.service import AuthService, AuthTokenError, log_security_decision
 
+logger = logging.getLogger("masterdb.security")
 _bearer_scheme = HTTPBearer(auto_error=False)
-
-_OPERATOR_ROLES: Set[str] = {ADMIN_ROLE, "admin", "operator", "ingest:operator", "bcaes-editor"}
-_INTERNAL_ROLES: Set[str] = _OPERATOR_ROLES | {"pravah-sync", "mdu", "shared", "internal-service", "service"}
-
-
-def get_identity(
-    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
-) -> AuthIdentity:
-    if credentials is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Missing bearer token. Obtain one from POST /auth/token.",
-        )
-    try:
-        import main
-        active_auth = getattr(main, "auth_service", None)
-        if active_auth is None:
-            active_auth = AuthService()
-        return active_auth.decode_token(credentials.credentials)
-    except AuthTokenError as exc:
-        raise HTTPException(status_code=401, detail=str(exc)) from exc
 
 
 def build_identity_dependency(auth_service: AuthService):
+    def get_identity(
+        request: Request = None,
+        credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer_scheme),
+    ) -> AuthIdentity:
+        cid = None
+        path = "auth.get_identity"
+        if request is not None:
+            cid = (
+                request.headers.get("X-Correlation-Id")
+                or request.headers.get("X-Request-Id")
+                or request.headers.get("X-Trace-Id")
+            )
+            try:
+                path = request.url.path
+            except Exception:
+                path = "auth.get_identity"
+
+        if credentials is None:
+            log_security_decision(
+                logger=logger,
+                outcome="DENY",
+                reason_code="DENY:MISSING_IDENTITY",
+                policy_reference=path,
+                actor_reference="anonymous",
+                correlation_id=cid,
+            )
+            raise HTTPException(
+                status_code=401,
+                detail="DENY:MISSING_IDENTITY",
+            )
+        try:
+            import main
+            active_auth = getattr(main, "auth_service", auth_service)
+            identity = active_auth.decode_token(credentials.credentials)
+            log_security_decision(
+                logger=logger,
+                outcome="ALLOW",
+                reason_code="ALLOW:VERIFIED_IDENTITY",
+                policy_reference=path,
+                actor_reference=identity.actor,
+                correlation_id=cid,
+            )
+            return identity
+        except AuthTokenError as exc:
+            log_security_decision(
+                logger=logger,
+                outcome="DENY",
+                reason_code="DENY:INVALID_CREDENTIALS",
+                policy_reference=path,
+                actor_reference="unauthenticated",
+                correlation_id=cid,
+            )
+            raise HTTPException(status_code=401, detail=f"DENY:INVALID_CREDENTIALS: {exc}") from exc
+
     return get_identity
 
 
-def require_operator_or_admin(
-    identity: AuthIdentity = Depends(get_identity),
-) -> AuthIdentity:
-    if not any(role in _OPERATOR_ROLES for role in identity.roles):
-        raise HTTPException(
-            status_code=403,
-            detail=f"Forbidden: caller requires '{ADMIN_ROLE}' or 'operator' role.",
-        )
-    return identity
-
-
-def require_internal_or_operator(
-    identity: AuthIdentity = Depends(get_identity),
-) -> AuthIdentity:
-    if not any(role in _INTERNAL_ROLES for role in identity.roles):
-        raise HTTPException(
-            status_code=403,
-            detail=f"Forbidden: caller requires internal service, operator, or '{ADMIN_ROLE}' role.",
-        )
-    return identity
+_default_auth_service = AuthService()
+get_identity = build_identity_dependency(_default_auth_service)

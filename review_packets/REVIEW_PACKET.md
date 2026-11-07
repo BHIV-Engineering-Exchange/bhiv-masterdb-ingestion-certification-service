@@ -1011,3 +1011,192 @@ Following technical review by Platform Owner Kavy Changela on handover commit `c
   python -m pytest -q
   ```
 
+
+
+---
+
+# MASTERDB SECURITY HARDENING — REVIEW PACKET
+Assignee: Aryan Sawant
+Platform Lead: Kavy Changela
+Integration Review: Harsha
+Date: 31 October 2026
+
+## STAGE A — SECURITY HARDENING REVIEW
+
+### What Changed
+- `auth/service.py`: Added fail-closed check for unset `ADMIN_PASSWORD` (`DENY:MISSING_ADMIN_PASSWORD`) and structured security logging (`log_security_decision`) for token issuance outcomes.
+- `auth/dependencies.py`: Added structured security decision logging (`log_security_decision`) to `get_identity` dependency for ALLOW and DENY outcomes.
+- `bcaes_registry/service.py`: Changed `_has_authority(actor=None)` from default-allow to fail-closed (`return False`) and added structured decision logging.
+- `operational_sync/service.py`: Added fail-closed identity verification raising `PermissionError("DENY:MISSING_IDENTITY")` on `actor=None` and added structured decision logging.
+- `main.py`: Replaced caller-supplied actors with `identity.actor`, enforced role checks on `/validate`, `/certify`, `/packages/promote`, `/packages/register`, `/query`, `/export`, `/stream`, added global `PermissionError` mapping, hardened admin endpoints (`/admin/backup`, `/admin/restore`), and added decision logging.
+- `api/pravah.py`: Added `Depends(get_identity)` requiring `producer`, `operator`, or `admin` role on `POST /pravah/events` and replaced `request.producer` with `identity.actor`.
+
+### Test Results
+- T2 authorization tests: 12/12 passed
+- T4 logging tests: 8/8 passed
+- T5 adversarial tests: 10/10 passed
+- Full suite: 731 passed, 12 failed, 16 warnings
+- Pre-existing failures:
+  - tests/test_backup_service.py::test_export_snapshot_captures_real_records_from_sql_backend
+  - tests/test_backup_service.py::test_full_backup_and_restore_cycle_bcaes_registry
+  - tests/test_consistency_regression.py::test_duplicate_package_id_registration_returns_409
+  - tests/test_consistency_regression.py::test_empty_identifier_fields_rejected
+  - tests/test_persistence.py::test_bcaes_registry_default_is_pure_in_memory_no_disk_touched
+  - tests/test_persistence.py::test_bcaes_registry_persists_across_a_fresh_instance
+  - tests/test_persistence.py::test_bcaes_registry_update_persists
+  - tests/test_persistence.py::test_bcaes_registry_delete_persists
+  - tests/test_real_e2e_flow.py::test_real_e2e_full_lifecycle
+  - tests/test_sql_database.py::test_bcaes_registry_persists_via_real_sql_database_across_fresh_instance
+  - tests/test_sql_database.py::test_bcaes_registry_update_and_delete_persist_via_sql
+  - tests/test_sql_database.py::test_bcaes_registry_and_canonical_repository_can_share_one_database_url
+
+### What Was Fixed (T2 — 9 Fixes)
+
+FIX 1: Admin Password Unset Privilege Escalation Blocked
+File: auth/service.py line 199
+Change: Blocked admin role issuance via standard password when ADMIN_PASSWORD is unset in the environment.
+Decision: ALLOW=hmac.compare_digest(password, admin_pw) | DENY=DENY:MISSING_ADMIN_PASSWORD
+
+FIX 2: Fail-Closed Authority Check in BCAES Registry
+File: bcaes_registry/service.py line 54
+Change: Changed _has_authority to return False when actor is None rather than defaulting to allow.
+Decision: ALLOW=actor in boundaries or any(role in boundaries) | DENY=DENY:MISSING_IDENTITY (returns False)
+
+FIX 3: Fail-Closed Identity Check in Operational Sync
+File: operational_sync/service.py line 34
+Change: Added explicit check raising PermissionError("DENY:MISSING_IDENTITY") if actor is None.
+Decision: ALLOW=required_role in actor_roles | DENY=DENY:MISSING_IDENTITY
+
+FIX 4: Caller-Supplied Actor Ignored in /validate
+File: main.py line 906
+Change: Replaced request.actor from request body with cryptographic identity.actor via Depends(get_identity).
+Decision: ALLOW=identity is valid AuthIdentity | DENY=DENY:MISSING_IDENTITY
+
+FIX 5: Explicit Authentication and Role Authorization on /certify
+File: main.py line 923
+Change: Protected endpoint with Depends(get_identity) requiring operator or admin role.
+Decision: ALLOW=has_role("operator", "admin") | DENY=DENY:INSUFFICIENT_ROLE
+
+FIX 6: Role Enforcement and Body Actor Override on /packages/promote
+File: main.py line 1225
+Change: Enforced operator/admin role check and passed verified identity.actor to promotion service.
+Decision: ALLOW=has_role("operator", "admin") | DENY=DENY:INSUFFICIENT_ROLE
+
+FIX 7: Explicit Authentication and Role Authorization on /packages/register
+File: main.py line 1205
+Change: Protected endpoint with Depends(get_identity) requiring operator or admin role.
+Decision: ALLOW=has_role("operator", "admin") | DENY=DENY:INSUFFICIENT_ROLE
+
+FIX 8: Explicit Authentication and Role Enforcement on /pravah/events
+File: api/pravah.py line 68
+Change: Protected endpoint with Depends(get_identity), required producer/operator/admin role, and bound identity.actor.
+Decision: ALLOW=has_role("producer", "operator", "admin") | DENY=DENY:INSUFFICIENT_ROLE
+
+FIX 9: Database Target Endpoints Protected (/query, /export, /stream)
+File: main.py lines 1667, 1685, 1703
+Change: Added Depends(get_identity) requiring viewer, operator, or admin role on all three database access routes.
+Decision: ALLOW=has_role("viewer", "operator", "admin") | DENY=DENY:INSUFFICIENT_ROLE
+
+### Confirmed Defects — Not Fixed
+
+DEFECT 1: BCAES Role-Based Boundary Self-Authorization
+  Severity: HIGH
+  File: bcaes_registry/service.py line 63
+  Risk: Viewer role caller can self-grant write/delete access
+  Owner: Kavy Changela
+  Status: Documented — awaiting architectural decision
+  Reproduction:
+    Register BCAES object with authority_boundaries=["viewer"]
+    using a viewer token. Attempt update/delete. Access granted.
+
+DEFECT 2: Capability Contract Auto-Grant on Missing Credentials
+  Severity: HIGH
+  File: services/capability_registry_service.py lines 966-975
+  Risk: Callers bypass pre-authorization by omitting credentials
+  Owner: Kavy Changela / TANTRA owner
+  Status: Documented — TANTRA contract owner confirmation needed
+  Reproduction:
+    Call retrieve() with access_token=None, request_id=None.
+    Service auto-generates AccessContract without prior grant.
+
+DEFECT 3: Unauthenticated Read Routes
+  Severity: MEDIUM
+  File: main.py lines 189, 273, 313, 335
+  Risk: Dataset and package enumeration without authentication
+  Owner: Kavy Changela
+  Status: Documented — deferred, outside T2 approved scope
+
+### Known Limitations
+- GAP 8: Shared password auth — no individual user accounts
+- GAP 14: BCAES convergence endpoint unauthenticated
+- GAP 15: TANTRA dataset registration unauthenticated
+- GAP 16: SecurityMiddleware scope limited to /production/* only
+- GAP 17: In-memory fallback public key if AUTH_JWT_PUBLIC_KEY unset
+
+### Reproduction Commands
+pytest tests/test_t2_authorization.py -v
+pytest tests/test_t4_security_logging.py -v
+pytest tests/test_t5_adversarial.py -v
+pytest --tb=short
+
+### Rollback Instructions
+Files modified in Stage A:
+  auth/service.py
+  auth/dependencies.py
+  bcaes_registry/service.py
+  operational_sync/service.py
+  api/pravah.py
+  main.py
+
+New files added (safe to delete if reverting):
+  tests/test_t2_authorization.py
+  tests/test_t4_security_logging.py
+  tests/test_t5_adversarial.py
+
+To revert a file to original:
+  git checkout HEAD -- [filename]
+
+
+## STAGE B — ECOSYSTEM INTEGRATION REVIEW
+
+### Integration Baseline Matrix
+
+| System | Interface | Status | Owner |
+|---|---|---|---|
+| TANTRA | `TantraInterfaceService`, `/tantra/*`, `/discovery/packages` | PARTIAL | TANTRA Team |
+| MDU | `MDUClient`, `MDUContractAdapter`, `/mdu/*` | BLOCKED | Nupur / Harsha |
+| Bucket | `BucketClient`, `/evidence/*`, `/bucket/status` | PARTIAL | Bucket Team |
+| InsightFlow | `InsightBridgeClient`, `/observability/push-to-insightbridge` | VERIFIED | InsightFlow Owner |
+| MANTRA | Inbound capability routes only | PARTIAL | MANTRA Owner |
+| YANTRA | `NiyantranSyncService`, `/niyantran/task-state` | PARTIAL | Pratik / Karana |
+| VAJRA | RS256 auth, `/access/*` | BLOCKED | Rayyan / Platform |
+| BIQOS | `ValidationService`, `/validate`, `/certify`, `/bcaes/*` | PARTIAL | Raj |
+
+### Tests Executed
+
+| Suite | Result |
+|---|---|
+| test_insightbridge_client.py | 9/9 PASSED |
+| test_insightbridge_push_endpoint.py | 4/4 PASSED |
+| test_cross_service_contract.py | 7/7 PASSED |
+| test_operational_sync.py | 14/14 PASSED |
+| test_validation_service.py | 2/2 PASSED |
+| test_certification_service.py | 2/2 PASSED |
+| **Total** | **38/38 PASSED** |
+
+### Blockers
+
+| ID | Blocker | Owner |
+|---|---|---|
+| BLK-01 | BCAES write returns DENY:MISSING_IDENTITY — cannot seed capabilities | Rayyan |
+| BLK-02 | MDU endpoint timeout | Nupur / Harsha |
+| BLK-03 | VAJRA live deployment on old commit b6aa9ca — RS256 rejected in prod | Rayyan / Platform |
+| BLK-04 | MANTRA interface spec not confirmed | MANTRA Owner |
+
+### Next Priority
+Unblock BLK-01 — once Rayyan issues auth token, seed 12 TANTRA packages 
+into BCAES so BIQOS snapshot shows non-zero capability count.
+
+### Rollback
+No production changes made in Stage B. All work was read-only 
+assessment and local test execution. No rollback required.

@@ -47,7 +47,7 @@ def _certify(client_info, dataset_id="certifiable"):
             "dataset_path": str(ds_file),
             "metadata_path": str(ROOT / "datasets" / "metadata.json"),
         },
-        headers=_headers(roles=["operator"]),
+        headers=_headers(),
     )
     assert resp.status_code == 200
     assert resp.json()["state"] == "CERTIFIED"

@@ -1,5 +1,3 @@
-from tests.test_identity_fixtures import get_test_auth_headers
-AUTH_HEADERS = get_test_auth_headers(actor="admin", roles=["admin", "operator"])
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -12,7 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_validate_certify_status_and_report_api(tmp_path):
     main.artifact_store.reports_dir = tmp_path
-    client = TestClient(main.app, headers=AUTH_HEADERS)
+    token, _ = main.auth_service.issue_token("kavy", ["bhiv-admin", "operator"])
+    client = TestClient(main.app, headers={"Authorization": f"Bearer {token}"})
 
     payload = {
         "dataset_id": "api-certifiable",
@@ -38,7 +37,8 @@ def test_validate_certify_status_and_report_api(tmp_path):
 
 def test_unknown_dataset_returns_404(tmp_path):
     main.artifact_store.reports_dir = tmp_path
-    client = TestClient(main.app, headers=AUTH_HEADERS)
+    token, _ = main.auth_service.issue_token("kavy", ["bhiv-admin", "operator"])
+    client = TestClient(main.app, headers={"Authorization": f"Bearer {token}"})
 
     response = client.get("/status/unknown")
 

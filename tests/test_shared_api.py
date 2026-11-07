@@ -1,9 +1,6 @@
 from fastapi.testclient import TestClient
 
 import main
-from tests.test_identity_fixtures import get_test_auth_headers
-
-AUTH_HEADERS = get_test_auth_headers(actor="kavy", roles=["admin", "operator", "shared"])
 
 
 def make_client(tmp_path):
@@ -11,7 +8,8 @@ def make_client(tmp_path):
         safe_name = name.replace("-", "_")
         service.store.reports_dir = tmp_path / f"shared_{safe_name}"
         service.store.reports_dir.mkdir(parents=True, exist_ok=True)
-    return TestClient(main.app, headers=AUTH_HEADERS)
+    token, _ = main.auth_service.issue_token("kavy", ["bhiv-admin", "operator"])
+    return TestClient(main.app, headers={"Authorization": f"Bearer {token}"})
 
 
 # -- Phase 1: registry ------------------------------------------------------

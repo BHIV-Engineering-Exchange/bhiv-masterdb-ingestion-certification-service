@@ -7,9 +7,11 @@ HTTP routes always supply an identity from a verified JWT; direct/
 programmatic callers (and tests) that don't pass one bypass the check, same
 reasoning as bcaes_registry.
 """
+import logging
 from typing import List, Optional
 
 from auth.constants import ADMIN_ROLE
+from auth.service import log_security_decision
 from operational_sync.models import (
     OperationalTaskState,
     ReviewReference,
@@ -17,6 +19,8 @@ from operational_sync.models import (
     UpsertReviewReferenceRequest,
 )
 from operational_sync.store import UpsertSyncStore
+
+logger = logging.getLogger("masterdb.operational_sync")
 
 PARIKSHAK_SYNC_ROLE = "parikshak-sync"
 NIYANTRAN_SYNC_ROLE = "niyantran-sync"
@@ -28,10 +32,31 @@ class SyncPermissionDeniedError(Exception):
 
 def _check(actor: Optional[str], actor_roles: Optional[List[str]], required_role: str) -> None:
     if actor is None:
-        return
+        log_security_decision(
+            logger=logger,
+            outcome="DENY",
+            reason_code="DENY:MISSING_IDENTITY",
+            policy_reference="operational_sync._check",
+            actor_reference="None",
+        )
+        raise PermissionError("DENY:MISSING_IDENTITY")
     roles = actor_roles or []
     if ADMIN_ROLE in roles or required_role in roles:
+        log_security_decision(
+            logger=logger,
+            outcome="ALLOW",
+            reason_code="ALLOW:SYNC_AUTHORIZED",
+            policy_reference="operational_sync._check",
+            actor_reference=actor,
+        )
         return
+    log_security_decision(
+        logger=logger,
+        outcome="DENY",
+        reason_code="DENY:INSUFFICIENT_ROLE",
+        policy_reference="operational_sync._check",
+        actor_reference=actor,
+    )
     raise SyncPermissionDeniedError(
         f"'{actor}' holds none of ['{required_role}', '{ADMIN_ROLE}'] required for this sync."
     )

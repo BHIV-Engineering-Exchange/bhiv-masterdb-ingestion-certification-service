@@ -6,10 +6,10 @@ from fastapi.testclient import TestClient
 
 from main import app
 from models import PackageStatus
-from tests.test_identity_fixtures import get_test_auth_headers
+import main
 
-AUTH_HEADERS = get_test_auth_headers(actor='admin', roles=['admin', 'operator', 'pravah-sync'])
-client = TestClient(app, headers=AUTH_HEADERS)
+_token, _ = main.auth_service.issue_token("kavy", ["bhiv-admin", "operator"])
+client = TestClient(app, headers={"Authorization": f"Bearer {_token}"})
 
 
 def test_api_ingest_event_success():
