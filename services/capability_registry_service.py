@@ -588,6 +588,45 @@ class CapabilityRegistryService:
                     "governance_gate": "6_TUPLE_EVALUATION_GATE",
                 },
             ),
+            Capability(
+                capability_id="cap-cmo-marketing-intelligence",
+                capability_name="CMO - Marketing Intelligence & Campaign Attribution Engine",
+                description="Governed marketing campaign performance, ROI, CAC, ROAS, and multi-touch attribution telemetry for the CMO Agent in BIQOS/BHIV.",
+                dataset_id="ds-cmo-marketing-001",
+                source_id="src-biqos-marketing-hub",
+                purpose="marketing_intelligence",
+                capability_version="1.0.0",
+                contract_version="1.0.0",
+                domain="marketing",
+                schema_version="v1.0",
+                status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "channel", "type": "String (search/social/email/display/affiliate/video)", "required": False},
+                    {"name": "status", "type": "String (ACTIVE/COMPLETED/PAUSED/SCHEDULED)", "required": False},
+                    {"name": "min_roas", "type": "Float", "required": False},
+                ],
+                outputs=[
+                    {"name": "records", "type": "JSON Array of Campaign Performance Objects"},
+                    {"name": "summary", "type": "JSON Object"},
+                ],
+                dependencies=["BIQOS Marketing Telemetry Hub", "CMO Attribution Engine"],
+                source_references=["src-biqos-marketing-hub"],
+                dataset_references=["ds-cmo-marketing-001"],
+                known_limitations=["Attribution refresh cycle 1-hour interval"],
+                potential_consumers=["CMO Agent", "BIQOS", "TANTRA", "VAJRA"],
+                licensing={"software_licence": "PROPRIETARY_BHIV", "dataset_licence": "BHIV_RESEARCH_USE", "source_licence": "BHIV_RESEARCH_USE"},
+                supported_access_methods=["QUERY", "EXPORT", "STREAM", "RETRIEVE"],
+                required_purpose="marketing_intelligence",
+                authorization_requirements={
+                    "required_roles": ["ecosystem-reader", "viewer", "operator", "admin", "APPROVED_CONSUMER", "cmo-agent"],
+                    "allowed_consumers": ["*"],
+                },
+                provenance={
+                    "source": "BIQOS Marketing Telemetry Hub",
+                    "certification": "MASTERDB-CERT-CMO-2026-001",
+                    "governance_gate": "6_TUPLE_EVALUATION_GATE",
+                },
+            ),
         ]
 
         existing_caps = {c.capability_id for c in self.list_capabilities()}
@@ -1594,6 +1633,55 @@ class CapabilityRegistryService:
                 "pavement_quality_score": 9.1,
                 "active_tolls": 12,
                 "updated_at": now,
+            }
+        elif domain == "marketing":
+            raw_path = Path(__file__).resolve().parent.parent / "datasets" / "cmo" / "cmo_marketing_sample_valid.json"
+            if raw_path.is_file():
+                try:
+                    with open(raw_path, "r", encoding="utf-8") as fh:
+                        raw_data = json.load(fh)
+                    records = raw_data.get("records", [])
+                    ch = params.get("channel")
+                    st = params.get("status")
+                    if ch:
+                        records = [r for r in records if str(r.get("channel")).lower() == str(ch).lower()]
+                    if st:
+                        records = [r for r in records if str(r.get("status")).upper() == str(st).upper()]
+                    min_roas = params.get("min_roas")
+                    if min_roas is not None:
+                        records = [r for r in records if float(r.get("roas", 0)) >= float(min_roas)]
+                    lim = int(params.get("limit", 100))
+                    records = records[:lim]
+                    total_spend = sum(float(r.get("spend_usd", 0)) for r in records)
+                    total_rev = sum(float(r.get("revenue_usd", 0)) for r in records)
+                    overall_roas = round(total_rev / total_spend, 2) if total_spend > 0 else 0.0
+                    return {
+                        "dataset_id": "ds-cmo-marketing-001",
+                        "capability_id": "cap-cmo-marketing-intelligence",
+                        "record_count": len(records),
+                        "summary": {
+                            "total_spend_usd": total_spend,
+                            "total_revenue_usd": total_rev,
+                            "overall_roas": overall_roas,
+                        },
+                        "records": records,
+                        "timestamp": now,
+                    }
+                except Exception as exc:
+                    logger.warning("Error reading CMO sample records: %s", exc)
+            return {
+                "dataset_type": "marketing_intelligence_records",
+                "campaign_id": params.get("campaign_id", "CMP-2026-Q4-001"),
+                "channel": params.get("channel", "search"),
+                "impressions": 125000,
+                "clicks": 6250,
+                "conversions": 450,
+                "spend_usd": 7500.0,
+                "revenue_usd": 33750.0,
+                "roas": 4.5,
+                "cac": 16.67,
+                "status": "ACTIVE",
+                "as_of": now,
             }
         else:
             return {

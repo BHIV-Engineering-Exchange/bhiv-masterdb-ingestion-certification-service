@@ -1,0 +1,44 @@
+{
+  "dataset_id": "ds-cmo-marketing-defect-duplicates",
+  "defect_type": "DUPLICATE_RECORDS_VIOLATION",
+  "expected_violation": "Duplicate campaign_id primary key collisions and identical row hashes",
+  "records": [
+    {
+      "campaign_id": "CMP-2026-Q4-001",
+      "campaign_name": "Bharat-Ecosystem-Q4-Awareness",
+      "channel": "search",
+      "impressions": 125000,
+      "clicks": 6250,
+      "conversions": 450,
+      "spend_usd": 7500.0,
+      "revenue_usd": 33750.0,
+      "roas": 4.5,
+      "cac": 16.67,
+      "attribution_model": "data_driven",
+      "status": "ACTIVE",
+      "start_date": "2026-10-01",
+      "end_date": "2026-11-30",
+      "last_updated_utc": "2026-11-06T08:30:00Z",
+      "provenance_source": "BIQOS-Marketing-Hub"
+    },
+    {
+      "campaign_id": "CMP-2026-Q4-001",
+      "campaign_name": "Bharat-Ecosystem-Q4-Awareness",
+      "channel": "search",
+      "impressions": 125000,
+      "clicks": 6250,
+      "conversions": 450,
+      "spend_usd": 7500.0,
+      "revenue_usd": 33750.0,
+      "roas": 4.5,
+      "cac": 16.67,
+      "attribution_model": "data_driven",
+      "status": "ACTIVE",
+      "start_date": "2026-10-01",
+      "end_date": "2026-11-30",
+      "last_updated_utc": "2026-11-06T08:30:00Z",
+      "provenance_source": "BIQOS-Marketing-Hub"
+    }
+  ]
+}
+

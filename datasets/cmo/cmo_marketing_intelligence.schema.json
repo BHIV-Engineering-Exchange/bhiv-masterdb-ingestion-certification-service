@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CMO Marketing Intelligence Data Contract Schema",
+  "description": "Governed marketing intelligence schema for CMO Agent in the BIQOS/BHIV ecosystem",
+  "type": "object",
+  "required": [
+    "campaign_id",
+    "campaign_name",
+    "channel",
+    "impressions",
+    "clicks",
+    "conversions",
+    "spend_usd",
+    "revenue_usd",
+    "roas",
+    "cac",
+    "attribution_model",
+    "status",
+    "start_date",
+    "end_date",
+    "last_updated_utc",
+    "provenance_source"
+  ],
+  "properties": {
+    "campaign_id": {
+      "type": "string",
+      "pattern": "^CMP-[0-9]{4}-[A-Z0-9]+-[0-9]{3,}$",
+      "description": "Unique immutable campaign identifier"
+    },
+    "campaign_name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128
+    },
+    "channel": {
+      "type": "string",
+      "enum": ["search", "social", "email", "display", "affiliate", "video"]
+    },
+    "impressions": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "clicks": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "conversions": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "spend_usd": {
+      "type": "number",
+      "minimum": 0.0
+    },
+    "revenue_usd": {
+      "type": "number",
+      "minimum": 0.0
+    },
+    "roas": {
+      "type": "number",
+      "minimum": 0.0
+    },
+    "cac": {
+      "type": "number",
+      "minimum": 0.0
+    },
+    "attribution_model": {
+      "type": "string",
+      "enum": ["last_touch", "first_touch", "linear", "data_driven"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ACTIVE", "COMPLETED", "PAUSED", "SCHEDULED"]
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "last_updated_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provenance_source": {
+      "type": "string"
+    }
+  }
+}
+

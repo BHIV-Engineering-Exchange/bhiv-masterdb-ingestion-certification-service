@@ -613,6 +613,59 @@
         "synthetic": false,
         "record_count": 17
       }
+    },
+    {
+      "dataset_id": "ds-cmo-marketing-001",
+      "name": "CMO Marketing Intelligence Campaign Performance Dataset",
+      "capability_id": "cap-cmo-marketing-intelligence",
+      "version": "1.0.0",
+      "description": "Governed marketing campaign performance, ROI, CAC, ROAS, and attribution telemetry for the CMO Agent in BIQOS/BHIV.",
+      "status": "certified",
+      "visibility": "ecosystem",
+      "sensitivity": "moderate",
+      "domain": "marketing",
+      "allowed_domains": [
+        "marketing",
+        "biqos",
+        "executive_agent",
+        "masterdb",
+        "tantra"
+      ],
+      "contract_kind": "dataset",
+      "schema": {
+        "": "#/shared_schemas/cmo_marketing_intelligence_v1"
+      },
+      "allowed_purposes": [
+        "marketing_intelligence",
+        "campaign_attribution",
+        "executive_analytics",
+        "budget_optimization"
+      ],
+      "allowed_consumers": [
+        {
+          "consumer_id": "cmo.executive_agent",
+          "name": "BIQOS CMO Agent",
+          "domain": "marketing"
+        },
+        {
+          "consumer_id": "tantra.runtime_router",
+          "name": "TANTRA Runtime Router",
+          "domain": "runtime"
+        },
+        {
+          "consumer_id": "vajra.provenance_ledger",
+          "name": "VAJRA Trust & Provenance Ledger",
+          "domain": "governance"
+        }
+      ],
+      "provenance": {
+        "source": "BIQOS Marketing Telemetry Hub",
+        "authority": "Hariom Upadhyay (MASTERDB Data Integrity Lead)",
+        "certification_reference": "MASTERDB-CERT-CMO-2026-001",
+        "licence": "BHIV-PROPRIETARY",
+        "synthetic": false,
+        "record_count": 10
+      }
     }
   ],
   "shared_schemas": {
@@ -1080,6 +1133,112 @@
         "type": "array",
         "minItems": 17,
         "maxItems": 17
+      }
+    },
+    "cmo_marketing_intelligence_v1": {
+      "": "https://json-schema.org/draft/2020-12/schema",
+      "title": "CMO Marketing Intelligence Records Schema",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "campaign_id",
+          "campaign_name",
+          "channel",
+          "impressions",
+          "clicks",
+          "conversions",
+          "spend_usd",
+          "revenue_usd",
+          "roas",
+          "cac",
+          "attribution_model",
+          "status",
+          "start_date",
+          "end_date",
+          "last_updated_utc",
+          "provenance_source"
+        ],
+        "properties": {
+          "campaign_id": {
+            "type": "string"
+          },
+          "campaign_name": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "search",
+              "social",
+              "email",
+              "display",
+              "affiliate",
+              "video"
+            ]
+          },
+          "impressions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "clicks": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "conversions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "spend_usd": {
+            "type": "number",
+            "minimum": 0.0
+          },
+          "revenue_usd": {
+            "type": "number",
+            "minimum": 0.0
+          },
+          "roas": {
+            "type": "number",
+            "minimum": 0.0
+          },
+          "cac": {
+            "type": "number",
+            "minimum": 0.0
+          },
+          "attribution_model": {
+            "type": "string",
+            "enum": [
+              "last_touch",
+              "first_touch",
+              "linear",
+              "data_driven"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "COMPLETED",
+              "PAUSED",
+              "SCHEDULED"
+            ]
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "last_updated_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "provenance_source": {
+            "type": "string"
+          }
+        }
       }
     }
   }

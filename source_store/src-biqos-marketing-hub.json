@@ -1,0 +1,24 @@
+{
+    "source_id": "src-biqos-marketing-hub",
+    "name": "BIQOS Marketing Telemetry Hub & Campaign Attribution Engine",
+    "authority": "BIQOS Platform / CMO Agent",
+    "source_type": "INTERNAL_STREAM",
+    "licence": "BHIV_RESEARCH_USE",
+    "access_method": "REST_API",
+    "geographic_coverage": "GLOBAL_AND_REGIONAL",
+    "update_characteristics": "HOURLY_ATTRIBUTION_INGESTION",
+    "reliability_limitations": "DATA_DRIVEN_ATTRIBUTION_MODEL_REFRESH_SLA_48H",
+    "attribution": "BIQOS Marketing Intelligence Engine",
+    "connector": "biqos_marketing_hub_connector",
+    "last_validation": "2026-11-06T09:00:00+00:00",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "source": "BIQOS Marketing Telemetry Hub",
+        "certification": "MASTERDB-CERT-CMO-2026-001",
+        "governance_gate": "6_TUPLE_EVALUATION_GATE"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-11-06T09:00:00+00:00",
+    "updated_at": "2026-11-06T09:00:00+00:00"
+}
+

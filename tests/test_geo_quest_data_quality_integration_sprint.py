@@ -675,10 +675,12 @@ class TestIsolatedCandidateServiceIntegration:
         fake_root = _setup_isolated_synthetic_workspace(tmp_path)
         store_dir = tmp_path / "store"
         service = GeoQuestCandidateService(store_dir=str(store_dir), project_root=fake_root)
-        service.register_candidate(actor="synthetic-runner")
+        summary = service.register_candidate(actor="synthetic-runner")
+        assert summary is not None, "Registration failed to return a valid candidate summary"
 
         # Tamper with stored bundle
         loaded = service.store.load(CAPABILITY_ID)
+        assert loaded is not None, f"Expected candidate bundle '{CAPABILITY_ID}' to be saved in {store_dir}, but store.load returned None"
         loaded["records"][0]["aircraft_hex_id"] = "TAMPER"
         service.store.save(CAPABILITY_ID, loaded)
 

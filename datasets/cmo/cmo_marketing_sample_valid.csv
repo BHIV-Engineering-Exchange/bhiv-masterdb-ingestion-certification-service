@@ -1,0 +1,12 @@
+campaign_id,campaign_name,channel,impressions,clicks,conversions,spend_usd,revenue_usd,roas,cac,attribution_model,status,start_date,end_date,last_updated_utc,provenance_source
+CMP-2026-Q4-001,Bharat-Ecosystem-Q4-Awareness,search,125000,6250,450,7500.0,33750.0,4.5,16.67,data_driven,ACTIVE,2026-10-01,2026-11-30,2026-11-06T08:30:00Z,BIQOS-Marketing-Hub
+CMP-2026-Q4-002,VANA-Green-Credit-Launch,social,340000,14200,890,12000.0,48000.0,4.0,13.48,linear,ACTIVE,2026-10-15,2026-11-20,2026-11-06T08:15:00Z,BIQOS-Marketing-Hub
+CMP-2026-Q4-003,TANTRA-Developer-Retargeting,display,85000,2125,190,3800.0,13300.0,3.5,20.0,last_touch,ACTIVE,2026-10-20,2026-11-25,2026-11-06T07:45:00Z,BIQOS-Marketing-Hub
+CMP-2026-Q4-004,Gov-Tech-Sumit-Registrations,email,45000,5400,810,1500.0,9750.0,6.5,1.85,first_touch,ACTIVE,2026-10-05,2026-11-10,2026-11-06T06:00:00Z,BIQOS-Marketing-Hub
+CMP-2026-Q4-005,VAJRA-Ledger-Trust-Webinar,video,180000,9000,540,8500.0,29750.0,3.5,15.74,data_driven,ACTIVE,2026-10-10,2026-11-15,2026-11-06T08:00:00Z,BIQOS-Marketing-Hub
+CMP-2026-Q4-006,Bharat-Mala-Partner-Affiliate,affiliate,92000,4600,368,4200.0,21000.0,5.0,11.41,last_touch,ACTIVE,2026-09-01,2026-11-30,2026-11-06T07:15:00Z,BIQOS-Marketing-Hub
+CMP-2026-Q4-007,Maritime-Logistics-Search,search,65000,3900,312,5100.0,22950.0,4.5,16.35,linear,ACTIVE,2026-10-12,2026-11-18,2026-11-06T06:30:00Z,BIQOS-Marketing-Hub
+CMP-2026-Q4-008,FinTech-Credit-Index-Newsletter,email,28000,3640,455,1200.0,8400.0,7.0,2.64,first_touch,ACTIVE,2026-10-01,2026-11-30,2026-11-06T05:45:00Z,BIQOS-Marketing-Hub
+CMP-2026-Q4-009,Gods-Eye-View-Brand-Campaign,video,210000,10500,630,9500.0,38000.0,4.0,15.08,data_driven,ACTIVE,2026-10-15,2026-11-20,2026-11-06T08:10:00Z,BIQOS-Marketing-Hub
+CMP-2026-Q4-010,Executive-BIQOS-Platform-Search,search,78000,4680,421,6800.0,34000.0,5.0,16.15,last_touch,ACTIVE,2026-10-01,2026-11-30,2026-11-06T08:25:00Z,BIQOS-Marketing-Hub
+

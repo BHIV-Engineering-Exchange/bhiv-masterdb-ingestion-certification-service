@@ -1,0 +1,26 @@
+{
+  "dataset_id": "ds-cmo-marketing-defect-freshness",
+  "defect_type": "TEMPORAL_FRESHNESS_STALENESS_VIOLATION",
+  "expected_violation": "last_updated_utc is older than max allowable freshness SLA (48 hours)",
+  "records": [
+    {
+      "campaign_id": "CMP-2026-Q1-099",
+      "campaign_name": "Stale-Q1-Legacy-Campaign",
+      "channel": "search",
+      "impressions": 50000,
+      "clicks": 2500,
+      "conversions": 120,
+      "spend_usd": 3000.0,
+      "revenue_usd": 9000.0,
+      "roas": 3.0,
+      "cac": 25.0,
+      "attribution_model": "last_touch",
+      "status": "COMPLETED",
+      "start_date": "2026-01-01",
+      "end_date": "2026-03-31",
+      "last_updated_utc": "2026-04-01T00:00:00Z",
+      "provenance_source": "BIQOS-Marketing-Hub"
+    }
+  ]
+}
+

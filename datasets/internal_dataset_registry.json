@@ -16,6 +16,7 @@
     "cap-mangrove-monitoring": "datasets/synthetic/mangrove_observations.json",
     "cap-maritime-cargo": "datasets/synthetic/maritime_vessels.json",
     "cap-fin-market-analytics": "datasets/synthetic/financial_market.json",
-    "cap-gev-flight-tracking-staged": "datasets/opensky_states.json"
+    "cap-gev-flight-tracking-staged": "datasets/opensky_states.json",
+    "cap-cmo-marketing-intelligence": "datasets/cmo/cmo_marketing_sample_valid.json"
   }
 }
