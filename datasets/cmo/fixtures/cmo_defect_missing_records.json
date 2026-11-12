@@ -1,5 +1,8 @@
 {
   "dataset_id": "ds-cmo-marketing-defect-missing-records",
+  "is_synthetic": true,
+  "data_tier": "synthetic_defect_fixture",
+  "synthetic_notice": "SYNTHETIC DEFECT FIXTURE: Synthetic data designed specifically to trigger validation errors for automated testing. Does not represent BIQOS production telemetry.",
   "defect_type": "MISSING_RECORDS_AND_COMPLETENESS_VIOLATION",
   "expected_violation": "Null or missing spend_usd, null campaign_id, null conversions",
   "records": [

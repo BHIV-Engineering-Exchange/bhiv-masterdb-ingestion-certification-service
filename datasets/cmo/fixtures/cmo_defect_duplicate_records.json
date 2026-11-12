@@ -1,5 +1,8 @@
 {
   "dataset_id": "ds-cmo-marketing-defect-duplicates",
+  "is_synthetic": true,
+  "data_tier": "synthetic_defect_fixture",
+  "synthetic_notice": "SYNTHETIC DEFECT FIXTURE: Synthetic data designed specifically to trigger validation errors for automated testing. Does not represent BIQOS production telemetry.",
   "defect_type": "DUPLICATE_RECORDS_VIOLATION",
   "expected_violation": "Duplicate campaign_id primary key collisions and identical row hashes",
   "records": [

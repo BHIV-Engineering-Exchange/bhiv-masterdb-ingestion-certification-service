@@ -1,5 +1,8 @@
 {
   "dataset_id": "ds-cmo-marketing-defect-freshness",
+  "is_synthetic": true,
+  "data_tier": "synthetic_defect_fixture",
+  "synthetic_notice": "SYNTHETIC DEFECT FIXTURE: Synthetic data designed specifically to trigger validation errors for automated testing. Does not represent BIQOS production telemetry.",
   "defect_type": "TEMPORAL_FRESHNESS_STALENESS_VIOLATION",
   "expected_violation": "last_updated_utc is older than max allowable freshness SLA (48 hours)",
   "records": [

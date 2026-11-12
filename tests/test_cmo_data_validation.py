@@ -75,6 +75,29 @@ def test_schema_consistency_detects_mismatches(validator):
     assert spend_violations, "Must catch string spend_usd"
 
 
+def test_schema_consistency_accepts_all_allowed_attributions(validator, valid_records):
+    """Verify all defined ALLOWED_ATTRIBUTIONS pass schema validation."""
+    from services.cmo_data_validation_service import ALLOWED_ATTRIBUTIONS
+    for model in ALLOWED_ATTRIBUTIONS:
+        test_records = [dict(valid_records[0], attribution_model=model)]
+        result = validator.validate_schema_consistency(test_records)
+        assert result["status"] == "PASS"
+        assert result["violation_count"] == 0
+
+
+def test_schema_consistency_rejects_invalid_attributions(validator, valid_records):
+    """Verify invalid attribution_model values are detected and flagged."""
+    invalid_models = ["last-touch", "multi_touch", "time_decay", "w_shaped", "invalid_model", ""]
+    for inv in invalid_models:
+        test_records = [dict(valid_records[0], attribution_model=inv)]
+        result = validator.validate_schema_consistency(test_records)
+        assert result["status"] == "FAIL"
+        assert any(
+            v.get("field") == "attribution_model" and "attribution_model must be one of" in v.get("error", "")
+            for v in result["violations"]
+        )
+
+
 # ---------------------------------------------------------------------------
 # Pillar 2: Freshness & Staleness
 # ---------------------------------------------------------------------------
@@ -114,6 +137,47 @@ def test_freshness_detects_future_timestamps(validator):
     result = validator.validate_freshness(future_record, as_of_utc=now)
     assert result["status"] == "FAIL"
     assert any("future" in v.get("error", "") for v in result["violations"])
+
+
+def test_freshness_regression_metadata_timestamp_cannot_mask_staleness(validator, valid_records):
+    """
+    Regression test: Stale records must not pass merely because metadata contains
+    an old historical created_at_utc timestamp.
+    """
+    metadata = {
+        "dataset_name": "CMO Marketing Intelligence",
+        "created_at_utc": "2026-11-06T09:00:00Z",
+    }
+    # Observation time is 10 days later (>48h SLA)
+    as_of = datetime.fromisoformat("2026-11-16T12:00:00+00:00")
+    report = validator.validate_cmo_data_slice(valid_records, metadata=metadata, as_of_utc=as_of)
+    assert report["classification"] == "REJECTED" or report["certification_status"] != "CERTIFIED"
+    assert "TEMPORAL_STALENESS_DETECTED" in report["risk_flags"]
+    assert report["pillars"]["freshness_and_staleness"]["status"] == "FAIL"
+    assert report["pillars"]["freshness_and_staleness"]["stale_record_count"] == len(valid_records)
+
+
+def test_freshness_runtime_default_uses_current_utc(validator):
+    """Verify normal runtime validation defaults to current UTC time when as_of_utc is omitted."""
+    now = datetime.now(timezone.utc)
+    # 1. Fresh record (1 hour ago)
+    fresh_record = [{
+        "campaign_id": "CMP-2026-Q4-001",
+        "last_updated_utc": (now - timedelta(hours=1)).isoformat(),
+    }]
+    res_fresh = validator.validate_freshness(fresh_record)
+    assert res_fresh["status"] == "PASS"
+    assert res_fresh["stale_record_count"] == 0
+
+    # 2. Stale record (72 hours ago, exceeding 48h SLA)
+    stale_record = [{
+        "campaign_id": "CMP-2026-Q4-001",
+        "last_updated_utc": (now - timedelta(hours=72)).isoformat(),
+    }]
+    res_stale = validator.validate_freshness(stale_record)
+    assert res_stale["status"] == "FAIL"
+    assert res_stale["stale_record_count"] == 1
+    assert "exceeds SLA threshold 48" in res_stale["violations"][0]["error"]
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +268,8 @@ def test_integrity_boundaries_detect_violations(validator):
 def test_unified_validation_report_certified_on_clean_data(validator, valid_records):
     """Verify full validation pipeline certifies clean CMO data as TRUSTED."""
     metadata = _load_json(ROOT / "datasets" / "cmo" / "cmo_metadata.json")
-    report = validator.validate_cmo_data_slice(valid_records, metadata=metadata)
+    anchor = datetime.fromisoformat("2026-11-06T12:00:00+00:00")
+    report = validator.validate_cmo_data_slice(valid_records, metadata=metadata, as_of_utc=anchor)
 
     assert report["composite_integrity_score"] == 100.0
     assert report["classification"] == "TRUSTED"

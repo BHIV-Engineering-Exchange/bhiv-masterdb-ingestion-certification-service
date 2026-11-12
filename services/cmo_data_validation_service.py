@@ -100,7 +100,17 @@ class CMODataValidationService:
                     "error": f"status must be one of {sorted(ALLOWED_STATUSES)}",
                 })
 
-            # 5. Numeric types
+            # 5. Attribution model enum
+            am = row.get("attribution_model")
+            if am is not None and am not in ALLOWED_ATTRIBUTIONS:
+                violations.append({
+                    "row_index": idx,
+                    "field": "attribution_model",
+                    "value": am,
+                    "error": f"attribution_model must be one of {sorted(ALLOWED_ATTRIBUTIONS)}",
+                })
+
+            # 6. Numeric types
             for int_f in ("impressions", "clicks", "conversions"):
                 val = row.get(int_f)
                 if val is not None and (not isinstance(val, int) or isinstance(val, bool)):
@@ -380,20 +390,13 @@ class CMODataValidationService:
         Unified 5-Pillar Validation Execution for CMO Marketing Intelligence.
         Computes composite score and produces an evidence-grade audit report.
         """
-        # Determine temporal reference point (fallback to metadata creation time if provided)
-        ref_time = as_of_utc
-        if ref_time is None and metadata:
-            meta_ts = (
-                metadata.get("created_at_utc")
-                or metadata.get("generated_at_utc")
-                or metadata.get("last_audit_utc")
-                or metadata.get("as_of_utc")
-            )
-            if meta_ts:
-                try:
-                    ref_time = datetime.fromisoformat(str(meta_ts).replace("Z", "+00:00"))
-                except Exception:
-                    ref_time = None
+        # Determine temporal reference point:
+        # Use explicit as_of_utc if supplied (for reproducible test fixtures or authorized observation times).
+        # Otherwise default to current UTC time for normal runtime validation.
+        # Historical metadata timestamp (e.g. metadata.created_at_utc) must NOT be used as an automatic
+        # substitute for actual validation time, to prevent stale records from passing merely because
+        # metadata contains an old timestamp.
+        ref_time = as_of_utc or datetime.now(timezone.utc)
 
         schema_res = self.validate_schema_consistency(records)
         freshness_res = self.validate_freshness(records, as_of_utc=ref_time)

@@ -15,7 +15,10 @@
 
 As the **MASTERDB Data Integrity and Validation Specialist**, Hariom Upadhyay has delivered end-to-end data integrity validation, schema conformance, temporal freshness verification, duplicate detection, completeness checks, domain integrity boundaries, and governed retrieval execution for the **CMO Marketing Intelligence** work package (`cap-cmo-marketing-intelligence` / `ds-cmo-marketing-001`).
 
-All 5 core data integrity pillars plus retrieval validation have been codified into an automated verification engine ([`services/cmo_data_validation_service.py`](file:///c:/Users/Microsoft/week/bhiv-masterdb-ingestion-certification-service/services/cmo_data_validation_service.py)), backed by a complete test suite ([`tests/test_cmo_data_validation.py`](file:///c:/Users/Microsoft/week/bhiv-masterdb-ingestion-certification-service/tests/test_cmo_data_validation.py)) passing 15/15 automated tests with zero warnings and zero regressions.
+All 5 core data integrity pillars plus retrieval validation have been codified into an automated verification engine ([`services/cmo_data_validation_service.py`](file:///c:/Users/Microsoft/week/bhiv-masterdb-ingestion-certification-service/services/cmo_data_validation_service.py)), backed by a complete test suite ([`tests/test_cmo_data_validation.py`](file:///c:/Users/Microsoft/week/bhiv-masterdb-ingestion-certification-service/tests/test_cmo_data_validation.py)) passing 19/19 automated tests with zero warnings and zero regressions.
+
+> [!NOTE]
+> **Synthetic Benchmark Notice:** The CMO sample dataset (`cmo_marketing_sample_valid.csv` / `cmo_marketing_sample_valid.json`) and accompanying defect fixtures are strictly synthetic test artifacts constructed to validate data integrity boundaries, schema enums, and pipeline capabilities. They do not represent live BIQOS production telemetry records.
 
 ---
 
