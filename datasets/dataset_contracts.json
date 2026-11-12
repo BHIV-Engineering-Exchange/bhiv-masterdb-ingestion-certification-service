@@ -620,8 +620,8 @@
       "capability_id": "cap-cmo-marketing-intelligence",
       "version": "1.0.0",
       "description": "Governed marketing campaign performance, ROI, CAC, ROAS, and attribution telemetry for the CMO Agent in BIQOS/BHIV.",
-      "status": "certified",
-      "visibility": "ecosystem",
+      "status": "synthetic",
+      "visibility": "internal",
       "sensitivity": "moderate",
       "domain": "marketing",
       "allowed_domains": [
@@ -629,11 +629,13 @@
         "biqos",
         "executive_agent",
         "masterdb",
-        "tantra"
+        "tantra",
+        "runtime",
+        "governance"
       ],
       "contract_kind": "dataset",
       "schema": {
-        "": "#/shared_schemas/cmo_marketing_intelligence_v1"
+        "$ref": "#/shared_schemas/cmo_marketing_intelligence_v1"
       },
       "allowed_purposes": [
         "marketing_intelligence",
