@@ -14,7 +14,14 @@ autouse fixture here instead of being repeated in every file.
 """
 import pytest
 
+import os
+_previous_pytest_marker = os.environ.get("PYTEST_CURRENT_TEST")
+os.environ["PYTEST_CURRENT_TEST"] = "pytest collection"
 import main
+if _previous_pytest_marker is None:
+    os.environ.pop("PYTEST_CURRENT_TEST", None)
+else:
+    os.environ["PYTEST_CURRENT_TEST"] = _previous_pytest_marker
 
 
 import os
