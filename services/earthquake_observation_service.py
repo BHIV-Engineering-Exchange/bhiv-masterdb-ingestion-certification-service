@@ -1,7 +1,7 @@
 """Validation and idempotent persistence for normalized USGS observations."""
 from datetime import datetime, timezone
 import math
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from services.artifact_store import ArtifactStore
 
@@ -60,7 +60,7 @@ class EarthquakeObservationService:
     def get(self, event_id: str) -> Dict[str, Any] | None:
         return self.store.load(event_id)
 
-    def list(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+    def list(self, limit: Optional[int] = 100, offset: int = 0) -> List[Dict[str, Any]]:
         items = self.store.list_all()
         items.sort(key=lambda item: (item.get("event_time_utc", ""), item.get("event_id", "")), reverse=True)
-        return items[offset:offset + limit]
+        return items[offset:] if limit is None else items[offset:offset + limit]

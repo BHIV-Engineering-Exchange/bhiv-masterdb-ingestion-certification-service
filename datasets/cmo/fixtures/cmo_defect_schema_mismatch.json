@@ -1,0 +1,28 @@
+{
+  "dataset_id": "ds-cmo-marketing-defect-schema",
+  "is_synthetic": true,
+  "data_tier": "synthetic_defect_fixture",
+  "synthetic_notice": "SYNTHETIC DEFECT FIXTURE: Synthetic data designed specifically to trigger validation errors for automated testing. Does not represent BIQOS production telemetry.",
+  "defect_type": "SCHEMA_CONSISTENCY_VIOLATION",
+  "expected_violation": "String spend_usd instead of float, invalid channel enum 'unsupported_channel', missing required 'attribution_model' column",
+  "records": [
+    {
+      "campaign_id": "CMP-2026-Q4-001",
+      "campaign_name": "Broken-Schema-Campaign",
+      "channel": "unsupported_channel",
+      "impressions": 10000,
+      "clicks": 500,
+      "conversions": 25,
+      "spend_usd": "five-hundred-dollars",
+      "revenue_usd": 2500.0,
+      "roas": 5.0,
+      "cac": 20.0,
+      "status": "ACTIVE",
+      "start_date": "2026-10-01",
+      "end_date": "2026-11-30",
+      "last_updated_utc": "2026-11-06T08:30:00Z",
+      "provenance_source": "BIQOS-Marketing-Hub"
+    }
+  ]
+}
+

@@ -37,7 +37,7 @@ def test_authenticated_vector_basemap_routes_record_unavailable_safely(monkeypat
         client = TestClient(main.app)
         assert client.get("/geospatial/vector-basemap/manifest").status_code == 401
         assert client.post("/geospatial/vector-basemap/verify").status_code == 401
-        main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["viewer"])
+        main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["operator"])
         manifest = client.get("/geospatial/vector-basemap/manifest")
         assert manifest.status_code == 200
         assert manifest.json()["status"] == "CONFIGURED"

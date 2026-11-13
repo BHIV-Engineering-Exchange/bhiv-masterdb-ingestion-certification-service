@@ -1,0 +1,25 @@
+{
+    "source_id": "src-gev-opensky",
+    "name": "God's Eye View - OpenSky Network Live Air Traffic Telemetry",
+    "authority": "The OpenSky Network / Bilawal Sidhu God's Eye View Proxy",
+    "source_type": "AIRSPACE_STATE_VECTORS_ADS_B",
+    "licence": "OPEN_COMMUNITY_DATA_LICENSE",
+    "access_method": "REST_API_PROXY",
+    "geographic_coverage": "GLOBAL_AIRSPACE",
+    "update_characteristics": "REALTIME_5_SECOND_POLL_60_SECOND_CACHE",
+    "reliability_limitations": "RECEIVER_COVERAGE_GAPS_AND_TRANSPONDER_ABSENCE",
+    "attribution": "The OpenSky Network (opensky-network.org), bilawalsidhu/gods-eye-view",
+    "connector": "gods_eye_view_connector",
+    "last_validation": "2026-10-28T15:00:00.000000+00:00",
+    "status": "ACTIVE",
+    "provenance_reference": {
+        "provider": "OpenSky Network",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30",
+        "proxy_endpoint": "/api/opensky"
+    },
+    "write_authority_confirmed": true,
+    "created_at": "2026-10-28T15:00:00.000000+00:00",
+    "updated_at": "2026-10-28T15:00:00.000000+00:00"
+}
+

@@ -1,12 +1,13 @@
 import logging
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
 
 if "PYTEST_CURRENT_TEST" not in os.environ:
-    load_dotenv()
+    load_dotenv(Path(__file__).resolve().with_name(".env"))
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -65,6 +66,7 @@ from services.source_registry_service import (
     SourceAlreadyExistsError,
 )
 from integrations.geospatial_connector import GeospatialConnectorAdapter
+from services.opensky_service import OpenSkyService
 from integrations.usgs_earthquake_connector import fetch_earthquakes
 from integrations.gods_eye_view_dams_connector import DamsSourceUnavailable, fetch_dams
 from integrations.natural_earth_connector import NaturalEarthSourceUnavailable, load_natural_earth_source
@@ -145,6 +147,7 @@ from services.mdu_contract_adapter import MDUContractAdapter
 from services.vana_client import VanaClient, VanaUnavailableError, VanaGovernanceDeniedError
 from services.package_registry_service import (
     InvalidTransitionError,
+    PackageAlreadyExistsError,
     PackageNotFoundError,
     PackageRegistryService,
 )
@@ -222,8 +225,8 @@ from services import backup_service
 from services import startup_config
 from auth.constants import ADMIN_ROLE
 from auth.dependencies import build_identity_dependency
-from auth.models import AuthIdentity, TokenRequest, TokenResponse
-from auth.service import AuthService, AuthTokenError
+from auth.models import AuthIdentity, TokenRequest, TokenResponse, ADMIN_ROLES, OPERATOR_ROLES
+from auth.service import AuthService, AuthTokenError, log_security_decision
 
 from canonical_repository.models import DocumentCategory as CanonicalDocumentCategory
 from canonical_repository.models import PublishVersionRequest as CanonicalPublishVersionRequest
@@ -359,7 +362,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     logger.warning("HTTPException %s at %s: %s", exc.status_code, request.url.path, exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
-        content=_error_body(request, "http_error", str(exc.detail)),
+        content=_error_body(request, "http_error", exc.detail),
     )
 
 
@@ -377,6 +380,15 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
+@app.exception_handler(PermissionError)
+async def permission_error_handler(request: Request, exc: PermissionError) -> JSONResponse:
+    logger.warning("PermissionError at %s: %s", request.url.path, exc)
+    return JSONResponse(
+        status_code=403,
+        content=_error_body(request, "auth_error", str(exc) or "DENY:FORBIDDEN"),
+    )
+
+
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error("Unhandled exception at %s: %s", request.url.path, exc, exc_info=True)
@@ -388,11 +400,13 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 artifact_store = ArtifactStore()
 validation_service = ValidationService(artifact_store=artifact_store)
+report_service = ReportService(artifact_store=artifact_store)
+package_registry_service = PackageRegistryService(report_service=report_service)
 certification_service = CertificationService(
     validation_service=validation_service,
     artifact_store=artifact_store,
+    package_registry=package_registry_service,
 )
-report_service = ReportService(artifact_store=artifact_store)
 
 # --- Database Targets: attach the ingestion/certification pipeline above to
 # the 8 MASTERDB target databases (VectorDB, GraphDB, MetadataDB,
@@ -411,11 +425,11 @@ upload_service = UploadService()
 
 # --- MASTERDB knowledge platform runtime (Knowledge Package Lifecycle,
 # Provenance/Lineage, Retrieval Readiness) ---------------------------------
-package_registry_service = PackageRegistryService()
 knowledge_object_service = KnowledgeObjectService(registry=package_registry_service)
 retrieval_readiness_service = RetrievalReadinessService(
     registry=package_registry_service,
     knowledge_object_service=knowledge_object_service,
+    report_service=report_service,
 )
 
 # --- Phase 4 — MASTERDB Dataset Retrieval & Phase 8 — Bucket Evidence -------
@@ -444,6 +458,7 @@ geospatial_connector = GeospatialConnectorAdapter(
     package_registry=package_registry_service,
     capability_registry=capability_registry_service,
 )
+opensky_service = OpenSkyService()
 
 tantra_interface_service = TantraInterfaceService(
     registry=package_registry_service,
@@ -515,6 +530,8 @@ earthquake_observation_service = EarthquakeObservationService(
     store=_sql_store("earthquake_observations"),
     store_dir=_persist_path("earthquake_observations") or "earthquake_observation_store",
 )
+capability_registry_service.earthquake_observation_service = earthquake_observation_service
+
 dam_feature_service = DamFeatureService(
     attribute_store=_sql_store("dam_attributes"),
     geometry_store=_sql_store("dam_geometries"),
@@ -890,7 +907,7 @@ def _shared_service(service_name: str) -> SharedRecordStore:
 
 
 @app.post("/validate")
-def validate_dataset(request: ValidationRequest) -> dict:
+def validate_dataset(request: ValidationRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     try:
         report = validation_service.validate(
             dataset_path=request.dataset_path,
@@ -907,7 +924,7 @@ def validate_dataset(request: ValidationRequest) -> dict:
 
 
 @app.post("/certify")
-def certify_dataset(request: CertificationRequest) -> dict:
+def certify_dataset(request: CertificationRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     try:
         report = certification_service.certify(
             dataset_id=request.dataset_id,
@@ -1189,28 +1206,41 @@ def cancel_upload(upload_id: str, reason: UploadCancelRequest,
 
 
 @app.post("/packages/register")
-def register_package(request: PackageRegisterRequest) -> dict:
-    package = package_registry_service.register(
-        dataset_id=request.dataset_id,
-        dataset_version=request.dataset_version,
-        schema_version=request.schema_version,
-        board=request.board,
-        medium=request.medium,
-        language=request.language,
-        owner=request.owner,
-        actor=request.actor,
-        reason=request.reason,
-    )
-    return package.model_dump(mode="json")
+def register_package(request: PackageRegisterRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    try:
+        package = package_registry_service.register(
+            dataset_id=request.dataset_id,
+            dataset_version=request.dataset_version,
+            schema_version=request.schema_version,
+            board=request.board,
+            medium=request.medium,
+            language=request.language,
+            owner=request.owner,
+            actor=identity.actor,
+            reason=request.reason,
+            package_id=request.package_id,
+        )
+        return package.model_dump(mode="json")
+    except PackageAlreadyExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @app.post("/packages/promote")
-def promote_package(request: PackagePromoteRequest) -> dict:
+def promote_package(request: PackagePromoteRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    if not (set(identity.roles) & (ADMIN_ROLES | OPERATOR_ROLES)):
+        log_security_decision(
+            logger=logger,
+            outcome="DENY",
+            reason_code="DENY:INSUFFICIENT_ROLE",
+            policy_reference="/packages/promote",
+            actor_reference=identity.actor,
+        )
+        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     try:
         package = package_registry_service.promote(
             package_id=request.package_id,
             to_status=request.to_status,
-            actor=request.actor,
+            actor=identity.actor,
             reason=request.reason,
         )
         return package.model_dump(mode="json")
@@ -1221,11 +1251,11 @@ def promote_package(request: PackagePromoteRequest) -> dict:
 
 
 @app.post("/packages/deprecate")
-def deprecate_package(request: PackageDeprecateRequest) -> dict:
+def deprecate_package(request: PackageDeprecateRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     try:
         package = package_registry_service.deprecate(
             package_id=request.package_id,
-            actor=request.actor,
+            actor=identity.actor,
             reason=request.reason,
         )
         return package.model_dump(mode="json")
@@ -1285,7 +1315,7 @@ def audit_package(package_id: str) -> dict:
 
 
 @app.post("/packages/{package_id}/knowledge-object")
-def register_knowledge_object(package_id: str, request: KnowledgeObjectRegisterRequest) -> dict:
+def register_knowledge_object(package_id: str, request: KnowledgeObjectRegisterRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     if request.package_id != package_id:
         raise HTTPException(
             status_code=400,
@@ -1352,7 +1382,7 @@ def mdu_schema(dataset_id: str) -> dict:
 
 
 @app.get("/mdu/provenance/{dataset_id}")
-def mdu_provenance(dataset_id: str) -> list:
+def mdu_provenance(dataset_id: str) -> dict:
     try:
         return mdu_contract_adapter.fetch_provenance_contract(dataset_id)
     except MDUUnavailableError as exc:
@@ -1373,18 +1403,22 @@ def mdu_schema_compatibility(dataset_id: str, local_schema_version: str) -> dict
 
 @app.post("/tantra/datasets/register")
 def tantra_register_dataset(request: PackageRegisterRequest) -> dict:
-    package = tantra_interface_service.register_dataset(
-        dataset_id=request.dataset_id,
-        dataset_version=request.dataset_version,
-        schema_version=request.schema_version,
-        board=request.board,
-        medium=request.medium,
-        language=request.language,
-        owner=request.owner,
-        actor=request.actor,
-        reason=request.reason,
-    )
-    return package.model_dump(mode="json")
+    try:
+        package = tantra_interface_service.register_dataset(
+            dataset_id=request.dataset_id,
+            dataset_version=request.dataset_version,
+            schema_version=request.schema_version,
+            board=request.board,
+            medium=request.medium,
+            language=request.language,
+            owner=request.owner,
+            actor=request.actor,
+            reason=request.reason,
+            package_id=request.package_id,
+        )
+        return package.model_dump(mode="json")
+    except PackageAlreadyExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @app.get("/tantra/packages/{package_id}/retrieval-readiness")
@@ -1488,13 +1522,13 @@ def shared_version_compatibility(local_version: str, remote_version: str) -> dic
 
 
 @app.post("/shared/{service_name}/register")
-def register_shared_record(service_name: str, request: SharedRecordRegisterRequest) -> dict:
+def register_shared_record(service_name: str, request: SharedRecordRegisterRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     service = _shared_service(service_name)
     try:
         record = service.register(
             record_id=request.record_id,
             payload=request.payload,
-            actor=request.actor,
+            actor=identity.actor,
             reason=request.reason,
         )
         return record.model_dump(mode="json")
@@ -1505,13 +1539,13 @@ def register_shared_record(service_name: str, request: SharedRecordRegisterReque
 
 
 @app.put("/shared/{service_name}/{record_id}")
-def update_shared_record(service_name: str, record_id: str, request: SharedRecordUpdateRequest) -> dict:
+def update_shared_record(service_name: str, record_id: str, request: SharedRecordUpdateRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     service = _shared_service(service_name)
     try:
         record = service.update(
             record_id=record_id,
             payload=request.payload,
-            actor=request.actor,
+            actor=identity.actor,
             reason=request.reason,
         )
         return record.model_dump(mode="json")
@@ -1524,10 +1558,10 @@ def update_shared_record(service_name: str, record_id: str, request: SharedRecor
 
 
 @app.post("/shared/{service_name}/{record_id}/deprecate")
-def deprecate_shared_record(service_name: str, record_id: str, request: SharedRecordDeprecateRequest) -> dict:
+def deprecate_shared_record(service_name: str, record_id: str, request: SharedRecordDeprecateRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     service = _shared_service(service_name)
     try:
-        record = service.deprecate(record_id=record_id, actor=request.actor, reason=request.reason)
+        record = service.deprecate(record_id=record_id, actor=identity.actor, reason=request.reason)
         return record.model_dump(mode="json")
     except SharedRecordNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -1601,6 +1635,8 @@ def list_datasets() -> dict:
 @app.get("/datasets/{dataset_id}")
 def get_dataset_detail(dataset_id: str) -> dict:
     """Return full dataset detail including history, knowledge object, and retrieval evidence."""
+    if dataset_id == "ds-gev-opensky-flights":
+        return get_opensky_flight_dataset()
     try:
         return dataset_retrieval_service.get_dataset(dataset_id)
     except PackageNotFoundError as exc:
@@ -1632,12 +1668,13 @@ def get_dataset_provenance(dataset_id: str) -> dict:
 
 
 @app.post("/query")
-def query_dataset(request: QueryRequest) -> dict:
+def query_dataset(request: QueryRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Execute a structured query against a dataset."""
     try:
         result = dataset_retrieval_service.query(
             dataset_id=request.dataset_id,
             query_params=request.query_params,
+            dataset_version=request.dataset_version,
         )
         return result
     except PackageNotFoundError as exc:
@@ -1649,12 +1686,13 @@ def query_dataset(request: QueryRequest) -> dict:
 
 
 @app.post("/export")
-def export_dataset(request: ExportRequest) -> dict:
+def export_dataset(request: ExportRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Request an asynchronous or synchronous export of a dataset."""
     try:
         result = dataset_retrieval_service.export_dataset(
             dataset_id=request.dataset_id,
             format=request.format,
+            dataset_version=request.dataset_version,
         )
         return result
     except PackageNotFoundError as exc:
@@ -1666,12 +1704,13 @@ def export_dataset(request: ExportRequest) -> dict:
 
 
 @app.post("/stream")
-def stream_dataset(request: StreamRequest) -> dict:
+def stream_dataset(request: StreamRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Request a streaming connection to a dataset."""
     try:
         result = dataset_retrieval_service.stream(
             dataset_id=request.dataset_id,
             stream_params=request.stream_params,
+            dataset_version=request.dataset_version,
         )
         return result
     except PackageNotFoundError as exc:
@@ -1686,7 +1725,10 @@ def stream_dataset(request: StreamRequest) -> dict:
 def reference_dataset(request: ReferenceRequest) -> dict:
     """Generate a stable reference/citation for a dataset."""
     try:
-        result = dataset_retrieval_service.reference(dataset_id=request.dataset_id)
+        result = dataset_retrieval_service.reference(
+            dataset_id=request.dataset_id,
+            dataset_version=request.dataset_version,
+        )
         return result
     except PackageNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -1702,7 +1744,7 @@ def reference_dataset(request: ReferenceRequest) -> dict:
 
 
 @app.post("/evidence/{evidence_id}")
-def store_evidence(evidence_id: str, request: dict) -> dict:
+def store_evidence(evidence_id: str, request: dict, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Persist an evidence record to the configured bucket (Phase 8).
 
     The evidence_id is placed in the path per spec §4.1. The request body
@@ -1724,7 +1766,7 @@ def retrieve_evidence(evidence_id: str) -> dict:
 
 
 @app.post("/provenance/{dataset_id}")
-def store_provenance(dataset_id: str, request: dict) -> dict:
+def store_provenance(dataset_id: str, request: dict, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Persist a provenance record for a dataset to the configured bucket (Phase 8)."""
     try:
         return bucket_client.store_provenance(dataset_id=dataset_id, provenance=request)
@@ -2105,7 +2147,8 @@ def issue_token(request: TokenRequest) -> dict:
             access_token=token, actor=request.actor, roles=trusted_roles, expires_at=expires_at
         ).model_dump(mode="json")
     except AuthTokenError as exc:
-        raise HTTPException(status_code=401, detail=str(exc)) from exc
+        status_code = 403 if str(exc) == "DENY:MISSING_ADMIN_PASSWORD" else 401
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -2121,7 +2164,7 @@ def health() -> dict:
 
 
 @app.get("/ready")
-def ready() -> dict:
+def ready() -> JSONResponse:
     """Readiness: the process is up AND its core stores are reachable and
     responding. Deliberately does not check TANTRA/MDU/Bucket/InsightFlow —
     this service has no live connection to any of them to check (see
@@ -2183,10 +2226,10 @@ def ready() -> dict:
 # ---------------------------------------------------------------------------
 
 
-@app.get("/admin/backup")
+@app.api_route("/admin/backup", methods=["GET", "POST"])
 def create_backup(identity: AuthIdentity = Depends(get_identity)) -> dict:
     if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail=f"Requires the '{ADMIN_ROLE}' role.")
+        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     snapshot = backup_service.export_snapshot({
         "bcaes_registry": bcaes_registry_service.artifact_store,
         "canonical_repository": canonical_repository_service.artifact_store,
@@ -2203,7 +2246,7 @@ def create_backup(identity: AuthIdentity = Depends(get_identity)) -> dict:
 @app.post("/admin/restore")
 def restore_backup(snapshot: dict, identity: AuthIdentity = Depends(get_identity)) -> dict:
     if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail=f"Requires the '{ADMIN_ROLE}' role.")
+        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     try:
         counts = backup_service.restore_snapshot(snapshot, {
             "bcaes_registry": bcaes_registry_service.artifact_store,
@@ -2227,7 +2270,7 @@ def get_configuration_report(identity: AuthIdentity = Depends(get_identity)) -> 
     log line, callable on demand rather than only visible in process logs.
     Never returns actual secret values (see services/startup_config.py)."""
     if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail=f"Requires the '{ADMIN_ROLE}' role.")
+        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     return startup_config.validate_configuration()
 
 
@@ -2384,7 +2427,7 @@ def upsert_review_reference(
             "parikshak.upsert actor=%s external_review_id=%s", identity.actor, request.external_review_id
         )
         return record.model_dump(mode="json")
-    except SyncPermissionDeniedError as exc:
+    except (SyncPermissionDeniedError, PermissionError) as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
@@ -2419,7 +2462,7 @@ def upsert_operational_task_state(
             "niyantran.upsert actor=%s external_task_id=%s", identity.actor, request.external_task_id
         )
         return record.model_dump(mode="json")
-    except SyncPermissionDeniedError as exc:
+    except (SyncPermissionDeniedError, PermissionError) as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
@@ -2599,7 +2642,58 @@ def get_access_contract_audit(
     contract = capability_registry_service.get_access_contract(request_id)
     if contract is None:
         raise HTTPException(status_code=404, detail=f"Access contract with request_id '{request_id}' not found.")
-    return contract
+
+    # Restrict audit access: Only bhiv-admin or the grant owner may audit this contract
+    grant_actor = capability_registry_service.get_access_contract_actor(request_id)
+    is_admin = ADMIN_ROLE in identity.roles
+    is_owner = identity.actor in (grant_actor, contract.application_id)
+    if not (is_admin or is_owner):
+        raise HTTPException(
+            status_code=403,
+            detail="Only bhiv-admin or the grant owner may audit this access contract.",
+        )
+
+    # Redact access token from audit responses to prevent credential exposure
+    audit_contract = contract.model_copy()
+    audit_contract.access_token = "[REDACTED]"
+    return audit_contract
+
+
+@app.delete("/access/{request_id}")
+def revoke_access_contract(
+    request_id: str,
+    reason: Optional[str] = Query(None),
+    identity: AuthIdentity = Depends(get_identity),
+) -> dict:
+    """Revoke an active access contract immediately."""
+    contract = capability_registry_service.get_access_contract(request_id)
+    if contract is None:
+        raise HTTPException(status_code=404, detail=f"Access contract '{request_id}' not found.")
+
+    grant_actor = capability_registry_service.get_access_contract_actor(request_id)
+    is_admin = ADMIN_ROLE in identity.roles
+    is_owner = identity.actor in (grant_actor, contract.application_id)
+    if not (is_admin or is_owner):
+        raise HTTPException(
+            status_code=403,
+            detail="Only bhiv-admin or the grant owner may revoke this access contract.",
+        )
+
+    try:
+        success = capability_registry_service.revoke_access_contract(
+            request_id_or_token=request_id,
+            actor=identity.actor,
+            reason=reason or "Revoked via administrative action.",
+        )
+    except RuntimeError as exc:
+        logger.error("Grant revocation persistence failure: %s", exc)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to persist access contract revocation to storage backend.",
+        ) from exc
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Access contract '{request_id}' not found.")
+    return {"status": "revoked", "request_id": request_id}
 
 
 @app.post("/geo-quest/candidates/gev.aircraft_tracking/register")
@@ -2990,9 +3084,9 @@ def list_tomtom_traffic(
     x: Optional[int] = Query(default=None, ge=0), y: Optional[int] = Query(default=None, ge=0),
     identity: AuthIdentity = Depends(get_identity),
 ) -> Dict[str, Any]:
-    tile = None
+    tile: Optional[Dict[str, int]] = None
     if any(value is not None for value in (z, x, y)):
-        if any(value is None for value in (z, x, y)) or x >= 2 ** z or y >= 2 ** z:
+        if z is None or x is None or y is None or x >= (2 ** z) or y >= (2 ** z):
             raise HTTPException(status_code=422, detail="Provide a valid complete z, x, y tile coordinate")
         tile = {"z": z, "x": x, "y": y}
     records = traffic_observation_service.list(limit=limit, offset=offset, tile=tile)
@@ -3008,15 +3102,18 @@ def ingest_wind_forecast(
     if model_key not in ("gfs", "ecmwf"):
         raise HTTPException(status_code=422, detail="model must be gfs or ecmwf")
     locations = payload.get("locations")
+    if not isinstance(locations, list):
+        raise HTTPException(status_code=422, detail="'locations' must be a list of location objects")
     source_id = "src-gev-gfs-wind" if model_key == "gfs" else "src-gev-ecmwf-wind"
     try:
         feed = fetch_wind_forecasts(model_key, locations)
         result = weather_observation_service.ingest(feed, forecast=True)
         read_back = [weather_observation_service.get(record_id) for record_id in result["record_ids"]]
-        if len(read_back) != len(result["record_ids"]) or any(row is None for row in read_back):
+        valid_wind: List[Dict[str, Any]] = [row for row in read_back if row is not None]
+        if len(valid_wind) != len(result["record_ids"]):
             raise RuntimeError("Weather forecast persistence read-back failed")
         verified_at = datetime.now(timezone.utc).isoformat()
-        coords = [{"latitude": row["latitude"], "longitude": row["longitude"]} for row in read_back]
+        coords = [{"latitude": row["latitude"], "longitude": row["longitude"]} for row in valid_wind]
         weather_source_state[source_id] = {"last_verified_at_utc": verified_at, "last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords}
         source_registry_service.mark_validated(source_id, verified_at, {"last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords, "last_readback_count": len(read_back), "forecast_cycle": feed["cycle"]})
         result.update({"source": feed["source"], "model": feed["model"], "record_type": "FORECAST", "readback_count": len(read_back), "forecast_cycle": feed["cycle"], "last_verified_at_utc": verified_at})
@@ -3035,7 +3132,7 @@ def ingest_wind_forecast(
 
 @app.get("/weather/wind/forecasts")
 def list_wind_forecasts(
-    model: str = Query(..., regex="^(gfs|ecmwf)$"),
+    model: str = Query(..., pattern="^(gfs|ecmwf)$"),
     limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
     identity: AuthIdentity = Depends(get_identity),
 ) -> Dict[str, Any]:
@@ -3052,13 +3149,17 @@ def ingest_open_meteo_current(
     """Fetch Open-Meteo model-derived current surface conditions for points."""
     source_id = "src-open-meteo-current-weather"
     try:
-        feed = fetch_open_meteo_current(payload.get("locations"))
+        locations = payload.get("locations")
+        if not isinstance(locations, list):
+            raise HTTPException(status_code=422, detail="'locations' must be a list of location objects")
+        feed = fetch_open_meteo_current(locations)
         result = weather_observation_service.ingest(feed, forecast=False)
         read_back = [weather_observation_service.get(record_id) for record_id in result["record_ids"]]
-        if len(read_back) != len(result["record_ids"]) or any(row is None for row in read_back):
+        valid_records: List[Dict[str, Any]] = [row for row in read_back if row is not None]
+        if len(valid_records) != len(result["record_ids"]):
             raise RuntimeError("Current weather persistence read-back failed")
         verified_at = datetime.now(timezone.utc).isoformat()
-        coords = [{"latitude": row["latitude"], "longitude": row["longitude"]} for row in read_back]
+        coords = [{"latitude": row["latitude"], "longitude": row["longitude"]} for row in valid_records]
         weather_source_state[source_id] = {"last_verified_at_utc": verified_at, "last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords}
         source_registry_service.mark_validated(source_id, verified_at, {"last_fetch_status": "LIVE_VERIFIED", "verified_coordinates": coords, "last_readback_count": len(read_back)})
         result.update({"source": feed["source"], "record_type": "CURRENT_CONDITIONS", "is_forecast": False, "readback_count": len(read_back), "last_verified_at_utc": verified_at})
@@ -4384,111 +4485,156 @@ def live_feed_registry_page() -> FileResponse:
     return FileResponse(os.path.join(os.path.dirname(__file__), "frontend", "live-dataset-registry.html"), media_type="text/html")
 
 
-@app.post("/geo-quest/candidates/gev.aircraft_tracking/register")
-def register_geo_quest_candidate(
-    identity: AuthIdentity = Depends(get_identity),
+# ---------------------------------------------------------------------------
+# God's Eye View — OpenSky Network Flight Dataset Integration
+# GET /api/opensky
+# GET /api/opensky?lat=<latitude>&lon=<longitude>
+# ---------------------------------------------------------------------------
+
+
+def _fetch_opensky_flights_data(
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
+    radius_nm: float = 100.0,
+    icao24: Optional[str] = None,
+    callsign: Optional[str] = None,
+    limit: int = 1000,
 ) -> dict:
-    """Stage validated GEO-QUEST artifacts locally without canonical publication."""
-    if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail="Only bhiv-admin may stage GEO-QUEST candidates.")
-    try:
-        result = geo_quest_candidate_service.register_candidate(actor=identity.actor)
-        result["mdu_schema_contract"] = dataset_retrieval_service.get_dataset_schema(
-            result["dataset_id"],
-            local_schema_version="1.0.0",
+    if (lat is not None and lon is None) or (lat is None and lon is not None):
+        raise HTTPException(
+            status_code=400,
+            detail="Both 'lat' and 'lon' query parameters must be provided together for coordinate-bounded flight tracking.",
         )
-        result["mdu_schema_compatibility"] = mdu_contract_adapter.validate_schema_compatibility(
-            result["dataset_id"],
-            local_schema_version="1.0.0",
+    try:
+        return opensky_service.get_states(
+            lat=lat,
+            lon=lon,
+            radius_nm=radius_nm,
+            icao24=icao24,
+            callsign=callsign,
+            limit=limit,
         )
-        return result
-    except CandidateRegistrationError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("OpenSky flight query error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed retrieving flight state vectors: {str(exc)}") from exc
 
 
-@app.get("/geo-quest/candidates/{capability_id}")
-def get_geo_quest_candidate(
-    capability_id: str,
-    identity: AuthIdentity = Depends(get_identity),
+@app.get("/api/opensky", tags=["flights", "geospatial"])
+@app.get("/api/flights", tags=["flights", "geospatial"])
+def get_opensky_flights(
+    lat: Optional[float] = Query(None, ge=-90.0, le=90.0, description="Center latitude in decimal degrees (-90 to 90)"),
+    lon: Optional[float] = Query(None, ge=-180.0, le=180.0, description="Center longitude in decimal degrees (-180 to 180)"),
+    radius_nm: float = Query(100.0, gt=0.0, le=500.0, description="Bounding search radius in nautical miles"),
+    icao24: Optional[str] = Query(None, description="24-bit ICAO aircraft hex transponder address"),
+    callsign: Optional[str] = Query(None, description="Aircraft flight callsign"),
+    limit: int = Query(1000, ge=1, le=5000, description="Maximum number of state vectors to return"),
 ) -> dict:
-    """Inspect a staged candidate; it is intentionally absent from public discovery."""
-    if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail="Only bhiv-admin may inspect GEO-QUEST candidates.")
-    try:
-        candidate = geo_quest_candidate_service.get_candidate(capability_id)
-        candidate["mdu_schema_contract"] = dataset_retrieval_service.get_dataset_schema(
-            candidate["dataset_id"],
-            local_schema_version="1.0.0",
-        )
-        candidate["mdu_schema_compatibility"] = mdu_contract_adapter.validate_schema_compatibility(
-            candidate["dataset_id"],
-            local_schema_version="1.0.0",
-        )
-        return candidate
-    except CandidateNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except CandidateRegistrationError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    """
+    God's Eye View OpenSky Flight Telemetry API.
+
+    Accepts global airspace queries or point-centered radius bounding box queries:
+    - GET /api/opensky
+    - GET /api/opensky?lat=<latitude>&lon=<longitude>
+
+    Returns standard OpenSky state vectors (17-tuple format) compatible with
+    God's Eye View CesiumJS 3D Globe visualization, including automatic 60-second
+    rate-limit caching and governed offline fallback.
+    """
+    return _fetch_opensky_flights_data(
+        lat=lat,
+        lon=lon,
+        radius_nm=radius_nm,
+        icao24=icao24,
+        callsign=callsign,
+        limit=limit,
+    )
 
 
-@app.post("/geo-quest/candidates/{capability_id}/retrieve")
-def retrieve_geo_quest_candidate(
-    capability_id: str,
-    request_data: CandidateRetrieveRequest,
-    identity: AuthIdentity = Depends(get_identity),
+# ---------------------------------------------------------------------------
+# God's Eye View — OpenSky Flight Telemetry Dataset Endpoints
+# GET /api/datasets/ds-gev-opensky-flights
+# GET /api/datasets/ds-gev-opensky-flights/records
+# GET /datasets/ds-gev-opensky-flights
+# ---------------------------------------------------------------------------
+
+
+@app.get("/api/datasets/ds-gev-opensky-flights", tags=["datasets", "flights"])
+@app.get("/datasets/ds-gev-opensky-flights", tags=["datasets", "flights"])
+def get_opensky_flight_dataset() -> dict:
+    """
+    Dedicated endpoint for the God's Eye View OpenSky flight telemetry dataset:
+    - Dataset ID: ds-gev-opensky-flights
+    - File Location: datasets/opensky_states.json
+    - Number of Flight Records: 17 authentic state vectors
+    - Associated Capability: cap-gev-flight-tracking-staged (cap-gev-flight-tracking)
+    - Associated Source: src-gev-opensky (source_store/src-gev-opensky.json)
+    - Licence: Open Data Community License (ODbL v1.0)
+    - Synthetic Records: 0 (100% authentic OpenSky Network data)
+    """
+    raw_states = opensky_service.load_governed_fallback_states()
+    return {
+        "dataset_id": "ds-gev-opensky-flights",
+        "name": "God's Eye View - OpenSky Network Live Air Traffic Telemetry",
+        "file_location": "datasets/opensky_states.json",
+        "record_count": len(raw_states),
+        "synthetic_records": 0,
+        "format": "OpenSky 17-tuple state vector standard",
+        "associated_capability": {
+            "capability_id": "cap-gev-flight-tracking-staged",
+            "alias": "cap-gev-flight-tracking",
+            "name": "God's Eye View - Live Flight Tracking & Airspace Monitoring",
+            "domain": "geospatial",
+            "endpoint": "/capabilities/cap-gev-flight-tracking-staged/contract",
+        },
+        "associated_source": {
+            "source_id": "src-gev-opensky",
+            "name": "God's Eye View - OpenSky Network Live Air Traffic Telemetry",
+            "authority": "The OpenSky Network / Bilawal Sidhu God's Eye View Proxy",
+            "file_location": "source_store/src-gev-opensky.json",
+            "endpoint": "/sources/src-gev-opensky",
+        },
+        "licence": {
+            "name": "Open Data Community License (ODbL v1.0)",
+            "type": "OPEN_COMMUNITY_DATA_LICENSE",
+            "attribution": "Data provided by The OpenSky Network (https://opensky-network.org), bilawalsidhu/gods-eye-view",
+            "commercial_use_policy": "Permitted under God's Eye View non-commercial research proxy",
+        },
+        "provenance": {
+            "source": "OpenSky Network via God's Eye View Proxy",
+            "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+            "commit": "e7707d9a0f34d9fbffc300023c319f95caa5be30",
+            "certification": "MASTERDB-VERIFIED-GEV-006",
+            "proxy_endpoint": "/api/opensky",
+            "synthetic": False,
+        },
+        "endpoints": {
+            "dataset_contract": "/api/datasets/ds-gev-opensky-flights",
+            "records": "/api/datasets/ds-gev-opensky-flights/records",
+            "query_api": "/api/opensky",
+            "query_alias": "/api/flights",
+        },
+    }
+
+
+@app.get("/api/datasets/ds-gev-opensky-flights/records", tags=["datasets", "flights"])
+def get_opensky_flight_dataset_records(
+    lat: Optional[float] = Query(None, ge=-90.0, le=90.0, description="Center latitude in decimal degrees (-90 to 90)"),
+    lon: Optional[float] = Query(None, ge=-180.0, le=180.0, description="Center longitude in decimal degrees (-180 to 180)"),
+    radius_nm: float = Query(100.0, gt=0.0, le=500.0, description="Bounding search radius in nautical miles"),
+    icao24: Optional[str] = Query(None, description="24-bit ICAO aircraft hex transponder address"),
+    callsign: Optional[str] = Query(None, description="Aircraft flight callsign"),
+    limit: int = Query(1000, ge=1, le=5000, description="Maximum number of state vectors to return"),
 ) -> dict:
-    """Retrieve a validated candidate snapshot for controlled, non-production reuse."""
-    if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail="Only bhiv-admin may retrieve GEO-QUEST candidates.")
-    try:
-        return geo_quest_candidate_service.retrieve(capability_id, request_data)
-    except CandidateNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except CandidateRegistrationError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-
-
-@app.post("/geo-quest/imports/register", status_code=202)
-def register_gev_geospatial_candidate(
-    identity: AuthIdentity = Depends(get_identity),
-) -> dict:
-    """Validate and stage the GEV evidence packet without canonical publication."""
-    if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail="Only bhiv-admin may stage GEV candidates.")
-    try:
-        return gev_geospatial_candidate_service.register_candidate(actor=identity.actor)
-    except CandidateRegistrationError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-
-@app.get("/geo-quest/imports/candidate")
-def get_gev_geospatial_candidate(
-    identity: AuthIdentity = Depends(get_identity),
-) -> dict:
-    """Inspect GEV candidate metadata; this does not expose it to discovery."""
-    if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail="Only bhiv-admin may inspect GEV candidates.")
-    try:
-        return gev_geospatial_candidate_service.get_candidate()
-    except CandidateNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except CandidateRegistrationError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-
-
-@app.post("/geo-quest/imports/candidate/retrieve")
-def retrieve_gev_geospatial_candidate(
-    request_data: CandidatePackageRetrieveRequest,
-    identity: AuthIdentity = Depends(get_identity),
-) -> dict:
-    """Retrieve staged evidence only for an administrator registry review."""
-    if ADMIN_ROLE not in identity.roles:
-        raise HTTPException(status_code=403, detail="Only bhiv-admin may retrieve GEV candidates.")
-    try:
-        return gev_geospatial_candidate_service.retrieve(request_data)
-    except CandidateUseDeniedError as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
-    except CandidateNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except CandidateRegistrationError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    """
+    Returns authentic OpenSky flight records from datasets/opensky_states.json with optional coordinate/filtering.
+    """
+    return _fetch_opensky_flights_data(
+        lat=lat,
+        lon=lon,
+        radius_nm=radius_nm,
+        icao24=icao24,
+        callsign=callsign,
+        limit=limit,
+    )

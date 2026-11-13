@@ -10,6 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
+from security.public_key import load_rsa_public_key
+
 
 def _error_response(request: Request, status_code: int, error_type: str, message: str) -> JSONResponse:
     return JSONResponse(
@@ -87,7 +89,7 @@ class RS256JWTVerifier:
                         pem = fh.read()
         if not pem:
             pem = self._generate_fallback_public_key()
-        self._public_key_pem = pem
+        self._public_key = pem
 
     @staticmethod
     def _generate_fallback_public_key() -> str:
@@ -103,7 +105,7 @@ class RS256JWTVerifier:
         try:
             payload = jwt.decode(
                 token,
-                self._public_key_pem,
+                load_rsa_public_key(self._public_key),
                 algorithms=["RS256"],
                 options={"require": ["exp", "sub", "jti"]},
             )
@@ -111,6 +113,8 @@ class RS256JWTVerifier:
             raise JWTVerificationError("Token has expired.") from exc
         except jwt.InvalidTokenError as exc:
             raise JWTVerificationError("Token is invalid or badly signed.") from exc
+        except (TypeError, ValueError) as exc:
+            raise JWTVerificationError(f"RS256 public key is invalid: {exc}") from exc
         return payload
 
 

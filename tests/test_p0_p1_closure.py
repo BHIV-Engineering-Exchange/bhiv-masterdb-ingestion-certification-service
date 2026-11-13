@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_auth_headers
 """
 Tests for P0 Upload Lifecycle Completion and P1 Target Database HTTP Read-back.
 """
@@ -58,12 +59,7 @@ def test_p0_upload_lifecycle_completion(tmp_path, monkeypatch):
 
     # Auth
     monkeypatch.setenv("AUTH_PASSWORD", "test-admin-password")
-    token_resp = client.post(
-        "/auth/token",
-        json={"actor": "admin", "password": "test-admin-password"},
-    )
-    token = token_resp.json()["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = get_test_auth_headers("admin", ["bhiv-admin", "admin", "operator"])
 
     # Upload initiation
     sample_csv = "id,name,age,email\n1,Alice,30,alice@example.com\n2,Bob,25,bob@example.com\n"
@@ -170,12 +166,7 @@ def test_p1_target_database_http_readback(tmp_path, monkeypatch):
 
     # Auth
     monkeypatch.setenv("AUTH_PASSWORD", "test-admin-password")
-    token_resp = client.post(
-        "/auth/token",
-        json={"actor": "admin", "password": "test-admin-password"},
-    )
-    token = token_resp.json()["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = get_test_auth_headers("admin", ["bhiv-admin", "admin", "operator"])
 
     # Upload & Ingest
     sample_csv = "id,name,age,email\n101,John Doe,25,john@example.com\n102,Alice Smith,30,alice@example.com\n"

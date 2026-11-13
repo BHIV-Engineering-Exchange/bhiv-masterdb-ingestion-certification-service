@@ -1,0 +1,10 @@
+{
+  "include": [
+    ".",
+    "MASTERDB-GEO-QUEST-01"
+  ],
+  "extraPaths": [
+    "./MASTERDB-GEO-QUEST-01",
+    "."
+  ]
+}

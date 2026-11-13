@@ -1,0 +1,29 @@
+{
+  "dataset_id": "ds-cmo-marketing-defect-missing-records",
+  "is_synthetic": true,
+  "data_tier": "synthetic_defect_fixture",
+  "synthetic_notice": "SYNTHETIC DEFECT FIXTURE: Synthetic data designed specifically to trigger validation errors for automated testing. Does not represent BIQOS production telemetry.",
+  "defect_type": "MISSING_RECORDS_AND_COMPLETENESS_VIOLATION",
+  "expected_violation": "Null or missing spend_usd, null campaign_id, null conversions",
+  "records": [
+    {
+      "campaign_id": null,
+      "campaign_name": "Incomplete-Metrics-Campaign",
+      "channel": "search",
+      "impressions": 10000,
+      "clicks": 500,
+      "conversions": null,
+      "spend_usd": null,
+      "revenue_usd": null,
+      "roas": null,
+      "cac": null,
+      "attribution_model": "last_touch",
+      "status": "ACTIVE",
+      "start_date": "2026-10-01",
+      "end_date": "2026-11-30",
+      "last_updated_utc": "2026-11-06T08:30:00Z",
+      "provenance_source": "BIQOS-Marketing-Hub"
+    }
+  ]
+}
+

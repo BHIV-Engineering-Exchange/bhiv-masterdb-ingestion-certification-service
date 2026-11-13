@@ -1,0 +1,27 @@
+{
+  "dataset_name": "CMO Marketing Intelligence Campaign Performance Dataset (Synthetic Test Fixture)",
+  "dataset_id": "ds-cmo-marketing-001",
+  "capability_id": "cap-cmo-marketing-intelligence",
+  "is_synthetic": true,
+  "data_tier": "synthetic_verification",
+  "synthetic_marker": "SYNTHETIC_DATASET_BENCHMARK_FIXTURE",
+  "synthetic_notice": "SYNTHETIC BENCHMARK DATA: This dataset contains synthetic campaign records generated for integration testing and schema validation. It does not represent actual BIQOS production telemetry.",
+  "associated_files": [
+    "cmo_marketing_sample_valid.json",
+    "cmo_marketing_sample_valid.csv"
+  ],
+  "owner": "BIQOS / CMO Agent",
+  "data_steward": "Hariom Upadhyay (Data Integrity Specialist)",
+  "source": "BIQOS Marketing Telemetry Hub (Synthetic Benchmark Generator)",
+  "license": "BHIV-PROPRIETARY",
+  "version": "1.0.0",
+  "domain": "marketing",
+  "schema_version": "v1.0",
+  "freshness_sla_hours": 48,
+  "lineage": "Synthetic-CMO-Generator -> MASTERDB-Governed-Store",
+  "transformation_log": "Cleaned, schema-verified, and deduplicated synthetic marketing intelligence snapshot",
+  "governance_status": "SYNTHETIC_VERIFIED_CANDIDATE",
+  "retrieval_ready": true,
+  "created_at_utc": "2026-11-06T09:00:00Z"
+}
+

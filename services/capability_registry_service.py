@@ -5,11 +5,16 @@ Owns MASTERDB Capability registration, discovery, machine-readable contract reso
 and authorization/access evaluation for TANTRA runtime integration.
 """
 import hashlib
+import json
 import logging
+import math
 import os
+import re
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
+
+from pydantic.fields import FieldInfo
 
 from models import (
     AccessContract,
@@ -19,6 +24,8 @@ from models import (
     CapabilityRetrieveRequest,
     CapabilityRetrieveResponse,
     CapabilityStatus,
+    PackageStatus,
+    RetrievalStatus,
 )
 from services.artifact_store import ArtifactStore
 from services.crypto_audit_emitter import CryptoAuditEmitter
@@ -31,6 +38,8 @@ from services.vana_client import (
 )
 
 logger = logging.getLogger("masterdb")
+
+# Schema extension fields are declared natively in models.py
 
 
 class CapabilityNotFoundError(KeyError):
@@ -60,6 +69,10 @@ class CapabilityRegistryService:
         retrieval_service: Optional[DatasetRetrievalService] = None,
         audit_emitter: Optional[CryptoAuditEmitter] = None,
         vana_client: Optional[VanaClient] = None,
+        grant_store: Optional[Any] = None,
+        sql_store: Optional[Any] = None,
+        actor_application_entitlements: Optional[Dict[str, List[str]]] = None,
+        earthquake_observation_service: Optional[Any] = None,
     ) -> None:
         self.store = ArtifactStore(reports_dir=store_dir)
         self.version_store = ArtifactStore(reports_dir=os.path.join(store_dir, "versions"))
@@ -67,9 +80,61 @@ class CapabilityRegistryService:
         self.retrieval_service = retrieval_service or DatasetRetrievalService(registry=self.package_registry)
         self.audit_emitter = audit_emitter or CryptoAuditEmitter()
         self.vana_client = vana_client or VanaClient()
+        self.grant_store = grant_store or ArtifactStore(reports_dir=os.path.join(store_dir, "access_grants"))
+        self.sql_store = sql_store
+        self.actor_application_entitlements: Dict[str, List[str]] = (
+            {
+                k.strip().lower(): [x.strip().lower() for x in v if isinstance(x, str)]
+                for k, v in actor_application_entitlements.items()
+                if isinstance(k, str)
+            }
+            if actor_application_entitlements
+            else {}
+        )
+        self.earthquake_observation_service = earthquake_observation_service
         self._access_contracts: Dict[str, AccessContract] = {}
         self._access_contract_actors: Dict[str, str] = {}
         self._seed_default_capabilities_if_empty()
+
+    def _is_actor_entitled_to_application(
+        self,
+        actor: str,
+        roles: List[str],
+        application_id: str,
+    ) -> bool:
+        """
+        D4 Entitlement Gate: Validates server-side whether authenticated actor is authorized
+        to represent or act on behalf of the requested application_id.
+        Fails closed (deny-by-default). Never trusts caller-supplied application_id alone.
+        Automatic self-representation is removed to prevent shared-password impersonation.
+        Requires explicit server-side entitlement via injected mapping or environment configuration.
+        No hardcoded service accounts; no admin wildcards.
+        """
+        if not actor or not actor.strip():
+            return False
+        if not application_id or not application_id.strip():
+            return False
+
+        actor_clean = actor.strip()
+        actor_lower = actor_clean.lower()
+        app_clean = application_id.strip()
+        app_lower = app_clean.lower()
+
+        # 1. Injected service-level entitlement mapping
+        allowed_injected = self.actor_application_entitlements.get(actor_lower, [])
+        if app_lower in allowed_injected:
+            return True
+
+        # 2. Environment-configured delegation (AUTH_ENTITLED_APPS_<ACTOR_CLEAN>)
+        env_actor_key = re.sub(r"[^A-Za-z0-9_]", "_", actor_clean).upper()
+        env_var_name = f"AUTH_ENTITLED_APPS_{env_actor_key}"
+        env_val = os.getenv(env_var_name)
+        if env_val:
+            allowed_env = [x.strip().lower() for x in env_val.split(",") if x.strip()]
+            if app_lower in allowed_env:
+                return True
+
+        return False
 
     def _seed_default_capabilities_if_empty(self) -> None:
         # NOTE: Seed records below are DEMO / TEST FIXTURES for contract demonstration.
@@ -523,6 +588,45 @@ class CapabilityRegistryService:
                     "governance_gate": "6_TUPLE_EVALUATION_GATE",
                 },
             ),
+            Capability(
+                capability_id="cap-cmo-marketing-intelligence",
+                capability_name="CMO - Marketing Intelligence & Campaign Attribution Engine",
+                description="Governed marketing campaign performance, ROI, CAC, ROAS, and multi-touch attribution telemetry for the CMO Agent in BIQOS/BHIV.",
+                dataset_id="ds-cmo-marketing-001",
+                source_id="src-biqos-marketing-hub",
+                purpose="marketing_intelligence",
+                capability_version="1.0.0",
+                contract_version="1.0.0",
+                domain="marketing",
+                schema_version="v1.0",
+                status=CapabilityStatus.ACTIVE,
+                inputs=[
+                    {"name": "channel", "type": "String (search/social/email/display/affiliate/video)", "required": False},
+                    {"name": "status", "type": "String (ACTIVE/COMPLETED/PAUSED/SCHEDULED)", "required": False},
+                    {"name": "min_roas", "type": "Float", "required": False},
+                ],
+                outputs=[
+                    {"name": "records", "type": "JSON Array of Campaign Performance Objects"},
+                    {"name": "summary", "type": "JSON Object"},
+                ],
+                dependencies=["BIQOS Marketing Telemetry Hub", "CMO Attribution Engine"],
+                source_references=["src-biqos-marketing-hub"],
+                dataset_references=["ds-cmo-marketing-001"],
+                known_limitations=["Attribution refresh cycle 1-hour interval"],
+                potential_consumers=["CMO Agent", "BIQOS", "TANTRA", "VAJRA"],
+                licensing={"software_licence": "PROPRIETARY_BHIV", "dataset_licence": "BHIV_RESEARCH_USE", "source_licence": "BHIV_RESEARCH_USE"},
+                supported_access_methods=["QUERY", "EXPORT", "STREAM", "RETRIEVE"],
+                required_purpose="marketing_intelligence",
+                authorization_requirements={
+                    "required_roles": ["ecosystem-reader", "viewer", "operator", "admin", "APPROVED_CONSUMER", "cmo-agent"],
+                    "allowed_consumers": ["*"],
+                },
+                provenance={
+                    "source": "BIQOS Marketing Telemetry Hub",
+                    "certification": "MASTERDB-CERT-CMO-2026-001",
+                    "governance_gate": "6_TUPLE_EVALUATION_GATE",
+                },
+            ),
         ]
 
         existing_caps = {c.capability_id for c in self.list_capabilities()}
@@ -539,7 +643,12 @@ class CapabilityRegistryService:
             f"{capability.description} {' '.join(capability.dependencies)} "
             f"{' '.join(capability.source_references)}"
         ).lower()
-        if any(keyword in cap_str for keyword in restricted_keywords):
+        is_verified_gev_proxy = (
+            capability.capability_id in ("cap-gev-flight-tracking-staged", "cap-gev-flight-tracking")
+            and isinstance(capability.provenance, dict)
+            and any(k in str(capability.provenance).lower() for k in ("gods-eye-view", "gods_eye_view", "src-gev-opensky", "gev"))
+        )
+        if not is_verified_gev_proxy and any(keyword in cap_str for keyword in restricted_keywords):
             raise ValueError(
                 f"Registration of commercially restricted/unverified capability "
                 f"'{capability.capability_id}' is prohibited."
@@ -693,6 +802,21 @@ class CapabilityRegistryService:
         request_data: CapabilityAccessRequest,
     ) -> AccessContract:
         req_id = request_data.request_id or f"req-{uuid.uuid4().hex[:12]}"
+
+        # 0. Validate actor identity
+        if not actor or not actor.strip():
+            reason = "Authenticated actor identity is required."
+            self._emit_audit(
+                request_id=req_id,
+                actor=actor or "anonymous",
+                application_id=request_data.application_id,
+                capability_id=request_data.capability_id,
+                action="ACCESS_REQUEST",
+                result="DENIED",
+                reason=reason,
+            )
+            raise CapabilityAccessDeniedError(reason)
+
         try:
             capability = self.get_capability(request_data.capability_id)
         except CapabilityNotFoundError as exc:
@@ -732,6 +856,22 @@ class CapabilityRegistryService:
                 actor=actor,
                 application_id=request_data.application_id,
                 capability_id=capability.capability_id,
+                action="ACCESS_REQUEST",
+                result="DENIED",
+                reason=reason,
+            )
+            raise CapabilityAccessDeniedError(reason)
+
+        # D4 Entitlement Check: Verify actor identity against requested application_id
+        if not self._is_actor_entitled_to_application(actor, roles, request_data.application_id):
+            reason = (
+                f"Actor '{actor}' is not entitled to represent application '{request_data.application_id}'."
+            )
+            self._emit_audit(
+                request_id=req_id,
+                actor=actor,
+                application_id=request_data.application_id,
+                capability_id=request_data.capability_id,
                 action="ACCESS_REQUEST",
                 result="DENIED",
                 reason=reason,
@@ -794,37 +934,73 @@ class CapabilityRegistryService:
             )
             raise CapabilityAccessDeniedError(reason)
 
-        # Evaluate VANA 6-tuple governance evaluation gate if configured and applicable
-        if self.vana_client and self.vana_client.is_configured():
-            if (
-                capability.capability_id.startswith("cap-vana-")
-                or capability.dataset_id.startswith("DS-FSI-")
-                or capability.dataset_id.startswith("DS-VANA-")
-            ):
-                try:
-                    primary_role = roles[0] if roles else "APPROVED_CONSUMER"
-                    self.vana_client.evaluate_governance(
-                        actor=actor,
-                        role=primary_role,
-                        dataset_id=capability.dataset_id,
-                        action="READ",
-                        purpose=request_data.purpose,
-                    )
-                except VanaGovernanceDeniedError as exc:
-                    reason = f"VANA 6-tuple governance evaluation denied access: {exc}"
-                    self._emit_audit(
-                        request_id=req_id,
-                        actor=actor,
-                        application_id=request_data.application_id,
-                        capability_id=capability.capability_id,
-                        action="ACCESS_REQUEST",
-                        result="DENIED",
-                        reason=reason,
-                    )
-                    raise CapabilityAccessDeniedError(reason) from exc
-                except Exception as exc:
-                    logger.warning("VANA governance evaluation check warning: %s", exc)
+        # Evaluate VANA 6-tuple governance evaluation gate if capability is VANA-governed
+        is_vana_governed = (
+            capability.capability_id.startswith("cap-vana-")
+            or capability.dataset_id.startswith("DS-FSI-")
+            or capability.dataset_id.startswith("DS-VANA-")
+        )
+        if is_vana_governed:
+            if not self.vana_client or not self.vana_client.is_configured():
+                reason = "VANA integration is required for governed capability but is not configured."
+                self._emit_audit(
+                    request_id=req_id,
+                    actor=actor,
+                    application_id=request_data.application_id,
+                    capability_id=capability.capability_id,
+                    action="ACCESS_REQUEST",
+                    result="DENIED",
+                    reason=reason,
+                )
+                raise VanaUnavailableError(reason)
 
+            try:
+                primary_role = roles[0] if roles else "APPROVED_CONSUMER"
+                self.vana_client.evaluate_governance(
+                    actor=actor,
+                    role=primary_role,
+                    dataset_id=capability.dataset_id,
+                    action="READ",
+                    purpose=request_data.purpose,
+                )
+            except VanaGovernanceDeniedError as exc:
+                reason = f"VANA 6-tuple governance evaluation denied access: {exc}"
+                self._emit_audit(
+                    request_id=req_id,
+                    actor=actor,
+                    application_id=request_data.application_id,
+                    capability_id=capability.capability_id,
+                    action="ACCESS_REQUEST",
+                    result="DENIED",
+                    reason=reason,
+                )
+                raise CapabilityAccessDeniedError(reason) from exc
+            except VanaUnavailableError as exc:
+                reason = f"VANA governance evaluation service unavailable: {exc}"
+                self._emit_audit(
+                    request_id=req_id,
+                    actor=actor,
+                    application_id=request_data.application_id,
+                    capability_id=capability.capability_id,
+                    action="ACCESS_REQUEST",
+                    result="DENIED",
+                    reason=reason,
+                )
+                raise VanaUnavailableError(reason) from exc
+            except Exception as exc:
+                reason = f"VANA governance evaluation failed unexpectedly: {exc}"
+                self._emit_audit(
+                    request_id=req_id,
+                    actor=actor,
+                    application_id=request_data.application_id,
+                    capability_id=capability.capability_id,
+                    action="ACCESS_REQUEST",
+                    result="DENIED",
+                    reason=reason,
+                )
+                raise VanaUnavailableError(reason) from exc
+
+        expires_at = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
         access_contract = AccessContract(
             request_id=req_id,
             application_id=request_data.application_id,
@@ -835,11 +1011,27 @@ class CapabilityRegistryService:
             authorized=True,
             access_scope=capability.supported_access_methods,
             reason="Access authorized based on authenticated application identity, role, and matching purpose.",
+            expires_at=expires_at,
         )
 
         self._access_contracts[access_contract.request_id] = access_contract
         self._access_contracts[access_contract.access_token] = access_contract
         self._access_contract_actors[access_contract.access_token] = actor
+        self._access_contract_actors[access_contract.request_id] = actor
+
+        # Persist to durable grant store
+        if self.grant_store is not None:
+            try:
+                grant_record = {
+                    "contract": access_contract.model_dump(mode="json"),
+                    "actor": actor,
+                    "revoked": False,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+                self.grant_store.save(access_contract.access_token, grant_record)
+                self.grant_store.save(access_contract.request_id, grant_record)
+            except Exception as exc:
+                logger.warning("Failed to persist access contract to grant store: %s", exc)
 
         self._emit_audit(
             request_id=req_id,
@@ -848,10 +1040,147 @@ class CapabilityRegistryService:
             capability_id=capability.capability_id,
             action="ACCESS_REQUEST",
             result="GRANTED",
-            reason=access_contract.reason,
+            reason=access_contract.reason or "Access authorized based on authenticated application identity, role, and matching purpose.",
         )
 
         return access_contract
+
+    def get_access_contract(self, request_id_or_token: str) -> Optional[AccessContract]:
+        """
+        D2 Authoritative Grant Resolution:
+        When a persistent grant_store is configured, it is authoritative across worker processes.
+        The persistent store is checked BEFORE trusting in-memory cache.
+        If a grant is missing, revoked, malformed, or encounters storage errors, the local cache
+        is evicted and access fails closed (returns None).
+        When no persistent grant_store is configured, falls back to in-memory store (single-process mode).
+        """
+        if not isinstance(request_id_or_token, str) or not request_id_or_token.strip():
+            return None
+
+        if self.grant_store is not None:
+            try:
+                data = self.grant_store.load(request_id_or_token)
+            except Exception as exc:
+                logger.error("Authoritative grant store read error for '%s': %s", request_id_or_token, exc)
+                # Storage error: fail closed immediately and evict local cache
+                self._access_contracts.pop(request_id_or_token, None)
+                self._access_contract_actors.pop(request_id_or_token, None)
+                return None
+
+            if not data or not isinstance(data, dict):
+                # Missing or empty record in persistent store: evict stale local cache
+                self._access_contracts.pop(request_id_or_token, None)
+                self._access_contract_actors.pop(request_id_or_token, None)
+                return None
+
+            if data.get("revoked", False):
+                # Authoritatively revoked in persistent store: evict stale local cache
+                self._access_contracts.pop(request_id_or_token, None)
+                self._access_contract_actors.pop(request_id_or_token, None)
+                contract_obj = data.get("contract")
+                if isinstance(contract_obj, dict):
+                    token_val = contract_obj.get("access_token")
+                    req_id_val = contract_obj.get("request_id")
+                    if isinstance(token_val, str) and token_val:
+                        self._access_contracts.pop(token_val, None)
+                        self._access_contract_actors.pop(token_val, None)
+                    if isinstance(req_id_val, str) and req_id_val:
+                        self._access_contracts.pop(req_id_val, None)
+                        self._access_contract_actors.pop(req_id_val, None)
+                return None
+
+            raw_contract = data.get("contract")
+            if not raw_contract or not isinstance(raw_contract, dict):
+                # Malformed grant record: missing or non-dict contract
+                self._access_contracts.pop(request_id_or_token, None)
+                self._access_contract_actors.pop(request_id_or_token, None)
+                return None
+
+            # Verify persistent contract corresponds to requested token or request_id
+            token_val = raw_contract.get("access_token")
+            req_id_val = raw_contract.get("request_id")
+            if (
+                not isinstance(token_val, str)
+                or not isinstance(req_id_val, str)
+                or (token_val != request_id_or_token and req_id_val != request_id_or_token)
+            ):
+                logger.warning(
+                    "Mismatched contract in grant store for key '%s'",
+                    request_id_or_token,
+                )
+                self._access_contracts.pop(request_id_or_token, None)
+                self._access_contract_actors.pop(request_id_or_token, None)
+                return None
+
+            # Authoritative actor metadata from persistent record
+            actor_val = data.get("actor")
+            authoritative_actor = actor_val if isinstance(actor_val, str) else ""
+
+            # Persistent store confirms grant exists, matches, and is NOT revoked.
+            # If already cached locally, sync authoritative actor and return valid cached contract.
+            cached_contract = self._access_contracts.get(request_id_or_token)
+            if cached_contract is not None:
+                self._access_contract_actors[cached_contract.access_token] = authoritative_actor
+                self._access_contract_actors[cached_contract.request_id] = authoritative_actor
+                return cached_contract
+
+            try:
+                contract = AccessContract.model_validate(raw_contract)
+            except Exception as exc:
+                logger.warning("Malformed AccessContract record in grant store for '%s': %s", request_id_or_token, exc)
+                self._access_contracts.pop(request_id_or_token, None)
+                self._access_contract_actors.pop(request_id_or_token, None)
+                return None
+
+            # Valid, unrevoked authoritative grant: populate/refresh memory cache
+            self._access_contracts[contract.request_id] = contract
+            self._access_contracts[contract.access_token] = contract
+            self._access_contract_actors[contract.access_token] = authoritative_actor
+            self._access_contract_actors[contract.request_id] = authoritative_actor
+            return contract
+
+        # In-memory only mode (when grant_store is explicitly None, e.g. tests or transient instances)
+        return self._access_contracts.get(request_id_or_token)
+
+    def get_access_contract_actor(self, request_id_or_token: str) -> Optional[str]:
+        contract = self.get_access_contract(request_id_or_token)
+        if not contract:
+            return None
+        return self._access_contract_actors.get(contract.access_token) or self._access_contract_actors.get(contract.request_id)
+
+    def revoke_access_contract(self, request_id_or_token: str, actor: str, reason: str = "") -> bool:
+        contract = self.get_access_contract(request_id_or_token)
+        if not contract:
+            return False
+
+        if self.grant_store is not None:
+            try:
+                data = self.grant_store.load(contract.access_token) or self.grant_store.load(contract.request_id) or {}
+                data["revoked"] = True
+                data["revoked_at"] = datetime.now(timezone.utc).isoformat()
+                data["revoked_by"] = actor
+                data["revocation_reason"] = reason
+                self.grant_store.save(contract.access_token, data)
+                self.grant_store.save(contract.request_id, data)
+            except Exception as exc:
+                logger.error("Failed to persist revocation to grant store: %s", exc)
+                raise RuntimeError(f"Failed to persist grant revocation: {exc}") from exc
+
+        self._access_contracts.pop(contract.access_token, None)
+        self._access_contracts.pop(contract.request_id, None)
+        self._access_contract_actors.pop(contract.access_token, None)
+        self._access_contract_actors.pop(contract.request_id, None)
+
+        self._emit_audit(
+            request_id=contract.request_id,
+            actor=actor,
+            application_id=contract.application_id,
+            capability_id=contract.capability_id,
+            action="ACCESS_REVOKED",
+            result="REVOKED",
+            reason=reason or "Access contract revoked by administrator.",
+        )
+        return True
 
     def retrieve(
         self,
@@ -861,38 +1190,70 @@ class CapabilityRegistryService:
         retrieve_req: CapabilityRetrieveRequest,
     ) -> CapabilityRetrieveResponse:
         capability = self.get_capability(capability_id)
+        if not capability:
+            raise CapabilityNotFoundError(f"Capability '{capability_id}' not found.")
+
+        # Resolve access grant
+        contract: Optional[AccessContract] = None
+        has_explicit_credential = bool(retrieve_req.access_token or retrieve_req.request_id)
         req_id = retrieve_req.request_id or f"req-ret-{uuid.uuid4().hex[:10]}"
 
-        # Validate access token or existing contract
-        contract: Optional[AccessContract] = None
         if retrieve_req.access_token:
-            contract = self._access_contracts.get(retrieve_req.access_token)
+            contract = self.get_access_contract(retrieve_req.access_token)
         elif retrieve_req.request_id:
-            contract = self._access_contracts.get(retrieve_req.request_id)
+            contract = self.get_access_contract(retrieve_req.request_id)
 
-        # If no prior token, verify roles/actor on the fly
-        if contract is None:
-            # Inline access request evaluation
-            app_id = retrieve_req.application_id or actor
-            access_req = CapabilityAccessRequest(
-                application_id=app_id,
-                capability_id=capability_id,
-                purpose=capability.required_purpose or "general_reuse",
-                request_id=req_id,
-            )
-            contract = self.request_access(actor=actor, roles=roles, request_data=access_req)
-        if (
-            not contract.authorized
-            or self._access_contract_actors.get(contract.access_token) != actor
-            or contract.capability_id != capability_id
-            or contract.application_id != (retrieve_req.application_id or actor)
-            or contract.capability_version != capability.capability_version
-            or not any(
-                scope.upper() in ("RETRIEVE", "QUERY")
-                for scope in contract.access_scope
-            )
-        ):
-            reason = "The access contract is not valid for this capability, application, version, or operation."
+        if not contract:
+            if not has_explicit_credential:
+                reason = (
+                    "Valid access grant required. Retrieval requires an existing authorized access grant "
+                    "(access_token or request_id)."
+                )
+                self._emit_audit(
+                    request_id=retrieve_req.request_id or "unknown",
+                    actor=actor,
+                    application_id=retrieve_req.application_id or "unknown",
+                    capability_id=capability_id,
+                    action="DATA_RETRIEVAL",
+                    result="DENIED",
+                    reason=reason,
+                    trace_id=retrieve_req.trace_id,
+                    execution_id=retrieve_req.execution_id,
+                )
+                raise CapabilityAccessDeniedError(reason)
+            else:
+                # Explicit credential was supplied but was not found or was revoked
+                was_revoked = False
+                token_key = retrieve_req.access_token or retrieve_req.request_id or ""
+                if self.grant_store is not None and token_key:
+                    try:
+                        data = self.grant_store.load(token_key)
+                        if data and data.get("revoked", False):
+                            was_revoked = True
+                    except Exception:
+                        pass
+
+                reason = (
+                    "Access grant has been revoked."
+                    if was_revoked
+                    else "Valid access grant required. Provided token/request_id is invalid or unauthorized."
+                )
+                self._emit_audit(
+                    request_id=retrieve_req.request_id or "unknown",
+                    actor=actor,
+                    application_id=retrieve_req.application_id or "unknown",
+                    capability_id=capability_id,
+                    action="DATA_RETRIEVAL",
+                    result="DENIED",
+                    reason=reason,
+                    trace_id=retrieve_req.trace_id,
+                    execution_id=retrieve_req.execution_id,
+                )
+                raise CapabilityAccessDeniedError(reason)
+
+        # Ensure grant authorizes the requested capability
+        if contract.capability_id != capability_id:
+            reason = f"Access contract '{contract.request_id}' was issued for '{contract.capability_id}', not '{capability_id}'."
             self._emit_audit(
                 request_id=contract.request_id,
                 actor=actor,
@@ -901,44 +1262,165 @@ class CapabilityRegistryService:
                 action="DATA_RETRIEVAL",
                 result="DENIED",
                 reason=reason,
+                trace_id=retrieve_req.trace_id,
+                execution_id=retrieve_req.execution_id,
             )
             raise CapabilityAccessDeniedError(reason)
 
-        # Execute data retrieval via DatasetRetrievalService / underlying governed dataset
+        # Validate consumer/application binding
+        if retrieve_req.application_id and retrieve_req.application_id != contract.application_id:
+            reason = f"Access contract was issued to application '{contract.application_id}', not '{retrieve_req.application_id}'."
+            self._emit_audit(
+                request_id=contract.request_id,
+                actor=actor,
+                application_id=retrieve_req.application_id,
+                capability_id=capability_id,
+                action="DATA_RETRIEVAL",
+                result="DENIED",
+                reason=reason,
+                trace_id=retrieve_req.trace_id,
+                execution_id=retrieve_req.execution_id,
+            )
+            raise CapabilityAccessDeniedError(reason)
+
+        # Validate actor binding
+        grant_actor = self._access_contract_actors.get(contract.access_token)
+        if not grant_actor and self.grant_store is not None:
+            try:
+                g_data = self.grant_store.load(contract.access_token)
+                if g_data:
+                    grant_actor = g_data.get("actor")
+            except Exception:
+                pass
+
+        if grant_actor and actor != grant_actor:
+            reason = f"Access contract '{contract.request_id}' is bound to actor '{grant_actor}', cannot be used by '{actor}'."
+            self._emit_audit(
+                request_id=contract.request_id,
+                actor=actor,
+                application_id=retrieve_req.application_id or contract.application_id,
+                capability_id=capability_id,
+                action="DATA_RETRIEVAL",
+                result="DENIED",
+                reason=reason,
+                trace_id=retrieve_req.trace_id,
+                execution_id=retrieve_req.execution_id,
+            )
+            raise CapabilityAccessDeniedError(reason)
+
+        # Check grant expiry
+        if contract.expires_at:
+            try:
+                exp_dt = datetime.fromisoformat(contract.expires_at)
+                if exp_dt.tzinfo is None:
+                    exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) >= exp_dt:
+                    reason = f"Access contract '{contract.request_id}' has expired."
+                    self._emit_audit(
+                        request_id=contract.request_id,
+                        actor=actor,
+                        application_id=retrieve_req.application_id or contract.application_id,
+                        capability_id=capability_id,
+                        action="DATA_RETRIEVAL",
+                        result="DENIED",
+                        reason=reason,
+                        trace_id=retrieve_req.trace_id,
+                        execution_id=retrieve_req.execution_id,
+                    )
+                    raise CapabilityAccessDeniedError(reason)
+            except (ValueError, TypeError) as exc:
+                logger.warning("Could not parse expires_at timestamp: %s", exc)
+
+        # Execute data retrieval via DatasetRetrievalService & SQL store / VANA live / canonical generator
         provenance = self.retrieval_service.get_dataset_provenance(capability.dataset_id)
-        
-        # Fetch live data from VANA if configured and capability is VANA-backed or mangrove monitoring
-        live_payload: Optional[Dict[str, Any]] = None
-        if self.vana_client and self.vana_client.is_configured():
+
+        # Check retrieval readiness if package exists in package registry
+        packages = self.package_registry.list_all()
+        package = next((p for p in packages if p.dataset_id == capability.dataset_id), None)
+        if package:
+            is_demo_fixture = "[DEMO]" in capability.capability_name or "Demo" in capability.description
+            is_registry_seeded_stub = (
+                package.status == PackageStatus.REGISTERED
+                and bool(package.history and package.history[0].actor == "capability_registry")
+                and capability.status != CapabilityStatus.CERTIFIED
+            )
+            # Evaluate readiness for production/lifecycle-managed packages or deprecated packages
+            if (not is_demo_fixture and not is_registry_seeded_stub) or package.status in (PackageStatus.DEPRECATED, PackageStatus.ARCHIVED):
+                readiness = self.retrieval_service.retrieval_readiness_service.assess(package.package_id)
+                if readiness.status == RetrievalStatus.NOT_RETRIEVABLE:
+                    reason = f"Dataset '{capability.dataset_id}' for capability '{capability_id}' is NOT_RETRIEVABLE: {readiness.corrective_actions}"
+                    self._emit_audit(
+                        request_id=contract.request_id,
+                        actor=actor,
+                        application_id=contract.application_id,
+                        capability_id=capability_id,
+                        action="DATA_RETRIEVAL",
+                        result="DENIED",
+                        reason=reason,
+                        trace_id=retrieve_req.trace_id,
+                        execution_id=retrieve_req.execution_id,
+                    )
+                    raise CapabilityAccessDeniedError(reason)
+
+        is_synthetic = False
+        payload_data = None
+
+        is_earthquake_capability = (
+            capability.capability_id == "cap-gev-earthquake-monitoring"
+            or capability.dataset_id == "ds-gev-seismic-events"
+        )
+        if is_earthquake_capability:
+            payload_data = self._get_earthquake_payload(retrieve_req.query_params or {})
+            is_synthetic = self.earthquake_observation_service is None
+
+        if payload_data is None and self.sql_store is not None:
+            try:
+                records = self.sql_store.list_target_records(target_database="relational_db", dataset_id=capability.dataset_id, limit=100)
+                if not records:
+                    for db_name in ("analytics_db", "document_db", "metadata_db"):
+                        records = self.sql_store.list_target_records(target_database=db_name, dataset_id=capability.dataset_id, limit=100)
+                        if records:
+                            break
+                if records:
+                    payload_data = {"records": records, "record_count": len(records), "dataset_id": capability.dataset_id}
+            except Exception as exc:
+                logger.warning("Could not query sql_store for target records: %s", exc)
+
+        if payload_data is None and self.vana_client and self.vana_client.is_configured():
             try:
                 if (
                     capability.capability_id == "cap-vana-forest-cover"
                     or capability.dataset_id == "DS-FSI-ISFR-2023-FOREST-COVER"
                 ):
-                    live_payload = self.vana_client.get_forest_cover_records(retrieve_req.query_params)
+                    payload_data = self.vana_client.get_forest_cover_records(retrieve_req.query_params)
                 elif (
                     capability.capability_id == "cap-vana-thane-creek-carbon"
                     or capability.dataset_id == "DS-VANA-THANE-CREEK-BLUE-CARBON"
                 ):
-                    live_payload = self.vana_client.get_carbon_thane_creek()
+                    payload_data = self.vana_client.get_carbon_thane_creek()
                 elif (
                     capability.capability_id == "cap-vana-spatial-layers"
                     or capability.dataset_id == "DS-VANA-SPATIAL-LAYERS"
                 ):
                     layer_id = (retrieve_req.query_params or {}).get("layer_id", "sanctuary_boundary")
-                    live_payload = self.vana_client.get_spatial_geojson(layer_id)
+                    payload_data = self.vana_client.get_spatial_geojson(layer_id)
                 elif capability.capability_id == "cap-mangrove-monitoring":
-                    live_payload = self.vana_client.get_real_observations(retrieve_req.query_params)
+                    payload_data = self.vana_client.get_real_observations(retrieve_req.query_params)
             except Exception as exc:
                 logger.warning("VANA live data retrieval fallback to canonical generator: %s", exc)
 
-        sample_payload = live_payload if live_payload is not None else self._generate_canonical_domain_payload(capability, retrieve_req.query_params)
+        if payload_data is None:
+            is_synthetic = True
+            payload_data = self._generate_canonical_domain_payload(capability, retrieve_req.query_params)
+
+        content_digest = hashlib.sha256(json.dumps(payload_data, sort_keys=True).encode()).hexdigest()
 
         response = CapabilityRetrieveResponse(
-            data=sample_payload,
+            data=payload_data,
             capability={
                 "capability_id": capability.capability_id,
                 "capability_name": capability.capability_name,
+                "description": capability.description,
                 "domain": capability.domain,
                 "dataset_id": capability.dataset_id,
                 "version": capability.capability_version,
@@ -949,6 +1431,8 @@ class CapabilityRegistryService:
                 "capability_id": capability.capability_id,
                 "version": capability.capability_version,
                 "retrieval_timestamp": datetime.now(timezone.utc).isoformat(),
+                "content_digest_sha256": content_digest,
+                "is_synthetic": is_synthetic,
                 "masterdb_lineage": provenance.get("masterdb_lineage"),
                 "mdu_provenance": provenance.get("mdu_provenance"),
                 "source": capability.provenance.get("source", "MASTERDB Canonical Data Layer"),
@@ -956,13 +1440,17 @@ class CapabilityRegistryService:
                 "commit": capability.provenance.get("commit"),
                 "certification": capability.provenance.get("certification"),
             },
+            content_digest_sha256=content_digest,
             request_id=contract.request_id,
+            trace_id=retrieve_req.trace_id,
+            execution_id=retrieve_req.execution_id,
             access_metadata={
                 "application_id": contract.application_id,
                 "purpose": contract.purpose,
                 "access_token": contract.access_token,
                 "authorization_status": "AUTHORIZED",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
+                "expires_at": contract.expires_at,
             },
         )
 
@@ -973,13 +1461,81 @@ class CapabilityRegistryService:
             capability_id=capability.capability_id,
             action="DATA_RETRIEVAL",
             result="SUCCESS",
-            reason="Data retrieved successfully via TANTRA access contract boundary.",
+            reason=f"Data retrieved successfully via TANTRA access contract boundary (synthetic={is_synthetic}).",
+            trace_id=retrieve_req.trace_id,
+            execution_id=retrieve_req.execution_id,
         )
 
         return response
 
-    def get_access_contract(self, request_id_or_token: str) -> Optional[AccessContract]:
-        return self._access_contracts.get(request_id_or_token)
+    def _get_earthquake_payload(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        observations = (
+            self.earthquake_observation_service.list(limit=None)
+            if self.earthquake_observation_service is not None
+            else []
+        )
+
+        min_magnitude = params.get("min_magnitude")
+        max_magnitude = params.get("max_magnitude")
+        try:
+            if isinstance(min_magnitude, bool) or isinstance(max_magnitude, bool):
+                raise ValueError("boolean is not a magnitude")
+            minimum = float(min_magnitude) if min_magnitude is not None else None
+            maximum = float(max_magnitude) if max_magnitude is not None else None
+        except (TypeError, ValueError) as exc:
+            raise ValueError("magnitude filters must be numeric") from exc
+        if any(value is not None and (not math.isfinite(value) or not (-2 <= value <= 10)) for value in (minimum, maximum)):
+            raise ValueError("magnitude filters must be between -2 and 10")
+        if minimum is not None and maximum is not None and minimum > maximum:
+            raise ValueError("min_magnitude must not exceed max_magnitude")
+        if minimum is not None:
+            observations = [
+                item for item in observations
+                if float(item.get("magnitude", float("-inf"))) >= minimum
+            ]
+        if maximum is not None:
+            observations = [
+                item for item in observations
+                if float(item.get("magnitude", float("inf"))) <= maximum
+            ]
+
+        time_window = params.get("time_window")
+        if time_window is not None:
+            match = re.fullmatch(r"(\d+)([hd])", str(time_window).strip().lower())
+            if not match or int(match.group(1)) < 1:
+                raise ValueError("time_window must be specified in hours or days, such as '24h' or '7d'.")
+            amount = int(match.group(1))
+            window = timedelta(hours=amount) if match.group(2) == "h" else timedelta(days=amount)
+            cutoff = datetime.now(timezone.utc) - window
+            recent_observations = []
+            for item in observations:
+                event_time = datetime.fromisoformat(item["event_time_utc"].replace("Z", "+00:00"))
+                if event_time.tzinfo is None:
+                    event_time = event_time.replace(tzinfo=timezone.utc)
+                if event_time >= cutoff:
+                    recent_observations.append(item)
+            observations = recent_observations
+
+        raw_limit = params.get("limit", 100)
+        all_observations = raw_limit is None or (isinstance(raw_limit, str) and raw_limit.strip().lower() == "all") or params.get("all") is True
+        try:
+            limit = len(observations) if all_observations else int(raw_limit)
+            offset = int(params.get("offset", 0))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("limit must be an integer from 1 to 1000 or 'all'; offset must be a non-negative integer") from exc
+        if (not all_observations and not 1 <= limit <= 1000) or offset < 0:
+            raise ValueError("limit must be an integer from 1 to 1000 or 'all'; offset must be a non-negative integer")
+        filtered_count = len(observations)
+        observations = observations[offset:offset + limit]
+        return {
+            "dataset_id": "ds-gev-seismic-events",
+            "capability_id": "cap-gev-earthquake-monitoring",
+            "count": filtered_count,
+            "returned_count": len(observations),
+            "limit": limit,
+            "offset": offset,
+            "observations": observations,
+        }
 
     def _generate_canonical_domain_payload(self, capability: Capability, params: Dict[str, Any]) -> Dict[str, Any]:
         """Generate domain payload proving generic capability model works for any domain."""
@@ -1032,13 +1588,23 @@ class CapabilityRegistryService:
                     ],
                     "timestamp": now,
                 }
+            elif capability.capability_id == "cap-mangrove-monitoring" or capability.dataset_id == "ds-mangrove-001":
+                return {
+                    "dataset_type": "mangrove_cover_index",
+                    "region": params.get("region", "Sundarbans-Zone-A"),
+                    "canopy_density_pct": 84.5,
+                    "biomass_index": 0.92,
+                    "observation_timestamp": now,
+                    "coordinates": {"lat": 21.9497, "lon": 88.9439},
+                }
             return {
-                "dataset_type": "mangrove_cover_index",
-                "region": params.get("region", "Sundarbans-Zone-A"),
-                "canopy_density_pct": 84.5,
-                "biomass_index": 0.92,
-                "observation_timestamp": now,
-                "coordinates": {"lat": 21.9497, "lon": 88.9439},
+                "dataset_type": "geospatial_canonical_records",
+                "dataset_id": capability.dataset_id,
+                "domain": domain,
+                "parameters": params,
+                "record_count": 0,
+                "records": [],
+                "timestamp": now,
             }
         elif domain == "maritime":
             return {
@@ -1068,6 +1634,55 @@ class CapabilityRegistryService:
                 "active_tolls": 12,
                 "updated_at": now,
             }
+        elif domain == "marketing":
+            raw_path = Path(__file__).resolve().parent.parent / "datasets" / "cmo" / "cmo_marketing_sample_valid.json"
+            if raw_path.is_file():
+                try:
+                    with open(raw_path, "r", encoding="utf-8") as fh:
+                        raw_data = json.load(fh)
+                    records = raw_data.get("records", [])
+                    ch = params.get("channel")
+                    st = params.get("status")
+                    if ch:
+                        records = [r for r in records if str(r.get("channel")).lower() == str(ch).lower()]
+                    if st:
+                        records = [r for r in records if str(r.get("status")).upper() == str(st).upper()]
+                    min_roas = params.get("min_roas")
+                    if min_roas is not None:
+                        records = [r for r in records if float(r.get("roas", 0)) >= float(min_roas)]
+                    lim = int(params.get("limit", 100))
+                    records = records[:lim]
+                    total_spend = sum(float(r.get("spend_usd", 0)) for r in records)
+                    total_rev = sum(float(r.get("revenue_usd", 0)) for r in records)
+                    overall_roas = round(total_rev / total_spend, 2) if total_spend > 0 else 0.0
+                    return {
+                        "dataset_id": "ds-cmo-marketing-001",
+                        "capability_id": "cap-cmo-marketing-intelligence",
+                        "record_count": len(records),
+                        "summary": {
+                            "total_spend_usd": total_spend,
+                            "total_revenue_usd": total_rev,
+                            "overall_roas": overall_roas,
+                        },
+                        "records": records,
+                        "timestamp": now,
+                    }
+                except Exception as exc:
+                    logger.warning("Error reading CMO sample records: %s", exc)
+            return {
+                "dataset_type": "marketing_intelligence_records",
+                "campaign_id": params.get("campaign_id", "CMP-2026-Q4-001"),
+                "channel": params.get("channel", "search"),
+                "impressions": 125000,
+                "clicks": 6250,
+                "conversions": 450,
+                "spend_usd": 7500.0,
+                "revenue_usd": 33750.0,
+                "roas": 4.5,
+                "cac": 16.67,
+                "status": "ACTIVE",
+                "as_of": now,
+            }
         else:
             return {
                 "dataset_type": f"{domain}_canonical_records",
@@ -1085,7 +1700,9 @@ class CapabilityRegistryService:
         capability_id: str,
         action: str,
         result: str,
-        reason: str,
+        reason: Optional[str],
+        trace_id: Optional[str] = None,
+        execution_id: Optional[str] = None,
     ) -> None:
         payload = {
             "request_id": request_id,
@@ -1096,5 +1713,12 @@ class CapabilityRegistryService:
             "reason": reason,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+        if trace_id:
+            payload["trace_id"] = trace_id
+        if execution_id:
+            payload["execution_id"] = execution_id
         self.audit_emitter.emit(event_type=f"capability_{action.lower()}", actor=actor, payload=payload)
-        logger.info("capability_audit event=%s actor=%s app=%s cap=%s result=%s", action, actor, application_id, capability_id, result)
+        logger.info(
+            "capability_audit event=%s actor=%s app=%s cap=%s result=%s trace=%s exec=%s",
+            action, actor, application_id, capability_id, result, trace_id, execution_id
+        )

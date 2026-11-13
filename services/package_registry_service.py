@@ -33,13 +33,18 @@ class PackageNotFoundError(KeyError):
     """Raised when a package_id does not exist in the registry."""
 
 
+class PackageAlreadyExistsError(ValueError):
+    """Raised when attempting to register a package_id that already exists."""
+
+
 class PackageRegistryService:
-    def __init__(self, store_dir: str = "registry_store") -> None:
+    def __init__(self, store_dir: str = "registry_store", report_service: Optional[object] = None) -> None:
         # Reuse ArtifactStore's simple JSON-per-key persistence, keyed by
         # package_id instead of dataset_id, in a dedicated directory so
         # registry records never collide with validation/certification
         # artifacts.
         self.store = ArtifactStore(reports_dir=store_dir)
+        self.report_service = report_service
 
     def get_by_dataset_id(self, dataset_id: str) -> KnowledgePackage:
         for pkg in self.list_all():
@@ -60,16 +65,31 @@ class PackageRegistryService:
         owner: str,
         actor: str = "system",
         reason: str = "Initial package registration.",
+        package_id: Optional[str] = None,
     ) -> KnowledgePackage:
-        package = KnowledgePackage(
-            dataset_id=dataset_id,
-            dataset_version=dataset_version,
-            schema_version=schema_version,
-            board=board,
-            medium=medium,
-            language=language,
-            owner=owner,
-        )
+        if package_id:
+            if self.store.load(package_id) is not None:
+                raise PackageAlreadyExistsError(f"Package with package_id={package_id} already exists.")
+            package = KnowledgePackage(
+                package_id=package_id,
+                dataset_id=dataset_id,
+                dataset_version=dataset_version,
+                schema_version=schema_version,
+                board=board,
+                medium=medium,
+                language=language,
+                owner=owner,
+            )
+        else:
+            package = KnowledgePackage(
+                dataset_id=dataset_id,
+                dataset_version=dataset_version,
+                schema_version=schema_version,
+                board=board,
+                medium=medium,
+                language=language,
+                owner=owner,
+            )
         transition = PackageTransition(
             from_status=None,
             to_status=PackageStatus.REGISTERED,
@@ -99,6 +119,16 @@ class PackageRegistryService:
                 f"to {to_status.value}. Allowed transitions from {current_status.value}: "
                 f"{[status.value for status in allowed_next] or 'none (terminal state)'}."
             )
+        if to_status in (PackageStatus.CERTIFIED, PackageStatus.RETRIEVAL_READY) and self.report_service:
+            try:
+                report = getattr(self.report_service, "get_report")(package.dataset_id)
+                if report.get("state") == "REJECTED" or not report.get("ingestion_decision", {}).get("eligible_for_masterdb", True):
+                    raise InvalidTransitionError(
+                        f"Cannot transition package {package_id} to {to_status.value}: "
+                        f"dataset {package.dataset_id} failed certification (state: REJECTED)."
+                    )
+            except KeyError:
+                pass
         transition = PackageTransition(
             from_status=current_status,
             to_status=to_status,

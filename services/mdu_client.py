@@ -9,9 +9,9 @@ returns is treated as MDU-owned data by the caller (MDUContractAdapter).
 
 Configuration is read from environment variables so no credentials are
 hardcoded in source:
-    MDU_BASE_URL           e.g. https://bhiv-mdu-api.onrender.com
+    MDU_BASE_URL           e.g. https://parakosha.blackholeinfiverse.com/
     MDU_API_KEY            the X-API-Key header value
-    MDU_TIMEOUT_SECONDS    client timeout (default: 30.0s for Render cold-starts)
+    MDU_TIMEOUT_SECONDS    client timeout (default: 10s; increase only if MDU cold starts require it)
 
 If MDU_BASE_URL / MDU_API_KEY are not set, every method raises
 MDUUnavailableError rather than silently falling back to placeholder data —
@@ -21,6 +21,7 @@ placeholder fallback is acceptable for their use case.
 import logging
 import os
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote
 
 import httpx
 from utils.trace import generate_trace_id, normalize_trace_id
@@ -41,10 +42,14 @@ class MDUClient:
     ) -> None:
         self.base_url = (base_url or os.environ.get("MDU_BASE_URL") or "").rstrip("/")
         self.api_key = api_key or os.environ.get("MDU_API_KEY")
-        if timeout_seconds is not None:
-            self.timeout_seconds = timeout_seconds
-        else:
-            self.timeout_seconds = float(os.environ.get("MDU_TIMEOUT_SECONDS", "30.0"))
+        # Keep optional MDU enrichment from tying up retrieval requests for a
+        # full minute during an upstream outage. Deployments with documented
+        # scale-to-zero cold starts can opt into a longer timeout explicitly.
+        self.timeout_seconds = (
+            timeout_seconds
+            if timeout_seconds is not None
+            else float(os.environ.get("MDU_TIMEOUT_SECONDS", "10"))
+        )
 
         # Circuit breaker to prevent cascading failures if MDU is down.
         from middleware.circuit_breaker import CircuitBreaker
@@ -69,17 +74,31 @@ class MDUClient:
             "X-API-Key": self.api_key or "",
             "X-Trace-Id": tid,
         }
-
+    # -- Read contract surface -----------------------------------------------
     # -- Read contract surface -----------------------------------------------
 
+    @staticmethod
+    def _dataset_path_id(dataset_id: str) -> str:
+        """Encode an ID as one URL path segment, never as path syntax."""
+        return quote(dataset_id, safe="")
+
     def get_dataset_schema(self, dataset_id: str, trace_id: Optional[str] = None) -> Any:
-        return self._get(f"/api/v1/schemas/dataset/{dataset_id}", trace_id=trace_id)
+        return self._get(
+            f"/api/v1/schemas/dataset/{self._dataset_path_id(dataset_id)}",
+            trace_id=trace_id,
+        )
 
     def get_dataset_provenance(self, dataset_id: str, trace_id: Optional[str] = None) -> Any:
-        return self._get(f"/api/v1/datasets/{dataset_id}/provenance", trace_id=trace_id)
+        return self._get(
+            f"/api/v1/datasets/{self._dataset_path_id(dataset_id)}/provenance",
+            trace_id=trace_id,
+        )
 
     def get_canonical_dataset(self, dataset_id: str, trace_id: Optional[str] = None) -> Any:
-        return self._get(f"/api/v1/datasets/canonical/{dataset_id}", trace_id=trace_id)
+        return self._get(
+            f"/api/v1/datasets/canonical/{self._dataset_path_id(dataset_id)}",
+            trace_id=trace_id,
+        )
 
     def validate_all_provenance(self, trace_id: Optional[str] = None) -> Any:
         return self._get("/api/v1/discovery/provenance/validate-all", trace_id=trace_id)
@@ -88,7 +107,10 @@ class MDUClient:
         return self._get("/api/v1/discovery/summary", trace_id=trace_id)
 
     def get_dataset_relationships(self, dataset_id: str, trace_id: Optional[str] = None) -> Any:
-        return self._get(f"/api/v1/relationships/dataset/{dataset_id}", trace_id=trace_id)
+        return self._get(
+            f"/api/v1/relationships/dataset/{self._dataset_path_id(dataset_id)}",
+            trace_id=trace_id,
+        )
 
     # -- Write contract surface ----------------------------------------------
 
@@ -99,7 +121,11 @@ class MDUClient:
         Record a provenance event against MDU via POST /api/v1/datasets/{dataset_id}/provenance.
         `dataset_id` MUST be MDU's internal UUID.
         """
-        return self._post(f"/api/v1/datasets/{dataset_id}/provenance", json_data=payload, trace_id=trace_id)
+        return self._post(
+            f"/api/v1/datasets/{self._dataset_path_id(dataset_id)}/provenance",
+            json_data=payload,
+            trace_id=trace_id,
+        )
 
     def create_relationship(
         self, payload: Dict[str, Any], trace_id: Optional[str] = None

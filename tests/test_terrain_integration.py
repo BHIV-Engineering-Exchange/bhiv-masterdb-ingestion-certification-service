@@ -38,7 +38,7 @@ def test_authenticated_terrain_routes_and_unavailable_registry_status(monkeypatc
         client = TestClient(main.app)
         assert client.get("/geospatial/terrain/manifest").status_code == 401
         assert client.post("/geospatial/terrain/verify").status_code == 401
-        main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["viewer"])
+        main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["operator"])
         manifest = client.get("/geospatial/terrain/manifest")
         assert manifest.status_code == 200
         assert manifest.json()["provider"] == "Re:Earth Terrain / Mapterhorn"

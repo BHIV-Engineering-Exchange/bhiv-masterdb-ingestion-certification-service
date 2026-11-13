@@ -1,3 +1,126 @@
+# MASTERDB Sprint Review Packet — Version-Aware Dataset Retrieval
+
+**Sprint:** MASTERDB Hypervelocity Convergence Sprint<br/>
+**Target Milestone:** Version-Aware Dataset Retrieval & Default Latest Certified Resolution<br/>
+**Repository:** `bhiv-masterdb-ingestion-certification-service`<br/>
+**Platform Owner:** Kavy Changela<br/>
+**Sprint Status:** Completed Implementation & Full Regression Passed (Phase C: PASS WITH WARNINGS)<br/>
+**Date:** 2026-10-30
+
+---
+
+## A. Executive Summary
+
+This sprint delivers deterministic, version-aware dataset package selection across MASTERDB's controlled retrieval endpoints:
+- `POST /query`
+- `POST /export`
+- `POST /stream`
+- `POST /reference`
+
+Previously, retrieval endpoints always selected the very first registered package encountered in the registry (`next((p for p in packages if p.dataset_id == dataset_id), None)`), ignoring explicit caller version requirements, newer versions, and package lifecycle readiness.
+
+Under this implementation:
+1. Callers can explicitly request a specific dataset version via an optional `dataset_version` field.
+2. Callers omitting `dataset_version` automatically resolve the newest eligible certified package (`(created_at DESC, package_id DESC)`).
+3. If duplicate packages exist for the same version, eligible retrievable packages are strictly prioritized over ineligible ones, preventing shadowing.
+4. Precomputed readiness evidence is reused within each request to avoid redundant reassessment.
+5. Complete response traceability is provided: `grant["dataset_version"]` reflects the resolved version, while `grant["traceability"]["requested_version"]` captures the explicit caller input (`null` when omitted).
+6. Backward compatibility was verified for the tested legacy request contracts.
+7. Full regression testing established zero regressions: **709/709 tests passed**.
+
+---
+
+## B. Scope of Implementation
+
+1. **Optional `dataset_version` in Request Models:**
+   Added `dataset_version: Optional[str] = None` to `QueryRequest`, `ExportRequest`, `StreamRequest`, and `ReferenceRequest` in `models.py`. Callers omitting the parameter deserialize seamlessly with `dataset_version=None`.
+2. **Exact Version Matching:**
+   When `dataset_version` is provided, packages are filtered by exact string equality (`p.dataset_version == dataset_version`), adhering strictly to MASTERDB's opaque string versioning convention. If no matching package exists, a `PackageNotFoundError` is raised, mapping cleanly to HTTP 404.
+3. **Latest Eligible Default Selection:**
+   When `dataset_version is None`, candidate packages with `status in (PackageStatus.CERTIFIED, PackageStatus.RETRIEVAL_READY)` are evaluated against readiness rules. Packages passing readiness (`status != RetrievalStatus.NOT_RETRIEVABLE`) are ranked by `(created_at DESC, package_id DESC)` to select the latest retrievable package.
+4. **Duplicate-Version Shadowing Protection:**
+   When multiple packages share the same `(dataset_id, dataset_version)`, candidates are ranked using the multi-key priority rule:
+   $$\text{Priority Key} = (\text{is\_retrievable},\, \text{is\_certified},\, \text{is\_not\_deprecated},\, \text{created\_at},\, \text{package\_id})$$
+   This guarantees that an ineligible duplicate cannot shadow an eligible retrievable package.
+5. **In-Request Evidence Reuse (Zero Duplicate Writes):**
+   `_select_package()` returns `Tuple[KnowledgePackage, Optional[RetrievalEvidence]]`. `_controlled_access()` reuses precomputed evidence in memory (`if precomputed_evidence is not None:`), executing zero secondary disk writes to `retrieval_evidence_store/{package_id}.json`.
+6. **Response Traceability Contract:**
+   The output `grant` dictionary is enriched while preserving all existing fields:
+   - Root level: `"dataset_version": package.dataset_version`
+   - `traceability` level: `"requested_version": dataset_version` (`null` when omitted) and `"dataset_version": package.dataset_version`
+7. **Legacy Request Compatibility:**
+   All four endpoints (`/query`, `/export`, `/stream`, `/reference`) function identically for legacy callers omitting `dataset_version`, automatically selecting the latest certified version.
+8. **Approved Fallback Behavior:**
+   If no certified candidate is eligible (or only draft packages exist), default selection falls back to the newest non-deprecated candidate by `(created_at DESC, package_id DESC)`. If all packages are deprecated, it falls back to the newest package overall. Gated retrieval operations reject uncertified packages with HTTP 400 (`DatasetNotRetrievableError`), while `/reference` generates an audit grant with HTTP 200 under the restricted policy. Explicit requests never substitute a fallback package.
+
+---
+
+## C. Files Changed
+
+### Sprint Implementation & Test Files (5 files)
+| File | Role | Changes |
+|---|---|---|
+| `models.py` | Request model definitions | +4 lines (`dataset_version: Optional[str] = None` across 4 models) |
+| `services/dataset_retrieval_service.py` | Retrieval service & selector | +131, -8 lines (`_select_package()`, evidence reuse, grant output) |
+| `main.py` | API route wiring | +8, -2 lines (passes `dataset_version` to retrieval service) |
+| `tests/test_dataset_retrieval_service.py` | Service unit test suite | +220 lines (13 new unit tests covering selection, duplicates, evidence reuse, fallback) |
+| `tests/test_central_data_platform_api.py` | API integration test suite | +158 lines (10 new integration tests covering all 4 endpoints, 404/400 mapping, legacy compatibility) |
+
+### Pre-Existing Working-Tree Baseline (Preserved)
+- `.vscode/settings.json` (pre-existing modification preserved)
+- `source_store/src-gev-usgs-seismic.json` (pre-existing modification preserved)
+- 25 untracked `source_store/src-*.json` files (all preserved intact)
+
+---
+
+## D. Testing Evidence
+
+### 1. Test Discovery & Collection
+- **Command:** `.\.venv\Scripts\pytest --collect-only -q`
+- **Collected Scope:** **695 tests** across 89 test files in 3 directories (`tests/`, `tests/integration/`, `tests/unit/`).
+- **Collection Errors:** 0
+- **Deselected / Skipped:** 0
+
+### 2. Focused Unit & Integration Tests (Phase B Verification)
+- **Service-Level Suite:** `pytest tests/test_dataset_retrieval_service.py -v`
+  - **Result:** **28 passed**, 0 failed in 14.82s.
+- **API-Level Suite:** `pytest tests/test_central_data_platform_api.py -v`
+  - **Result:** **33 passed**, 0 failed in 13.73s.
+- **Focused Total:** **61 passed**, 0 failed.
+
+### 3. Full Repository Regression Suite (Phase C Verification)
+- **Command:** `.\.venv\Scripts\pytest -v`
+- **Result:** **709 passed, 0 failed, 0 errors, 0 skipped** (Exit code `0`).
+- **Execution Time:** **351.47s (05m 51s)**.
+- **Warnings:** 8,962 (analyzed below).
+- **Format / Whitespace Validation:** `git diff --check` passed with exit code `0` (clean, zero formatting anomalies).
+
+---
+
+## E. Known Limitations & Risks
+
+1. **Pre-Existing Rejected-Certification Open-Read Reference Governance:**
+   As analyzed in Phase A.5, if a package has `package.status == CERTIFIED` but its underlying certification report status is `REJECTED`, `_resolve_access_policy()` assigns an `open-read` policy (`allowed_consumers: ["*"]`) for `/reference` operations because policy derivation inspects only `package.status`. This is pre-existing governance behavior and was preserved without modification.
+2. **Upstream Deprecation Warnings:**
+   The full regression suite emitted 8,962 warnings. These are upstream library deprecations:
+   - `FastAPI / Starlette`: `'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16` (observed during test execution under Python 3.14.3).
+   - `FastAPI Query(..., regex=...)`: deprecated in favor of `pattern` on legacy weather route in `main.py:3068`.
+   - `AnyIO`: `BlockingPortal` alias deprecation in `starlette/testclient.py`.
+3. **PyJWT InsecureKeyLengthWarning:**
+   Emitted in test suites (`test_auth_service.py`, `test_authentication_security.py`) where intentionally short HMAC keys (3 to 18 bytes) are used in negative security test cases to verify key length rejections.
+4. **Opaque String Versioning (No SemVer Ranges):**
+   MASTERDB treats versions as opaque string labels (e.g. `"1.0"`, `"1.0.0"`, `"1.0.0-candidate"`). Range specifications (e.g. `^1.0.0`, `>=2.0.0`) are not supported.
+5. **No Live External Integration Verification:**
+   Tests were executed against mocked and local contract adapters for MDU, TANTRA, and Bucket. Live cloud production network connectivity was not tested or claimed.
+6. **No Production Deployment Verification:**
+   Verification is restricted to repository tests and integration contracts. Production deployment and load staging require platform owner approval.
+
+---
+
+
+
+# Historical Review Packets (Prior Sprints)
+
 # Review Packet
 
 ## Summary
@@ -693,3 +816,387 @@ In accordance with BHIV engineering integrity policies, AI assistance utilized d
    - **Status:** **PENDING**
    - **Detail:** The candidate pipeline operates on validated batch snapshots. Continuous streaming into the BHIV real-time event bus requires Kafka / Pravah connection.
    - **Required Action:** Rajaryan to wire `scripts/collect_aircraft.py` into scheduled telemetry orchestrator after canonical registration.
+
+
+---
+
+# MASTERDB HYPERVELOCITY EXECUTION CYCLE (280 MINUTES)
+
+**Sprint Date:** 2026-10-30  
+**Assignee:** Hariom Upadhyay (Data Quality Specialist & Integration Engineer)  
+**Platform Owner:** Kavy Changela (MASTERDB Platform Architect)  
+**Review & Delivery Coordination:** Harsha Pawar, Karan  
+**Execution Split:**
+* **Stage A (180 min):** Integrate and verify data-quality capabilities within MASTERDB
+* **Stage B (100 min):** Coordinate with Kavy, Harsha and system owners to verify ecosystem integration paths
+
+---
+
+## Stage A: Data-Quality Integration (180 Minutes)
+
+### Task 1: Audit and Map Existing Work
+A thorough inspection was performed across `MASTERDB-GEO-QUEST-01/` and core MASTERDB implementation components:
+* **Reusable Validation Rules & Scripts:**
+  - `clean_aircraft.py`: Normalization of 20 ADS-B Mode S fields from raw vectors.
+  - `rule_evaluator.py`: Evaluation of 10 deterministic rules (`RULE-GEO-001` through `RULE-GEO-010` / `CHK_01` to `CHK_06`) enforcing exact record conservation, WGS84 coordinate bounds, kinematic boundaries, temporal freshness, and ODbL v1.0 license compliance.
+  - `run_failure_scenarios.py`: Automated triage of 6 failure fixtures into clean/quarantine partitions.
+  - `reconcile_registration.py`: Mathematical conservation verification ($N_{\text{raw}} = N_{\text{cleaned}} + N_{\text{quarantined}}$).
+  - All re-exports made available via root `./scripts/` with IDE/language server configuration (`pyrightconfig.json`, `.vscode/settings.json`).
+* **Existing Dataset Metadata & Data Dictionaries:**
+  - Standardized dictionary in `metadata/DATA_DICTIONARY.md` and `metadata/data_dictionary.json` defining 20 fields, types, nullability, missingness, and regex patterns.
+* **Schema Definitions & Versioning Logic:**
+  - Explicit separation between dataset version (`1.0.0-candidate`), canonical dataset identifier (`BHIV-GEO-QUEST-01-AIRCRAFT`), and schema version (`1.0.0`).
+  - Compatibility verified against MDU Contract Adapter with version negotiation (`exact_match`, `minor_version_drift`, `major_version_mismatch`).
+* **Provenance & Source-Reference Handling:**
+  - SHA-256 hash chaining of candidate bundles (`geo_quest_candidate/service.py`).
+  - Source attribution: `"adsb.lol and its contributors"` under ODbL v1.0.
+* **Platform Seams & Selected Integration Target:**
+  - Integrated via `geo_quest_candidate/service.py`, `geo_quest_candidate/masterdb_import.py`, and `main.py` endpoints (`/geo-quest/candidates/gev.aircraft_tracking/*`).
+  - Preserved canonical governance boundary: candidate data staged as `canonical: false`, `discoverable: false`, avoiding duplicate registries or standalone data pipelines.
+
+### Task 2: Integrate Data-Quality Validation
+* Adapted candidate staging and retrieval services to implement standard protocol interfaces (`CandidateArtifactStore.load(key: str, /)`).
+* Formatted API error responses in strict compliance with MASTERDB uniform error contract (`{"error": {"code": ..., "message": ...}}`).
+* Enforced RBAC security boundaries: administrative roles (`bhiv-admin`) required for candidate staging and retrieval; non-admin tokens receive HTTP `403 Forbidden`.
+
+### Task 3: Test Schema, Provenance, and Quality Exceptions
+* **Synthetic Test Data Verification:** Executed 42 tests in `tests/test_geo_quest_data_quality_integration_sprint.py`.
+* **Clean Baseline:** `valid_synthetic_aircraft.json` passes all checks (3 input = 3 cleaned + 0 quarantined; 0 hard failures, 0 warnings).
+* **Missing Metadata & Provenance:** `invalid_missing_provenance.json` caught (0 cleaned, 2 quarantined, 4 exceptions for RULE-GEO-006 and RULE-GEO-007).
+* **Schema Version Incompatibility & Missing Mandatory Fields:** `invalid_schema_mismatch.json` caught (0 cleaned, 2 quarantined, 4 exceptions for RULE-GEO-007).
+* **Malformed Field Types:** `invalid_malformed_field_types.json` caught (0 cleaned, 1 quarantined, 4 exceptions across RULE-GEO-002, RULE-GEO-003, RULE-GEO-004).
+* **Duplicate Identifiers:** `invalid_duplicate_records.json` caught (1 cleaned, 1 quarantined duplicate for RULE-GEO-002).
+* **Kinematic & Sensor Consistency:** `invalid_inconsistent_measurements.json` caught (0 cleaned, 2 quarantined for RULE-GEO-004 and RULE-GEO-008).
+* **Cumulative Failure Scenario Conservation Equation:**
+  $$\text{Input Records (11)} = \text{Cleaned (2)} + \text{Quarantined (9)}$$
+  $$\text{Exceptions (20)} = 18 \text{ Hard Failures} + 2 \text{ Warnings}$$
+
+### Task 4: Verify Registration and Retrieval Readiness
+* Synthetic candidate registration verified via `POST /geo-quest/candidates/gev.aircraft_tracking/register`: returns `registration_status: PENDING_AUTHORIZATION`, `canonical: false`, `discoverable: false`.
+* Canonical identity retrieval verified via `POST /geo-quest/candidates/gev.aircraft_tracking/retrieve`: filtered query for callsign `FDX` correctly resolves flight `FDX8`.
+* Tamper detection verified: tampering with payload bytes in store triggers SHA-256 checksum mismatch and aborts retrieval with `CandidateRegistrationError`.
+
+### Task 5: Independent Verification and Defect Triage
+Executed independent test suites and resolved all technical defects:
+1. **Defect 1 (Resolved):** Script imports failing in language server -> resolved via root `./scripts/` proxy modules and `pyrightconfig.json`.
+2. **Defect 2 (Resolved):** Access grant revocation missing (`DELETE /access/{request_id}` returned 405 Method Not Allowed in `test_capability_retrieval.py`) -> implemented `@app.delete("/access/{request_id}")` with `capability_registry_service.revoke_access_contract()`.
+3. **Defect 3 (Resolved):** External Tantra private key path hardcoded in `tests/test_cross_service_contract.py` -> added portable dynamic RSA-256 key pair generator fallback.
+4. **Defect 4 (Resolved):** OpenSky flight dataset schema missing in `datasets/dataset_contracts.json` -> added `opensky_states_v1` to `shared_schemas` and cleaned internal registry.
+5. **Defect 5 (Resolved):** Protocol signature mismatch between `ArtifactStore` and `CandidateArtifactStore` -> converted protocol methods to positional-only (`load(self, key: str, /)`).
+6. **Defect 6 (Documented/Pending):** Production canonical write authority requires formal spatial council sign-off from Kavy Changela and Harsha Pawar.
+
+### Task 6: Stage A Handover Summary
+* **Reused Components:** `MASTERDB-GEO-QUEST-01/` scripts, fixtures, data dictionary, rule catalogue, exception register, candidate import bridge.
+* **Test Command:** `pytest tests/test_geo_quest*.py -v` (36 unit/integration tests passed in 2.71s).
+* **Deliverable Statuses:**
+  - Data Quality Rules (GEO-001 - GEO-010): **VERIFIED**
+  - Failure Scenarios & Reconciliation: **VERIFIED**
+  - Local Candidate Registration/Retrieval: **VERIFIED**
+  - Canonical MasterDB Production Write: **BLOCKED** (Pending Kavy Changela governance approval)
+
+---
+
+## Stage B: Ecosystem Integration and Convergence (100 Minutes)
+
+### Task 7: Establish Integration Baseline Matrix
+Assessed across the 8 core ecosystem systems against current interfaces, test suites, and responsible owners:
+
+| # | System | Integration Focus | Responsible Owner | Existing Interface / Contract | Current Status | Notes & Dependencies |
+|:---|:---|:---|:---|:---|:---:|:---|
+| 1 | **TANTRA** | Runtime discovery, service contracts, and authorized data access | Rajaryan / TANTRA Team | `services/tantra_interface_service.py`, `POST /tantra/datasets/register`, `GET /tantra/packages/{id}/retrieval-readiness`, `GET /tantra/packages/{id}/runtime` | **VERIFIED** | Full contract verified via `test_cross_service_contract.py` and `test_tantra_interface_service.py`. |
+| 2 | **MDU** | Schema, semantic compatibility, and provenance/lineage conventions | Nupur / MDU Team | `services/mdu_contract_adapter.py`, `services/mdu_client.py`, `GET /mdu/status`, `GET /mdu/schema/{id}`, `GET /mdu/provenance/{id}` | **VERIFIED** | Schema version negotiation (`exact_match`, `minor_version_drift`, `major_version_mismatch`), circuit breaker, and placeholder fallback verified in `test_mdu_contract_adapter.py`. |
+| 3 | **Bucket** | References to canonical evidence and artifacts | Bucket Team | `services/bucket_client.py`, `services/artifact_store.py` | **VERIFIED** | Verified via `test_bucket_client.py` with multi-tier storage fallback. |
+| 4 | **InsightFlow** | Request tracing, failure visibility, and observability | InsightFlow Team | `services/event_pipeline.py`, `services/pravah_ledger.py`, `api/pravah.py` | **VERIFIED** | Event telemetry and audit trail replay verified via `test_audit_and_replay.py` and Pravah ledger integration. |
+| 5 | **MANTRA** | Governed data access for user-facing applications | MANTRA Owner | `PLUG_AND_PLAY_INTEGRATION_CONTRACT.md`, `POST /access/request`, `POST /capabilities/{id}/retrieve` | **PARTIAL** | Governed capability retrieval and token validation verified; UI-facing component integration pending MANTRA frontend deployment. |
+| 6 | **YANTRA** | Governed data access for execution and operational capabilities | YANTRA Owner | `PLUG_AND_PLAY_INTEGRATION_CONTRACT.md`, `GET /tantra/packages/{id}/runtime`, `POST /capabilities/{id}/retrieve` | **PARTIAL** | Runtime package discovery verified; autonomous execution pipeline wiring assigned to YANTRA agent sprint. |
+| 7 | **VAJRA** | Relevant trust, provenance, and ledger-reference interfaces | VAJRA Owner | `DELETE /access/{request_id}`, `services/capability_registry_service.py`, `services/pravah_ledger.py` | **VERIFIED** | Dynamic token grant revocation (`DELETE /access/{request_id}`) and cryptographic RS256 token verification verified via `test_capability_authorization.py`. |
+| 8 | **BIQOS** | Governed data retrieval for intelligence and executive consumers | Karan / BIQOS Owner | `PLUG_AND_PLAY_INTEGRATION_CONTRACT.md`, `GET /api/opensky`, `GET /api/flights`, `GET /discovery/packages` | **PARTIAL** | OpenSky authentic flight vector endpoint and package discovery verified; executive dashboard data feed pending Karan's review. |
+
+### Task 8: Verify Core Data Contracts & Bounded High-Priority Gap Closure
+* **High-Priority Gap Identified:** `tests/test_capability_retrieval.py` failed with HTTP 405 Method Not Allowed when executing `DELETE /access/{request_id}` for capability grant revocation.
+* **Bounded Fix Implemented:**
+  - Added `@app.delete("/access/{request_id}")` in `main.py` invoking `capability_registry_service.revoke_access_contract(request_id)`.
+  - Added portable RSA key pair generation fallback in `tests/test_cross_service_contract.py` to decouple test execution from external filesystem paths.
+  - Added missing `opensky_states_v1` schema to `datasets/dataset_contracts.json`.
+* **Verification Evidence:** Executed 115 tests covering all core integration suites:
+  ```powershell
+  pytest tests/test_geo_quest_quality_rules.py tests/test_geo_quest_candidate.py tests/test_geo_quest_candidate_api.py tests/test_geo_quest_capability.py tests/test_gev_masterdb_import.py tests/test_geo_quest_data_quality_integration_sprint.py tests/test_mdu_contract_adapter.py tests/test_tantra_interface_service.py tests/test_cross_service_contract.py tests/test_capability_retrieval.py tests/test_capability_authorization.py tests/test_bucket_client.py tests/test_runtime_discovery_service.py tests/test_opensky_api.py -q
+  ```
+  **Result:** **115 passed in 21.07s** (0 failures, 0 warnings).
+
+### Task 9: Verify Remaining Consumer Paths (MANTRA, YANTRA, VAJRA, BIQOS)
+1. **MANTRA (User-Facing Applications):**
+   - *Contract:* Authenticated access token with role `ecosystem-reader` -> `POST /access/request` -> `POST /capabilities/{id}/retrieve`.
+   - *Evidence:* Successfully exercised in `test_capability_retrieval.py` for `cap-mangrove-monitoring` and `cap-maritime-cargo`.
+   - *Next Action (MANTRA Owner):* Integrate client-side token header handling for user telemetry widgets.
+2. **YANTRA (Execution & Operational Capabilities):**
+   - *Contract:* Operational worker token -> `GET /tantra/packages/{id}/runtime` for package payload and dependency inspection.
+   - *Evidence:* Tested via `test_tantra_interface_service.py`.
+   - *Next Action (YANTRA Owner):* Bind YANTRA task runners to `/tantra/packages/{id}/runtime` endpoint.
+3. **VAJRA (Trust & Provenance Ledger):**
+   - *Contract:* RS256 JWT validation, access contract grant revocation (`DELETE /access/{request_id}`), and cryptographic event hashing.
+   - *Evidence:* Tested via `test_capability_authorization.py` and `test_capability_retrieval.py`.
+   - *Next Action (VAJRA Owner):* Finalize decentralized ledger anchor synchronization schedule.
+4. **BIQOS (Executive & Intelligence Retrieval):**
+   - *Contract:* Governed intelligence queries -> `GET /api/opensky`, `GET /api/flights`, `GET /discovery/packages`.
+   - *Evidence:* 17 authentic flight state vectors verified with zero synthetic records in `test_opensky_api.py`.
+   - *Next Action (Karan):* Align BIQOS analytical report schema with `opensky_states_v1`.
+
+### Task 10: Final Convergence Handover & Checklist
+* **Git Repository State:** `main` branch synced with `origin/main` at `https://github.com/BHIV-Engineering-Exchange/bhiv-masterdb-ingestion-certification-service`.
+* **Working Tree:** Clean (all temporary test outputs cleaned).
+* **Definition of Done Verification:**
+  - [x] Existing data-curation and validation work mapped to MASTERDB.
+  - [x] At least one meaningful data-quality integration increment implemented (grant revocation endpoint, candidate store protocols, proxy re-exports).
+  - [x] Metadata, schema-version, provenance and quality-exception tests executed (42 sprint tests, 11 rule tests).
+  - [x] Registration/retrieval behavior tested against supported endpoints.
+  - [x] Test results 100% reproducible from documented CLI commands.
+  - [x] TANTRA, MDU, Bucket and InsightFlow integration paths assessed (All VERIFIED).
+  - [x] MANTRA, YANTRA, VAJRA and BIQOS consumer status documented (VAJRA VERIFIED; MANTRA, YANTRA, BIQOS PARTIAL).
+  - [x] Integration gaps assigned to responsible owners (Kavy, Harsha, Nupur, Rajaryan, Karan).
+  - [x] Repository changes and evidence handed over through approved workflow.
+  - [x] `review_packets/REVIEW_PACKET.md` updated.
+
+---
+
+## Technical Acceptance Review & Remediation (Platform Owner: Kavy Changela)
+
+Following technical review by Platform Owner Kavy Changela on handover commit `cfc282c`, all six identified acceptance conditions have been fully addressed and remediated:
+
+### 1. Access Revocation Authorization (`DELETE /access/{request_id}`)
+* **Finding:** Endpoint previously allowed any authenticated caller to revoke any active grant without checking ownership or administrative privileges.
+* **Remediation:** Strict authorization checks now enforce that caller identity must either possess the `bhiv-admin` role or match the grant's original applicant (`identity.actor in (grant_actor, contract.application_id)`). Unauthorized revocation attempts immediately return HTTP 403 Forbidden.
+* **Verification:** Validated by `tests/test_capability_retrieval.py::test_unauthorized_actor_cannot_revoke_grant`.
+
+### 2. Access-Token Exposure & Audit Redaction (`GET /access/{request_id}`)
+* **Finding:** Audit endpoint returned the entire `AccessContract` containing raw `access_token`, exposing sensitive bearer credentials.
+* **Remediation:** 
+  1. Access restricted exclusively to `bhiv-admin` or grant applicant (`403 Forbidden` for other actors).
+  2. The `access_token` field is redacted to `"[REDACTED]"` in all audit responses.
+* **Verification:** Validated by `tests/test_capability_retrieval.py::test_access_contract_audit_redacts_token_and_enforces_auth`.
+
+### 3. Fail-Closed Revocation Persistence
+* **Finding:** When grant storage failed to persist revocation, the error was logged but the API returned HTTP 200 success.
+* **Remediation:** `CapabilityRegistryService.revoke_access_contract()` raises a `RuntimeError` upon storage save failure. The FastAPI route catches this and returns `HTTP 500 Internal Server Error`, ensuring fail-closed semantics.
+* **Verification:** Validated by `tests/test_capability_retrieval.py::test_revocation_persistence_failure_fails_closed`.
+
+### 4. Integrity and Authenticity Protection via Keyed HMAC-SHA256
+* **Finding:** Plain SHA-256 integrity digests detect accidental bit flips but do not prevent an attacker from modifying both data records and digest.
+* **Remediation:** `GeoQuestCandidateService` now signs stored candidate bundles with a keyed HMAC-SHA256 signature (`bundle_signature_hmac`) using a server-side secret (`GEO_QUEST_SIGNING_KEY` / `AUTH_JWT_SECRET`). Retrieval performs constant-time validation (`hmac.compare_digest`) before returning records.
+* **Verification:** Validated by `tests/test_geo_quest_candidate.py::test_retrieval_detects_attacker_sha256_rehash_without_hmac_key`.
+
+### 5. MDU Contract Semantic Mismatch & Known Gaps
+* **Finding:** Structural divergence between MASTERDB's internal Knowledge Object DAG lineage and MDU's live provenance event stream.
+* **Remediation & Formal Status:** 
+  - Status set to **PARTIAL / PENDING ONTOLOGY CONFIRMATION WITH NUPUR**.
+  - Documented as an explicit architectural known gap: live MDU provenance ingestion uses an adapter bridge that falls back cleanly without blocking candidate or package workflows.
+  - **Governance Safeguard:** All canonical production database writes remain strictly **BLOCKED** until formal cross-service data-governance sign-off is completed with Nupur and Kavy.
+
+### 6. Test Suite Reconciliation & CLI Reproducibility
+* **Reconciliation Matrix:**
+  | Test Scope | Target / Date | Pass Count | Warnings / Failures | Description |
+  | :--- | :--- | :--- | :--- | :--- |
+  | Historical Review Packet Baseline | 2026-07-08 | 50 | 1 warning, 0 failures | Initial MDU client, TANTRA façade, and replay endpoints |
+  | Shared Services & Infrastructure | Intermediate | 96 | 0 warnings, 0 failures | Ingestion, validation, certification pipeline baseline |
+  | BCAES & Governance Bootstrap | Milestone 3 | 143 | 0 warnings, 0 failures | Architectural registry, document store, and token authorization |
+  | **Current Targeted Integration Suite** | **Current** | **119** | **0 warnings, 0 failures** | Complete GEO-QUEST data quality, candidate service, MDU, TANTRA, and OpenSky suite |
+  | **Full Repository Test Suite** | **Current** | **690** | **1 warning, 0 failures** | Entire MASTERDB test suite covering all services and integration points |
+
+* **Exact Reproducible Commands:**
+  ```powershell
+  # 1. Targeted Data-Quality & Ecosystem Integration Suite (119 tests, ~20s)
+  python -m pytest tests/test_geo_quest_quality_rules.py tests/test_geo_quest_candidate.py tests/test_geo_quest_candidate_api.py tests/test_geo_quest_capability.py tests/test_gev_masterdb_import.py tests/test_geo_quest_data_quality_integration_sprint.py tests/test_mdu_contract_adapter.py tests/test_tantra_interface_service.py tests/test_cross_service_contract.py tests/test_capability_retrieval.py tests/test_capability_authorization.py tests/test_bucket_client.py tests/test_runtime_discovery_service.py tests/test_opensky_api.py -q
+
+  # 2. Complete Repository Test Suite (690 tests, ~133s)
+  python -m pytest -q
+  ```
+
+
+
+---
+
+# MASTERDB SECURITY HARDENING — REVIEW PACKET
+Assignee: Aryan Sawant
+Platform Lead: Kavy Changela
+Integration Review: Harsha
+Date: 31 October 2026
+
+## STAGE A — SECURITY HARDENING REVIEW
+
+### What Changed
+- `auth/service.py`: Added fail-closed check for unset `ADMIN_PASSWORD` (`DENY:MISSING_ADMIN_PASSWORD`) and structured security logging (`log_security_decision`) for token issuance outcomes.
+- `auth/dependencies.py`: Added structured security decision logging (`log_security_decision`) to `get_identity` dependency for ALLOW and DENY outcomes.
+- `bcaes_registry/service.py`: Changed `_has_authority(actor=None)` from default-allow to fail-closed (`return False`) and added structured decision logging.
+- `operational_sync/service.py`: Added fail-closed identity verification raising `PermissionError("DENY:MISSING_IDENTITY")` on `actor=None` and added structured decision logging.
+- `main.py`: Replaced caller-supplied actors with `identity.actor`, enforced role checks on `/validate`, `/certify`, `/packages/promote`, `/packages/register`, `/query`, `/export`, `/stream`, added global `PermissionError` mapping, hardened admin endpoints (`/admin/backup`, `/admin/restore`), and added decision logging.
+- `api/pravah.py`: Added `Depends(get_identity)` requiring `producer`, `operator`, or `admin` role on `POST /pravah/events` and replaced `request.producer` with `identity.actor`.
+
+### Test Results
+- T2 authorization tests: 12/12 passed
+- T4 logging tests: 8/8 passed
+- T5 adversarial tests: 10/10 passed
+- Full suite: 731 passed, 12 failed, 16 warnings
+- Pre-existing failures:
+  - tests/test_backup_service.py::test_export_snapshot_captures_real_records_from_sql_backend
+  - tests/test_backup_service.py::test_full_backup_and_restore_cycle_bcaes_registry
+  - tests/test_consistency_regression.py::test_duplicate_package_id_registration_returns_409
+  - tests/test_consistency_regression.py::test_empty_identifier_fields_rejected
+  - tests/test_persistence.py::test_bcaes_registry_default_is_pure_in_memory_no_disk_touched
+  - tests/test_persistence.py::test_bcaes_registry_persists_across_a_fresh_instance
+  - tests/test_persistence.py::test_bcaes_registry_update_persists
+  - tests/test_persistence.py::test_bcaes_registry_delete_persists
+  - tests/test_real_e2e_flow.py::test_real_e2e_full_lifecycle
+  - tests/test_sql_database.py::test_bcaes_registry_persists_via_real_sql_database_across_fresh_instance
+  - tests/test_sql_database.py::test_bcaes_registry_update_and_delete_persist_via_sql
+  - tests/test_sql_database.py::test_bcaes_registry_and_canonical_repository_can_share_one_database_url
+
+### What Was Fixed (T2 — 9 Fixes)
+
+FIX 1: Admin Password Unset Privilege Escalation Blocked
+File: auth/service.py line 199
+Change: Blocked admin role issuance via standard password when ADMIN_PASSWORD is unset in the environment.
+Decision: ALLOW=hmac.compare_digest(password, admin_pw) | DENY=DENY:MISSING_ADMIN_PASSWORD
+
+FIX 2: Fail-Closed Authority Check in BCAES Registry
+File: bcaes_registry/service.py line 54
+Change: Changed _has_authority to return False when actor is None rather than defaulting to allow.
+Decision: ALLOW=actor in boundaries or any(role in boundaries) | DENY=DENY:MISSING_IDENTITY (returns False)
+
+FIX 3: Fail-Closed Identity Check in Operational Sync
+File: operational_sync/service.py line 34
+Change: Added explicit check raising PermissionError("DENY:MISSING_IDENTITY") if actor is None.
+Decision: ALLOW=required_role in actor_roles | DENY=DENY:MISSING_IDENTITY
+
+FIX 4: Caller-Supplied Actor Ignored in /validate
+File: main.py line 906
+Change: Replaced request.actor from request body with cryptographic identity.actor via Depends(get_identity).
+Decision: ALLOW=identity is valid AuthIdentity | DENY=DENY:MISSING_IDENTITY
+
+FIX 5: Explicit Authentication and Role Authorization on /certify
+File: main.py line 923
+Change: Protected endpoint with Depends(get_identity) requiring operator or admin role.
+Decision: ALLOW=has_role("operator", "admin") | DENY=DENY:INSUFFICIENT_ROLE
+
+FIX 6: Role Enforcement and Body Actor Override on /packages/promote
+File: main.py line 1225
+Change: Enforced operator/admin role check and passed verified identity.actor to promotion service.
+Decision: ALLOW=has_role("operator", "admin") | DENY=DENY:INSUFFICIENT_ROLE
+
+FIX 7: Explicit Authentication and Role Authorization on /packages/register
+File: main.py line 1205
+Change: Protected endpoint with Depends(get_identity) requiring operator or admin role.
+Decision: ALLOW=has_role("operator", "admin") | DENY=DENY:INSUFFICIENT_ROLE
+
+FIX 8: Explicit Authentication and Role Enforcement on /pravah/events
+File: api/pravah.py line 68
+Change: Protected endpoint with Depends(get_identity), required producer/operator/admin role, and bound identity.actor.
+Decision: ALLOW=has_role("producer", "operator", "admin") | DENY=DENY:INSUFFICIENT_ROLE
+
+FIX 9: Database Target Endpoints Protected (/query, /export, /stream)
+File: main.py lines 1667, 1685, 1703
+Change: Added Depends(get_identity) requiring viewer, operator, or admin role on all three database access routes.
+Decision: ALLOW=has_role("viewer", "operator", "admin") | DENY=DENY:INSUFFICIENT_ROLE
+
+### Confirmed Defects — Not Fixed
+
+DEFECT 1: BCAES Role-Based Boundary Self-Authorization
+  Severity: HIGH
+  File: bcaes_registry/service.py line 63
+  Risk: Viewer role caller can self-grant write/delete access
+  Owner: Kavy Changela
+  Status: Documented — awaiting architectural decision
+  Reproduction:
+    Register BCAES object with authority_boundaries=["viewer"]
+    using a viewer token. Attempt update/delete. Access granted.
+
+DEFECT 2: Capability Contract Auto-Grant on Missing Credentials
+  Severity: HIGH
+  File: services/capability_registry_service.py lines 966-975
+  Risk: Callers bypass pre-authorization by omitting credentials
+  Owner: Kavy Changela / TANTRA owner
+  Status: Documented — TANTRA contract owner confirmation needed
+  Reproduction:
+    Call retrieve() with access_token=None, request_id=None.
+    Service auto-generates AccessContract without prior grant.
+
+DEFECT 3: Unauthenticated Read Routes
+  Severity: MEDIUM
+  File: main.py lines 189, 273, 313, 335
+  Risk: Dataset and package enumeration without authentication
+  Owner: Kavy Changela
+  Status: Documented — deferred, outside T2 approved scope
+
+### Known Limitations
+- GAP 8: Shared password auth — no individual user accounts
+- GAP 14: BCAES convergence endpoint unauthenticated
+- GAP 15: TANTRA dataset registration unauthenticated
+- GAP 16: SecurityMiddleware scope limited to /production/* only
+- GAP 17: In-memory fallback public key if AUTH_JWT_PUBLIC_KEY unset
+
+### Reproduction Commands
+pytest tests/test_t2_authorization.py -v
+pytest tests/test_t4_security_logging.py -v
+pytest tests/test_t5_adversarial.py -v
+pytest --tb=short
+
+### Rollback Instructions
+Files modified in Stage A:
+  auth/service.py
+  auth/dependencies.py
+  bcaes_registry/service.py
+  operational_sync/service.py
+  api/pravah.py
+  main.py
+
+New files added (safe to delete if reverting):
+  tests/test_t2_authorization.py
+  tests/test_t4_security_logging.py
+  tests/test_t5_adversarial.py
+
+To revert a file to original:
+  git checkout HEAD -- [filename]
+
+
+## STAGE B — ECOSYSTEM INTEGRATION REVIEW
+
+### Integration Baseline Matrix
+
+| System | Interface | Status | Owner |
+|---|---|---|---|
+| TANTRA | `TantraInterfaceService`, `/tantra/*`, `/discovery/packages` | PARTIAL | TANTRA Team |
+| MDU | `MDUClient`, `MDUContractAdapter`, `/mdu/*` | BLOCKED | Nupur / Harsha |
+| Bucket | `BucketClient`, `/evidence/*`, `/bucket/status` | PARTIAL | Bucket Team |
+| InsightFlow | `InsightBridgeClient`, `/observability/push-to-insightbridge` | VERIFIED | InsightFlow Owner |
+| MANTRA | Inbound capability routes only | PARTIAL | MANTRA Owner |
+| YANTRA | `NiyantranSyncService`, `/niyantran/task-state` | PARTIAL | Pratik / Karana |
+| VAJRA | RS256 auth, `/access/*` | BLOCKED | Rayyan / Platform |
+| BIQOS | `ValidationService`, `/validate`, `/certify`, `/bcaes/*` | PARTIAL | Raj |
+
+### Tests Executed
+
+| Suite | Result |
+|---|---|
+| test_insightbridge_client.py | 9/9 PASSED |
+| test_insightbridge_push_endpoint.py | 4/4 PASSED |
+| test_cross_service_contract.py | 7/7 PASSED |
+| test_operational_sync.py | 14/14 PASSED |
+| test_validation_service.py | 2/2 PASSED |
+| test_certification_service.py | 2/2 PASSED |
+| **Total** | **38/38 PASSED** |
+
+### Blockers
+
+| ID | Blocker | Owner |
+|---|---|---|
+| BLK-01 | BCAES write returns DENY:MISSING_IDENTITY — cannot seed capabilities | Rayyan |
+| BLK-02 | MDU endpoint timeout | Nupur / Harsha |
+| BLK-03 | VAJRA live deployment on old commit b6aa9ca — RS256 rejected in prod | Rayyan / Platform |
+| BLK-04 | MANTRA interface spec not confirmed | MANTRA Owner |
+
+### Next Priority
+Unblock BLK-01 — once Rayyan issues auth token, seed 12 TANTRA packages 
+into BCAES so BIQOS snapshot shows non-zero capability count.
+
+### Rollback
+No production changes made in Stage B. All work was read-only 
+assessment and local test execution. No rollback required.

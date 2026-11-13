@@ -1,0 +1,29 @@
+{
+  "dataset_id": "ds-cmo-marketing-defect-integrity",
+  "is_synthetic": true,
+  "data_tier": "synthetic_defect_fixture",
+  "synthetic_notice": "SYNTHETIC DEFECT FIXTURE: Synthetic data designed specifically to trigger validation errors for automated testing. Does not represent BIQOS production telemetry.",
+  "defect_type": "INTEGRITY_BOUNDARY_VIOLATION",
+  "expected_violation": "Negative spend_usd, clicks exceeding impressions, conversions exceeding clicks, negative ROAS",
+  "records": [
+    {
+      "campaign_id": "CMP-2026-Q4-088",
+      "campaign_name": "Impossible-Economics-Campaign",
+      "channel": "search",
+      "impressions": 1000,
+      "clicks": 5000,
+      "conversions": 10000,
+      "spend_usd": -500.0,
+      "revenue_usd": -1200.0,
+      "roas": -2.4,
+      "cac": -0.05,
+      "attribution_model": "last_touch",
+      "status": "ACTIVE",
+      "start_date": "2026-10-01",
+      "end_date": "2026-11-30",
+      "last_updated_utc": "2026-11-06T08:30:00Z",
+      "provenance_source": "BIQOS-Marketing-Hub"
+    }
+  ]
+}
+

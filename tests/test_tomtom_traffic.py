@@ -116,7 +116,7 @@ def test_traffic_api_readback_and_registry_visibility(tmp_path, monkeypatch):
     monkeypatch.setattr(main, "fetch_flow_tiles", lambda tiles: {"source": "TomTom Traffic API", "tile_count": 1,
         "tiles": [{**tile, "segment_count": 1, "observation_time_utc": "2026-10-24T08:30:00+00:00"}], "record_count": 1,
         "observations": [_record()]})
-    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["viewer"])
+    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["operator"])
     try:
         client = TestClient(main.app)
         ingested = client.post("/traffic/tomtom/ingest", json={"tiles": [tile]})

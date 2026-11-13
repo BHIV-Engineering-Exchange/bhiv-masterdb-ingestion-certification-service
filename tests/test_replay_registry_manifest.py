@@ -4,7 +4,9 @@ import main
 
 
 def test_replay_registry_manifest_is_public_and_honest():
-    client = TestClient(main.app)
+    from tests.test_identity_fixtures import get_test_auth_headers
+    headers = get_test_auth_headers(actor="kavy", roles=["admin", "operator"])
+    client = TestClient(main.app, headers=headers)
     resp = client.get("/replay-registry/manifest")
     assert resp.status_code == 200
     body = resp.json()
@@ -15,7 +17,9 @@ def test_replay_registry_manifest_is_public_and_honest():
 
 
 def test_replay_registry_manifest_hash_matches_live_validation():
-    client = TestClient(main.app)
+    from tests.test_identity_fixtures import get_test_auth_headers
+    headers = get_test_auth_headers(actor="kavy", roles=["admin", "operator"])
+    client = TestClient(main.app, headers=headers)
     architecture = client.get("/bcaes/validate/architecture").json()
     manifest = client.get("/replay-registry/manifest").json()
     bcaes_entry = next(c for c in manifest["replay_capabilities"] if c["name"] == "bcaes_registry_architecture")

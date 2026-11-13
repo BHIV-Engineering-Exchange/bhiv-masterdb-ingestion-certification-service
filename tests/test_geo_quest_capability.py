@@ -1,3 +1,4 @@
+from tests.test_identity_fixtures import get_test_token, get_test_auth_headers
 import os
 import uuid
 import pytest
@@ -14,18 +15,7 @@ def client():
 
 @pytest.fixture
 def auth_header(client):
-    auth_pw = os.environ.get("AUTH_PASSWORD", "test-auth-password")
-    res = client.post(
-        "/auth/token",
-        json={
-            "actor": "geo-quest-tester",
-            "password": auth_pw,
-            "roles": ["ecosystem-reader", "viewer", "operator", "admin"],
-        },
-    )
-    assert res.status_code == 200
-    token = res.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+    return get_test_auth_headers("geo-quest-tester", ["operator", "bcaes-editor", "ingest:operator"])
 
 
 def test_source_registration_and_duplicate_detection(client, auth_header):
@@ -99,12 +89,7 @@ def test_capability_discovery_and_contract(client, auth_header):
 
 def test_capability_registration_requires_admin(client, auth_header, monkeypatch):
     monkeypatch.setenv("AUTH_PASSWORD", "test-admin-password")
-    admin_response = client.post(
-        "/auth/token",
-        json={"actor": "admin", "password": "test-admin-password"},
-    )
-    assert admin_response.status_code == 200
-    admin_header = {"Authorization": f"Bearer {admin_response.json()['access_token']}"}
+    admin_header = get_test_auth_headers("admin", ["bhiv-admin", "admin", "operator"])
     cap_payload = {
         "capability_id": "cap-mangrove-monitoring",
         "capability_name": "Duplicate Mangrove Capability",
