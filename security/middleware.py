@@ -54,6 +54,29 @@ class JWTVerificationError(Exception):
 
 class RS256JWTVerifier:
     def __init__(self, public_key_pem: Optional[str] = None) -> None:
+        # Load RSA public key; in production require explicit key configuration
+        pem: Optional[str] = public_key_pem
+        if pem is None:
+            pem = os.environ.get("AUTH_JWT_PUBLIC_KEY", "").replace("\\n", "\n")
+            if not pem:
+                key_path = os.environ.get("AUTH_JWT_PUBLIC_KEY_PATH")
+                if key_path and os.path.exists(key_path):
+                    with open(key_path, "r", encoding="utf-8") as fh:
+                        pem = fh.read()
+        # Determine if we are in production mode
+        env_mode = (
+            os.environ.get("ENVIRONMENT")
+            or os.environ.get("APP_ENV")
+            or os.environ.get("MASTERDB_ENV")
+            or ""
+        ).strip().lower()
+        is_production = env_mode in ("production", "prod")
+        if not pem:
+            if is_production:
+                raise RuntimeError("AUTH_JWT_PUBLIC_KEY must be set in production for RS256 verification")
+            # Fallback key generation for non-production/testing environments
+            pem = self._generate_fallback_public_key()
+        self._public_key_pem = pem
         pem: Optional[str] = public_key_pem
         if pem is None:
             pem = os.environ.get("AUTH_JWT_PUBLIC_KEY", "").replace("\\n", "\n")

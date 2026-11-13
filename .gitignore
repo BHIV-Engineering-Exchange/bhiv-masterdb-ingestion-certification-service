@@ -19,3 +19,5 @@ canonical_store/
 shared_data_store/
 *.db
 *.sqlite
+# pytest temporary directories
+.pytest-tmp-gev/

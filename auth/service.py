@@ -43,6 +43,10 @@ class AuthService:
             or ""
         ).strip().lower()
         is_production = env_mode in ("production", "prod")
+        # Enforce production uses RS256 only
+        if is_production and _JWT_ALGORITHM != "RS256":
+            raise RuntimeError("Production environment must use RS256 algorithm for JWTs")
+
 
         if secret_key is not None:
             if not str(secret_key).strip():

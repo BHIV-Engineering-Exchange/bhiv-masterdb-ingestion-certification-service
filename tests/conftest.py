@@ -17,6 +17,8 @@ import pytest
 import os
 _previous_pytest_marker = os.environ.get("PYTEST_CURRENT_TEST")
 os.environ["PYTEST_CURRENT_TEST"] = "pytest collection"
+os.environ["JWT_ALGORITHM"] = "HS256"
+os.environ["AUTH_JWT_SECRET"] = "test-secret"
 import main
 if _previous_pytest_marker is None:
     os.environ.pop("PYTEST_CURRENT_TEST", None)
