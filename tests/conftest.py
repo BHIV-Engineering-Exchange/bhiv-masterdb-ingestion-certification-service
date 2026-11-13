@@ -15,10 +15,6 @@ autouse fixture here instead of being repeated in every file.
 import pytest
 
 import os
-
-# main.py loads the developer's .env during normal application startup. Keep
-# that out of pytest's initial import so integration tests start from a clean,
-# reproducible environment (individual tests can still set env values).
 _previous_pytest_marker = os.environ.get("PYTEST_CURRENT_TEST")
 os.environ["PYTEST_CURRENT_TEST"] = "pytest collection"
 import main

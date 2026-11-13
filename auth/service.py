@@ -17,7 +17,18 @@ from security.public_key import load_rsa_public_key
 
 logger = logging.getLogger("masterdb.auth")
 
-_ALGORITHM = "HS256"
+# ---------------------------------------------------------------------------
+# Configuration – algorithm selection (environment controlled)
+# ---------------------------------------------------------------------------
+_JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "RS256").upper()
+
+if _JWT_ALGORITHM not in ("RS256", "HS256"):
+    raise RuntimeError(f"Unsupported JWT_ALGORITHM={_JWT_ALGORITHM}")
+
+# The constant used by the rest of the module – we keep the old name for backward
+# compatibility but force it to reflect the configured algorithm.
+_ALGORITHM = _JWT_ALGORITHM
+
 _DEFAULT_EXPIRY_MINUTES = 60
 
 
