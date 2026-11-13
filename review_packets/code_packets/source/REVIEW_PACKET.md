@@ -171,7 +171,7 @@ results, including against the live MDU API:
 
 ```bash
 python -m pip install -r requirements.txt
-export MDU_BASE_URL="https://bhiv-mdu-api.onrender.com"
+export MDU_BASE_URL="https://parakosha.blackholeinfiverse.com"
 export MDU_API_KEY="<the shared key>"
 python -m pytest
 uvicorn main:app --reload

@@ -31,12 +31,14 @@ class RetrievalReadinessService:
         registry: Optional[PackageRegistryService] = None,
         knowledge_object_service: Optional[KnowledgeObjectService] = None,
         store_dir: str = "retrieval_evidence_store",
+        report_service: Optional[object] = None,
     ) -> None:
         self.registry = registry or PackageRegistryService()
         self.knowledge_object_service = knowledge_object_service or KnowledgeObjectService(
             registry=self.registry
         )
         self.store = ArtifactStore(reports_dir=store_dir)
+        self.report_service = report_service
 
     def assess(self, package_id: str) -> RetrievalEvidence:
         package = self.registry.get(package_id)  # raises PackageNotFoundError
@@ -70,12 +72,26 @@ class RetrievalReadinessService:
 
     # -- rules ------------------------------------------------------------
 
-    @staticmethod
-    def _rule_certified(package: KnowledgePackage) -> RetrievalRuleResult:
+    def _rule_certified(self, package: KnowledgePackage) -> RetrievalRuleResult:
         passed = package.status in (
             PackageStatus.CERTIFIED,
             PackageStatus.RETRIEVAL_READY,
         )
+        if passed and self.report_service:
+            try:
+                report = getattr(self.report_service, "get_report")(package.dataset_id)
+                if report.get("state") == "REJECTED" or not report.get("ingestion_decision", {}).get("eligible_for_masterdb", True):
+                    return RetrievalRuleResult(
+                        rule="PACKAGE_CERTIFIED",
+                        passed=False,
+                        detail=(
+                            f"Package status is {package.status.value}, but dataset {package.dataset_id} "
+                            "failed certification (state: REJECTED)."
+                        ),
+                    )
+            except KeyError:
+                pass
+
         return RetrievalRuleResult(
             rule="PACKAGE_CERTIFIED",
             passed=passed,

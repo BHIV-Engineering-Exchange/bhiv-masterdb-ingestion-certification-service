@@ -99,6 +99,6 @@ def test_restore_is_immediately_readable_on_the_same_running_service(client, tmp
     # The critical check: read it back on the SAME client/service instance,
     # with no reconstruction in between — this is exactly what a real
     # POST /admin/restore caller does next.
-    verify_resp = client.get(f"/bcaes/registries/product/objects/{object_id}")
+    verify_resp = client.get(f"/bcaes/registries/product/objects/{object_id}", headers=_admin_headers())
     assert verify_resp.status_code == 200
     assert verify_resp.json()["name"] == "MASTERDB"

@@ -210,7 +210,7 @@ before starting the app; without them, MDU-dependent endpoints degrade to
 the documented placeholder behavior rather than failing:
 
 ```bash
-export MDU_BASE_URL="https://bhiv-mdu-api.onrender.com"
+export MDU_BASE_URL="https://parakosha.blackholeinfiverse.com"
 export MDU_API_KEY="<the shared key>"
 ```
 

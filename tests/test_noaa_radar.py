@@ -88,7 +88,7 @@ def test_satellite_manifest_image_routes_and_error_handling(monkeypatch):
     monkeypatch.setattr(main, "fetch_weather_manifest", lambda product: satellite_manifest(product))
     monkeypatch.setattr(main, "fetch_weather_tile", lambda product, time, z, x, y, size="256": (b"png", {"width": 256, "height": 256, "bytes": 3, "content_type": "image/png"}))
     monkeypatch.setattr(main, "fetch_weather_image", lambda product, time, size=None, bbox=None: (b"png", {"width": 2048, "height": 1024, "bytes": 3, "content_type": "image/png"}))
-    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="satellite-test", roles=["viewer"])
+    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="satellite-test", roles=["operator"])
     try:
         client = TestClient(main.app)
         global_manifest = client.get("/weather/satellite/manifest?product=clouds")
@@ -136,7 +136,7 @@ def test_satellite_manifest_upstream_failure_sets_unavailable(monkeypatch, produ
     def fail(product):
         raise radar.RadarUpstreamError("upstream unavailable")
     monkeypatch.setattr(main, "fetch_weather_manifest", fail)
-    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="satellite-error-test", roles=["viewer"])
+    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="satellite-error-test", roles=["operator"])
     try:
         path = "/weather/lightning/manifest" if product == "lightning" else "/weather/satellite/manifest?product=clouds"
         response = TestClient(main.app).get(path)
@@ -169,7 +169,7 @@ def test_radar_verify_registers_metadata_only_after_tile_readback(monkeypatch):
     main.source_registry_service = registry
     monkeypatch.setattr(main, "fetch_radar_manifest", manifest)
     monkeypatch.setattr(main, "fetch_radar_tile", lambda *args, **kwargs: (b"png", {"width": 256, "height": 256, "bytes": 3, "content_type": "image/png"}))
-    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="radar-test", roles=["viewer"])
+    main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="radar-test", roles=["operator"])
     try:
         client = TestClient(main.app)
         response = client.post("/weather/radar/verify")

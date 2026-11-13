@@ -7,7 +7,9 @@ idempotent replaying, deterministic state verification, and pipeline automation.
 import time
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from auth.dependencies import get_identity
+from auth.models import AuthIdentity
 from pydantic import BaseModel, ConfigDict, Field
 
 from models import PackageStatus
@@ -67,11 +69,13 @@ class DeterministicRunRequest(BaseModel):
 async def ingest_event(
     event: PravahEvent,
     request: Request,
+    identity: AuthIdentity = Depends(get_identity),
 ) -> EventIngestResponse:
     """
     Ingest a validated event into the Pravah replay ledger and execute
     state machine transition with strict concurrency control.
     """
+    event.producer = identity.actor
     pipeline = _get_pipeline(request)
     try:
         entry, state = await pipeline.process_event(event)
@@ -139,6 +143,7 @@ async def query_ledger(
 async def replay_events(
     body: ReplayRequest,
     request: Request,
+    identity: AuthIdentity = Depends(get_identity),
 ) -> ReplayResponse:
     """Replay events from the Pravah replay ledger with idempotent deduplication."""
     pipeline = _get_pipeline(request)
@@ -199,11 +204,13 @@ async def verify_determinism(
 async def execute_pipeline_route(
     body: PipelineExecutionRequest,
     request: Request,
+    identity: AuthIdentity = Depends(get_identity),
 ) -> PipelineExecutionResponse:
     """
     Automate pipeline progression across lifecycle states with strict concurrency
     control, Pravah replay ledger recording, and cryptographic auditing.
     """
+    body.actor = identity.actor
     pipeline = _get_pipeline(request)
     try:
         return await pipeline.execute_pipeline(body)

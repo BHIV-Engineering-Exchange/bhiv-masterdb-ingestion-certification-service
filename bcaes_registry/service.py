@@ -19,7 +19,11 @@ authority_boundaries being requested for the new object (you can't grant
 authority you don't hold). For `update`/`delete`, it means the existing
 object's current authority_boundaries.
 """
+import logging
 from typing import Dict, List, Optional
+from auth.service import log_security_decision
+
+logger = logging.getLogger("masterdb.bcaes_registry")
 
 from auth.constants import ADMIN_ROLE
 from bcaes_registry import graph, snapshot, validators
@@ -48,13 +52,32 @@ __all__ = [
 
 def _has_authority(actor: Optional[str], actor_roles: Optional[List[str]], boundaries: List[str]) -> bool:
     if actor is None:
-        return True  # no identity supplied -> enforcement not requested by the caller
+        log_security_decision(
+            logger=logger,
+            outcome="DENY",
+            reason_code="DENY:MISSING_IDENTITY",
+            policy_reference="bcaes_registry._has_authority",
+            actor_reference="None",
+        )
+        return False  # Actor must be present and verified. None = DENY.
     roles = actor_roles or []
-    if ADMIN_ROLE in roles:
+    if ADMIN_ROLE in roles or actor in boundaries or bool(set(roles) & set(boundaries)):
+        log_security_decision(
+            logger=logger,
+            outcome="ALLOW",
+            reason_code="ALLOW:AUTHORITY_CONFIRMED",
+            policy_reference="bcaes_registry._has_authority",
+            actor_reference=actor,
+        )
         return True
-    if actor in boundaries:
-        return True
-    return bool(set(roles) & set(boundaries))
+    log_security_decision(
+        logger=logger,
+        outcome="DENY",
+        reason_code="DENY:INSUFFICIENT_ROLE",
+        policy_reference="bcaes_registry._has_authority",
+        actor_reference=actor,
+    )
+    return False
 
 
 class BCAESRegistryService:

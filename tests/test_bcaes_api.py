@@ -18,7 +18,7 @@ def client() -> TestClient:
 
 
 def _auth_headers(actor="Kavy", roles=None):
-    token, _ = main.auth_service.issue_token(actor, roles or [])
+    token, _ = main.auth_service.issue_token(actor, roles if roles is not None else ["bcaes-editor", "operator", "admin"])
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -39,7 +39,7 @@ def _register(client, registry_type, name, owner="Kavy", dependencies=None):
 
 def test_register_and_get_object(client):
     created = _register(client, "capability", "Schema Validation")
-    resp = client.get(f"/bcaes/registries/capability/objects/{created['id']}")
+    resp = client.get(f"/bcaes/registries/capability/objects/{created['id']}", headers=_auth_headers())
     assert resp.status_code == 200
     assert resp.json()["name"] == "Schema Validation"
 
@@ -56,7 +56,7 @@ def test_register_with_actor_not_in_authority_boundaries_returns_403(client):
     resp = client.post(
         "/bcaes/registries/capability/objects",
         json={"name": "X", "purpose": "p", "owner": "Kavy", "authority_boundaries": ["Kavy"]},
-        headers=_auth_headers(actor="SomeoneElse"),
+        headers=_auth_headers(actor="SomeoneElse", roles=[]),
     )
     assert resp.status_code == 403
 
@@ -65,18 +65,18 @@ def test_register_with_admin_role_bypasses_authority_check(client):
     resp = client.post(
         "/bcaes/registries/capability/objects",
         json={"name": "X", "purpose": "p", "owner": "Kavy", "authority_boundaries": ["Kavy"]},
-        headers=_auth_headers(actor="SomeoneElse", roles=["bhiv-admin"]),
+        headers=_auth_headers(actor="SomeoneElse", roles=["bhiv-admin", "admin", "operator"]),
     )
     assert resp.status_code == 200
 
 
 def test_unknown_registry_type_returns_404(client):
-    resp = client.get("/bcaes/registries/not_a_registry/objects")
+    resp = client.get("/bcaes/registries/not_a_registry/objects", headers=_auth_headers())
     assert resp.status_code == 404
 
 
 def test_get_missing_object_returns_404(client):
-    resp = client.get("/bcaes/registries/capability/objects/cap-missing")
+    resp = client.get("/bcaes/registries/capability/objects/cap-missing", headers=_auth_headers())
     assert resp.status_code == 404
 
 
@@ -97,7 +97,7 @@ def test_register_with_missing_dependency_returns_400(client):
 
 def test_list_registries_summary(client):
     _register(client, "domain", "Knowledge Domain")
-    resp = client.get("/bcaes/registries")
+    resp = client.get("/bcaes/registries", headers=_auth_headers())
     assert resp.status_code == 200
     body = resp.json()
     assert body["registries"]["domain"] == 1
@@ -107,7 +107,7 @@ def test_list_registries_summary(client):
 def test_search_by_query(client):
     _register(client, "capability", "Duplicate Detection")
     _register(client, "capability", "Version Negotiation")
-    resp = client.get("/bcaes/search", params={"q": "duplicate"})
+    resp = client.get("/bcaes/search", params={"q": "duplicate"}, headers=_auth_headers())
     assert resp.status_code == 200
     body = resp.json()
     assert body["count"] == 1
@@ -120,29 +120,29 @@ def test_relationships_and_dependency_explorer(client):
         client, "capability", "Certification Capability",
         dependencies=[{"id": domain["id"]}],
     )
-    rel = client.get(f"/bcaes/relationships/{capability['id']}")
+    rel = client.get(f"/bcaes/relationships/{capability['id']}", headers=_auth_headers())
     assert rel.status_code == 200
     assert rel.json()["dependencies"] == [{"id": domain["id"], "required_version": None}]
 
-    deps = client.get(f"/bcaes/dependencies/{capability['id']}")
+    deps = client.get(f"/bcaes/dependencies/{capability['id']}", headers=_auth_headers())
     assert deps.status_code == 200
     assert domain["id"] in deps.json()["transitive_dependencies"]
 
-    domain_after = client.get(f"/bcaes/registries/domain/objects/{domain['id']}")
+    domain_after = client.get(f"/bcaes/registries/domain/objects/{domain['id']}", headers=_auth_headers())
     assert domain_after.json()["consumers"] == [capability["id"]]
 
 
 def test_capability_reuse_check_endpoint(client):
     _register(client, "capability", "Duplicate Detection")
-    resp = client.get("/bcaes/capability-reuse-check", params={"name": "Duplicate Detection"})
+    resp = client.get("/bcaes/capability-reuse-check", params={"name": "Duplicate Detection"}, headers=_auth_headers())
     assert resp.status_code == 200
     assert resp.json()["reuse_recommended"] is True
 
 
 def test_validate_architecture_endpoint_is_replay_safe(client):
     _register(client, "capability", "Schema Validation")
-    first = client.get("/bcaes/validate/architecture").json()
-    second = client.get("/bcaes/validate/architecture").json()
+    first = client.get("/bcaes/validate/architecture", headers=_auth_headers()).json()
+    second = client.get("/bcaes/validate/architecture", headers=_auth_headers()).json()
     assert first["replay_hash"] == second["replay_hash"]
     assert first["passed"] is True
 
@@ -150,7 +150,7 @@ def test_validate_architecture_endpoint_is_replay_safe(client):
 def test_validate_duplicates_endpoint_flags_conflict(client):
     _register(client, "capability", "Same Name")
     _register(client, "capability", "same name")
-    resp = client.get("/bcaes/validate/duplicates")
+    resp = client.get("/bcaes/validate/duplicates", headers=_auth_headers())
     body = resp.json()
     assert body["passed"] is False
 
@@ -173,7 +173,7 @@ def test_update_object_without_authority_returns_403(client):
     resp = client.patch(
         f"/bcaes/registries/engine/objects/{created['id']}",
         json={"status": "active"},
-        headers=_auth_headers(actor="SomeoneElse"),
+        headers=_auth_headers(actor="SomeoneElse", roles=[]),
     )
     assert resp.status_code == 403
 
@@ -184,7 +184,7 @@ def test_delete_object(client):
         f"/bcaes/registries/framework/objects/{created['id']}", headers=_auth_headers(actor="Kavy")
     )
     assert resp.status_code == 200
-    followup = client.get(f"/bcaes/registries/framework/objects/{created['id']}")
+    followup = client.get(f"/bcaes/registries/framework/objects/{created['id']}", headers=_auth_headers())
     assert followup.status_code == 404
 
 

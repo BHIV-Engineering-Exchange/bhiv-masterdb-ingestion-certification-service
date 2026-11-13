@@ -12,7 +12,9 @@ def _fresh_registry():
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(main.app)
+    from tests.test_identity_fixtures import get_test_auth_headers
+    headers = get_test_auth_headers(actor="Kavy", roles=["admin", "operator"])
+    return TestClient(main.app, headers=headers)
 
 
 def _register_product(client, name="MASTERDB"):

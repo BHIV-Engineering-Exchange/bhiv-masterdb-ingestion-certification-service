@@ -19,3 +19,7 @@ canonical_store/
 shared_data_store/
 *.db
 *.sqlite
+.env*
+env*
+scratch/
+

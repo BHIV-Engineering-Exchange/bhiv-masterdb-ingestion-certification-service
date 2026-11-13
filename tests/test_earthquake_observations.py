@@ -59,6 +59,9 @@ def test_api_fetches_and_returns_stored_observations(monkeypatch, tmp_path):
     previous_feed_state = main.observation_feed_state["usgs"]
     main.earthquake_observation_service = EarthquakeObservationService(ArtifactStore(str(tmp_path)))
     main.source_registry_service = SourceRegistryService(store_dir=str(tmp_path / "registry"))
+    main.source_registry_service.mark_fetch_status(
+        "src-gev-usgs-seismic", "UNAVAILABLE", {"last_error": "previous fetch failed"},
+    )
     main.observation_feed_state["usgs"] = {"status": "PENDING", "last_verified_at_utc": None}
     monkeypatch.setattr(main, "fetch_earthquakes", lambda: {"source": "USGS", "observations": [observation()]})
     main.app.dependency_overrides[main.get_identity] = lambda: AuthIdentity(actor="test", roles=["operator"])
@@ -75,6 +78,7 @@ def test_api_fetches_and_returns_stored_observations(monkeypatch, tmp_path):
         assert listed.json()["observations"][0]["event_id"] == "us-test-1"
         source = main.source_registry_service.get_source("src-gev-usgs-seismic")
         assert source.provenance_reference["last_fetch_status"] == "LIVE_VERIFIED"
+        assert "last_error" not in source.provenance_reference
         assert source.provenance_reference["last_verification"]["readback_records"] == 1
         listed_dataset = next(
             row for row in client.get("/live-datasets").json()["datasets"]

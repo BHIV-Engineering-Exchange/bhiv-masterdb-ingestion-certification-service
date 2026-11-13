@@ -80,6 +80,7 @@ class TantraInterfaceService:
         owner: str,
         actor: str = "tantra",
         reason: str = "Registered via TANTRA runtime interface.",
+        package_id: Optional[str] = None,
     ) -> KnowledgePackage:
         return self.registry.register(
             dataset_id=dataset_id,
@@ -91,6 +92,7 @@ class TantraInterfaceService:
             owner=owner,
             actor=actor,
             reason=reason,
+            package_id=package_id,
         )
 
     # -- package discovery ----------------------------------------------------

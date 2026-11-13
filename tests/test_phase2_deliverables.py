@@ -1,4 +1,5 @@
 ﻿"""Comprehensive tests for Phase 2 deliverables."""
+import base64
 import hashlib
 import json
 import time
@@ -57,6 +58,20 @@ def test_rs256_verifier_accepts_valid_token(rsa_keypair, jwt_payload):
     payload = verifier.verify(token)
     assert payload["sub"] == jwt_payload["sub"]
     assert payload["jti"] == jwt_payload["jti"]
+
+
+def test_rs256_verifier_accepts_base64_der_public_key(rsa_keypair, jwt_payload):
+    priv, pem = rsa_keypair
+    public_key = serialization.load_pem_public_key(pem.encode("utf-8"))
+    der_base64 = base64.b64encode(
+        public_key.public_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+    ).decode("ascii")
+    token = jwt.encode(jwt_payload, priv, algorithm="RS256")
+
+    assert RS256JWTVerifier(public_key_pem=der_base64).verify(token)["sub"] == jwt_payload["sub"]
 
 
 def test_rs256_verifier_rejects_expired_token(rsa_keypair, jwt_payload):

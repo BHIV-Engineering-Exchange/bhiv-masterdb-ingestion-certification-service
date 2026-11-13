@@ -3,14 +3,17 @@ Auth — JWT issuance and verification.
 """
 from datetime import datetime, timedelta, timezone
 import hmac
+import json
 import logging
 import os
 import secrets
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
+import uuid
 
 import jwt
 
 from auth.models import AuthIdentity
+from security.public_key import load_rsa_public_key
 
 logger = logging.getLogger("masterdb.auth")
 
@@ -33,8 +36,79 @@ class AuthTokenError(Exception):
     """Raised for a missing, malformed, expired, or badly-signed token."""
 
 
+def log_security_decision(
+    logger: logging.Logger,
+    outcome: str,
+    reason_code: str,
+    policy_reference: str,
+    actor_reference: Optional[str] = None,
+    correlation_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Structured security decision logger following MASTERDB audit conventions."""
+    cid = correlation_id or uuid.uuid4().hex
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "correlation_id": cid,
+        "request_id": cid,
+        "outcome": outcome,
+        "reason_code": reason_code,
+        "policy_reference": policy_reference,
+        "actor_reference": actor_reference or "anonymous",
+    }
+    msg = json.dumps(record, sort_keys=True)
+    if outcome == "DENY":
+        logger.warning("SECURITY_DECISION: %s", msg)
+    else:
+        logger.info("SECURITY_DECISION: %s", msg)
+    return record
+
+
+def validate_rsa_public_key(pem_str: str) -> None:
+    if not pem_str or not pem_str.strip():
+        raise RuntimeError("Authoritative RS256 public key is empty.")
+    try:
+        from cryptography.hazmat.primitives.serialization import load_pem_public_key
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        key = load_pem_public_key(pem_str.encode("utf-8"))
+    except Exception as exc:
+        raise RuntimeError(f"Invalid RSA public key: {exc}") from exc
+    if not isinstance(key, rsa.RSAPublicKey):
+        raise RuntimeError("Key must be RSA.")
+    if key.key_size < 2048:
+        raise RuntimeError("RSA key must be at least 2048 bits.")
+
+
 class AuthService:
-    def __init__(self, secret_key: Optional[str] = None, expiry_minutes: Optional[int] = None) -> None:
+    def __init__(
+        self,
+        secret_key: Optional[str] = None,
+        expiry_minutes: Optional[int] = None,
+        public_key_pem: Optional[str] = None,
+    ) -> None:
+        self._public_key_pem = public_key_pem
+        if not self._public_key_pem:
+            env_pubkey = (os.environ.get("AUTH_JWT_PUBLIC_KEY") or "").replace("\\n", "\n").strip()
+            if env_pubkey:
+                self._public_key_pem = env_pubkey
+            else:
+                key_path = os.environ.get("AUTH_JWT_PUBLIC_KEY_PATH")
+                if not key_path or not os.path.exists(key_path):
+                    sibling_key_path = os.path.abspath(
+                        os.path.join(
+                            os.path.dirname(__file__),
+                            "..", "..", "..", "Tantra", "TANTRA-Gated-Bridge-Infrastructure", "services", "sarathi", "keys", "public.pem"
+                        )
+                    )
+                    if os.path.exists(sibling_key_path):
+                        key_path = sibling_key_path
+
+                if key_path and os.path.exists(key_path):
+                    try:
+                        with open(key_path, "r", encoding="utf-8") as fh:
+                            self._public_key_pem = fh.read().strip()
+                    except Exception as exc:
+                        logger.warning("Could not read AUTH_JWT_PUBLIC_KEY_PATH: %s", exc)
+
         env_secret = (os.environ.get("AUTH_JWT_SECRET") or os.environ.get("JWT_SECRET") or "").strip()
         env_mode = (
             os.environ.get("ENVIRONMENT")
@@ -72,6 +146,14 @@ class AuthService:
                 self._expiry_minutes = int(env_expiry) if env_expiry else _DEFAULT_EXPIRY_MINUTES
             except ValueError:
                 self._expiry_minutes = _DEFAULT_EXPIRY_MINUTES
+
+    @property
+    def public_key_pem(self) -> Optional[str]:
+        return self._public_key_pem
+
+    @public_key_pem.setter
+    def public_key_pem(self, value: Optional[str]) -> None:
+        self._public_key_pem = value.strip() if value else None
 
     def resolve_roles(self, actor: str, is_admin: bool = False) -> List[str]:
         """Resolves trusted server-side roles for an actor from environment configuration or defaults.
@@ -119,6 +201,13 @@ class AuthService:
         admin_pw = os.environ.get("ADMIN_PASSWORD")
 
         if not auth_pw and not admin_pw:
+            log_security_decision(
+                logger=logger,
+                outcome="DENY",
+                reason_code="DENY:SERVER_AUTH_NOT_CONFIGURED",
+                policy_reference="auth.service.authenticate",
+                actor_reference=actor,
+            )
             raise AuthTokenError(
                 "Authentication is not configured on the server. Privileged token issuance requires a configured server authentication password."
             )
@@ -134,16 +223,37 @@ class AuthService:
             if actor_clean in admin_actors_clean:
                 is_admin_auth = True
         elif auth_pw and password and hmac.compare_digest(str(password), str(auth_pw)):
-            authenticated = True
             if not admin_pw and actor_clean in admin_actors_clean:
-                is_admin_auth = True
+                log_security_decision(
+                    logger=logger,
+                    outcome="DENY",
+                    reason_code="DENY:MISSING_ADMIN_PASSWORD",
+                    policy_reference="auth.service.authenticate",
+                    actor_reference=actor,
+                )
+                raise AuthTokenError("DENY:MISSING_ADMIN_PASSWORD")
+            authenticated = True
 
         if not authenticated:
+            log_security_decision(
+                logger=logger,
+                outcome="DENY",
+                reason_code="DENY:INVALID_CREDENTIALS",
+                policy_reference="auth.service.authenticate",
+                actor_reference=actor,
+            )
             raise AuthTokenError("Invalid credentials.")
 
         # Ignore caller-supplied roles for public authentication; obtain trusted server-side roles
         trusted_roles = self.resolve_roles(actor, is_admin=is_admin_auth)
         token, expires_at = self.issue_token(actor.strip(), trusted_roles)
+        log_security_decision(
+            logger=logger,
+            outcome="ALLOW",
+            reason_code="ALLOW:AUTHENTICATED",
+            policy_reference="auth.service.authenticate",
+            actor_reference=actor,
+        )
         return token, expires_at, trusted_roles
 
     def issue_token(self, actor: str, roles: List[str]) -> tuple:
@@ -164,14 +274,68 @@ class AuthService:
     def decode_token(self, token: str) -> AuthIdentity:
         if not token or not str(token).strip():
             raise AuthTokenError("Token cannot be empty.")
+
         try:
-            payload = jwt.decode(token, self._secret_key, algorithms=[_ALGORITHM])
-        except jwt.ExpiredSignatureError as exc:
-            raise AuthTokenError("Token has expired.") from exc
-        except jwt.InvalidTokenError as exc:
+            unverified_header = jwt.get_unverified_header(token)
+            alg = unverified_header.get("alg")
+        except Exception as exc:
             raise AuthTokenError("Token is invalid or badly signed.") from exc
 
-        actor = payload.get("sub")
-        if not actor or not str(actor).strip():
-            raise AuthTokenError("Token is missing a subject (actor).")
-        return AuthIdentity(actor=actor, roles=payload.get("roles", []))
+        if alg == "RS256":
+            public_key = self._public_key_pem or os.environ.get("AUTH_JWT_PUBLIC_KEY")
+            if not public_key:
+                raise AuthTokenError("Asymmetric RS256 token received but AUTH_JWT_PUBLIC_KEY is not configured.")
+            try:
+                rsa_public_key = load_rsa_public_key(public_key)
+                payload = jwt.decode(
+                    token,
+                    rsa_public_key,
+                    algorithms=["RS256"],
+                    options={"verify_aud": False},
+                )
+            except jwt.ExpiredSignatureError as exc:
+                raise AuthTokenError("Token has expired.") from exc
+            except jwt.InvalidTokenError as exc:
+                raise AuthTokenError(f"Token is invalid or badly signed: {exc}") from exc
+            except (TypeError, ValueError) as exc:
+                raise AuthTokenError(f"RS256 public key is invalid: {exc}") from exc
+
+            iss = payload.get("iss")
+            if not iss or iss not in ("tantra-sarathi", "masterdb", "masterdb-production"):
+                raise AuthTokenError(f"Untrusted or missing token issuer: {iss}")
+
+            aud = payload.get("aud")
+            if not aud:
+                raise AuthTokenError("Token is missing required audience claim.")
+            aud_list = [aud] if isinstance(aud, str) else [aud]
+            if not any(a in ("masterdb", "tantra-bridge") for a in aud_list):
+                raise AuthTokenError(f"Untrusted or invalid token audience: {aud}")
+
+            actor = payload.get("sub") or payload.get("actor") or payload.get("trace_id")
+            if not actor or not str(actor).strip():
+                raise AuthTokenError("Token is missing a subject (actor).")
+
+            roles = payload.get("roles")
+            if not roles or not isinstance(roles, list):
+                raise AuthTokenError("Token is missing required roles claim.")
+
+            safe_roles = [r for r in roles if r in ("ecosystem-reader", "viewer", "operator", "APPROVED_CONSUMER")]
+            if not safe_roles:
+                raise AuthTokenError("Token contains no valid roles.")
+
+            return AuthIdentity(actor=str(actor).strip(), roles=safe_roles)
+
+        elif alg == _ALGORITHM:
+            try:
+                payload = jwt.decode(token, self._secret_key, algorithms=[_ALGORITHM])
+            except jwt.ExpiredSignatureError as exc:
+                raise AuthTokenError("Token has expired.") from exc
+            except jwt.InvalidTokenError as exc:
+                raise AuthTokenError("Token is invalid or badly signed.") from exc
+
+            actor = payload.get("sub")
+            if not actor or not str(actor).strip():
+                raise AuthTokenError("Token is missing a subject (actor).")
+            return AuthIdentity(actor=actor, roles=payload.get("roles", []))
+        else:
+            raise AuthTokenError(f"Unsupported algorithm: {alg}")

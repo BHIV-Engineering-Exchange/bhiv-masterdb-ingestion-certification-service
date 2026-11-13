@@ -10,7 +10,8 @@ def make_client(tmp_path):
     main.knowledge_object_service.store.reports_dir.mkdir(parents=True, exist_ok=True)
     main.retrieval_readiness_service.store.reports_dir = tmp_path / "retrieval_evidence"
     main.retrieval_readiness_service.store.reports_dir.mkdir(parents=True, exist_ok=True)
-    return TestClient(main.app)
+    token, _ = main.auth_service.issue_token("kavy", ["bhiv-admin", "operator"])
+    return TestClient(main.app, headers={"Authorization": f"Bearer {token}"})
 
 
 def register_payload(dataset_id="ds-api-1"):

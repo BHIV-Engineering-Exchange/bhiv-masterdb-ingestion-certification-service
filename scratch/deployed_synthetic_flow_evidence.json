@@ -1,0 +1,905 @@
+[
+  {
+    "step": 1,
+    "action": "GET /health",
+    "status": 200,
+    "data": {
+      "status": "ok"
+    }
+  },
+  {
+    "step": 2,
+    "action": "POST /tantra/datasets/register",
+    "status": 200,
+    "package_id": "pkg-73e2c099dd95",
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "dataset_id": "ds-synthetic-tantra-golden-001",
+      "dataset_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "board": "synthetic-tantra",
+      "medium": "api",
+      "language": "en",
+      "owner": "tantra_lead",
+      "created_at": "2026-10-28T06:33:28.208213+00:00",
+      "updated_at": "2026-10-28T06:33:28.208231+00:00",
+      "status": "REGISTERED",
+      "history": [
+        {
+          "transition_id": "txn-605997d1f64d",
+          "from_status": null,
+          "to_status": "REGISTERED",
+          "reason": "Golden path synthetic test registration.",
+          "actor": "tantra_fa\u00e7ade",
+          "timestamp": "2026-10-28T06:33:28.208255+00:00"
+        }
+      ]
+    }
+  },
+  {
+    "step": 3,
+    "action": "GET /packages/pkg-73e2c099dd95",
+    "status": 200,
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "dataset_id": "ds-synthetic-tantra-golden-001",
+      "dataset_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "board": "synthetic-tantra",
+      "medium": "api",
+      "language": "en",
+      "owner": "tantra_lead",
+      "created_at": "2026-10-28T06:33:28.208213+00:00",
+      "updated_at": "2026-10-28T06:33:28.208231+00:00",
+      "status": "REGISTERED",
+      "history": [
+        {
+          "transition_id": "txn-605997d1f64d",
+          "from_status": null,
+          "to_status": "REGISTERED",
+          "reason": "Golden path synthetic test registration.",
+          "actor": "tantra_fa\u00e7ade",
+          "timestamp": "2026-10-28T06:33:28.208255+00:00"
+        }
+      ]
+    }
+  },
+  {
+    "step": 4,
+    "action": "GET /tantra/packages/pkg-73e2c099dd95/retrieval-readiness",
+    "status": 200,
+    "readiness": "NOT_RETRIEVABLE",
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "status": "NOT_RETRIEVABLE",
+      "rules": [
+        {
+          "rule": "PACKAGE_CERTIFIED",
+          "passed": false,
+          "detail": "Package status is REGISTERED; CERTIFIED or RETRIEVAL_READY is required."
+        },
+        {
+          "rule": "NOT_DEPRECATED_OR_ARCHIVED",
+          "passed": true,
+          "detail": "Package is active."
+        },
+        {
+          "rule": "METADATA_COMPLETE",
+          "passed": true,
+          "detail": "All required package metadata fields are present."
+        },
+        {
+          "rule": "LINEAGE_REGISTERED",
+          "passed": false,
+          "detail": "No knowledge object with a source_reference is registered for this package."
+        }
+      ],
+      "corrective_actions": [
+        "Promote the package through VERIFIED -> CERTIFIED before requesting retrieval readiness.",
+        "Register a Knowledge Object with a source_reference for this package via the Knowledge Object & Provenance Engine."
+      ],
+      "generated_at": "2026-10-28T06:33:28.649636+00:00"
+    }
+  },
+  {
+    "step": 5,
+    "action": "POST /packages/promote -> INGESTED",
+    "status": 200,
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "dataset_id": "ds-synthetic-tantra-golden-001",
+      "dataset_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "board": "synthetic-tantra",
+      "medium": "api",
+      "language": "en",
+      "owner": "tantra_lead",
+      "created_at": "2026-10-28T06:33:28.208213+00:00",
+      "updated_at": "2026-10-28T06:33:28.782324+00:00",
+      "status": "INGESTED",
+      "history": [
+        {
+          "transition_id": "txn-605997d1f64d",
+          "from_status": null,
+          "to_status": "REGISTERED",
+          "reason": "Golden path synthetic test registration.",
+          "actor": "tantra_fa\u00e7ade",
+          "timestamp": "2026-10-28T06:33:28.208255+00:00"
+        },
+        {
+          "transition_id": "txn-c414e51d1a7b",
+          "from_status": "REGISTERED",
+          "to_status": "INGESTED",
+          "reason": "Ingested.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:28.782257+00:00"
+        }
+      ]
+    }
+  },
+  {
+    "step": 6,
+    "action": "POST /packages/promote -> VALIDATED",
+    "status": 200,
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "dataset_id": "ds-synthetic-tantra-golden-001",
+      "dataset_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "board": "synthetic-tantra",
+      "medium": "api",
+      "language": "en",
+      "owner": "tantra_lead",
+      "created_at": "2026-10-28T06:33:28.208213+00:00",
+      "updated_at": "2026-10-28T06:33:29.049480+00:00",
+      "status": "VALIDATED",
+      "history": [
+        {
+          "transition_id": "txn-605997d1f64d",
+          "from_status": null,
+          "to_status": "REGISTERED",
+          "reason": "Golden path synthetic test registration.",
+          "actor": "tantra_fa\u00e7ade",
+          "timestamp": "2026-10-28T06:33:28.208255+00:00"
+        },
+        {
+          "transition_id": "txn-c414e51d1a7b",
+          "from_status": "REGISTERED",
+          "to_status": "INGESTED",
+          "reason": "Ingested.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:28.782257+00:00"
+        },
+        {
+          "transition_id": "txn-726f130d0b52",
+          "from_status": "INGESTED",
+          "to_status": "VALIDATED",
+          "reason": "Validated.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:29.049452+00:00"
+        }
+      ]
+    }
+  },
+  {
+    "step": 7,
+    "action": "POST /packages/pkg-73e2c099dd95/knowledge-object",
+    "status": 200,
+    "data": {
+      "knowledge_object_id": "kobj-0c58a681376e",
+      "knowledge_hash": "defdca5b5c2503898bc6b05f4898a8850d59d3da21190f56440547fb6e0f0912",
+      "package_id": "pkg-73e2c099dd95",
+      "schema_version": "1.0.0",
+      "parent_package": null,
+      "child_packages": [],
+      "source_reference": "src-gev-celestrak",
+      "lineage_reference": null,
+      "derivation_path": [
+        "synthetic_raw",
+        "synthetic_validated"
+      ],
+      "created_at": "2026-10-28T06:33:29.165654+00:00"
+    }
+  },
+  {
+    "step": 8,
+    "action": "GET /packages/pkg-73e2c099dd95/lineage",
+    "status": 200,
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "knowledge_object_registered": true,
+      "knowledge_object_id": "kobj-0c58a681376e",
+      "knowledge_hash": "defdca5b5c2503898bc6b05f4898a8850d59d3da21190f56440547fb6e0f0912",
+      "source_reference": "src-gev-celestrak",
+      "lineage_reference": null,
+      "derivation_path": [
+        "synthetic_raw",
+        "synthetic_validated"
+      ],
+      "ancestors": [],
+      "descendants": [],
+      "known_gaps": [
+        "knowledge_object_id: Live-checked 2026-07-08 (scripts/confirm_mdu_contract.py, BHIV-DS-MARITIME-AIS-LIVE-001): does NOT exist as a concept in MDU's real model. MDU provenance is an append-only event list (ORIGIN/INGESTION/VALIDATION/...), each with its own event 'id' plus a shared 'dataset_id' -- there is no single knowledge-object identifier. Needs a design conversation with Nupur, not just a rename.",
+        "lineage_reference: Live-checked 2026-07-08 (scripts/confirm_mdu_contract.py, BHIV-DS-MARITIME-AIS-LIVE-001): does NOT exist as a field. MDU's lineage is the ordered event list itself, not a pointer field on a record. Needs a design conversation with Nupur on how MASTERDB should reference/consume that list.",
+        "derivation_path: Live-checked 2026-07-08 (scripts/confirm_mdu_contract.py, BHIV-DS-MARITIME-AIS-LIVE-001): does NOT exist as a field. Closest real analog is 'transformation_reference' (null on every observed event so far) plus event ordering. Needs confirmation from Nupur before MASTERDB relies on either."
+      ],
+      "mdu_provenance": {
+        "source": "unavailable",
+        "dataset_id": "ds-synthetic-tantra-golden-001",
+        "reason": "MDU provenance fetch failed: MDU request failed for /api/v1/datasets/canonical/ds-synthetic-tantra-golden-001: Client error '404 Not Found' for url 'https://bhiv-mdu-api.onrender.com/api/v1/datasets/canonical/ds-synthetic-tantra-golden-001'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      }
+    }
+  },
+  {
+    "step": 9,
+    "action": "POST /packages/promote -> VERIFIED",
+    "status": 200,
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "dataset_id": "ds-synthetic-tantra-golden-001",
+      "dataset_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "board": "synthetic-tantra",
+      "medium": "api",
+      "language": "en",
+      "owner": "tantra_lead",
+      "created_at": "2026-10-28T06:33:28.208213+00:00",
+      "updated_at": "2026-10-28T06:33:30.073530+00:00",
+      "status": "VERIFIED",
+      "history": [
+        {
+          "transition_id": "txn-605997d1f64d",
+          "from_status": null,
+          "to_status": "REGISTERED",
+          "reason": "Golden path synthetic test registration.",
+          "actor": "tantra_fa\u00e7ade",
+          "timestamp": "2026-10-28T06:33:28.208255+00:00"
+        },
+        {
+          "transition_id": "txn-c414e51d1a7b",
+          "from_status": "REGISTERED",
+          "to_status": "INGESTED",
+          "reason": "Ingested.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:28.782257+00:00"
+        },
+        {
+          "transition_id": "txn-726f130d0b52",
+          "from_status": "INGESTED",
+          "to_status": "VALIDATED",
+          "reason": "Validated.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:29.049452+00:00"
+        },
+        {
+          "transition_id": "txn-f53fc579c884",
+          "from_status": "VALIDATED",
+          "to_status": "VERIFIED",
+          "reason": "Verified.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.073506+00:00"
+        }
+      ]
+    }
+  },
+  {
+    "step": 10,
+    "action": "POST /packages/promote -> CERTIFIED",
+    "status": 200,
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "dataset_id": "ds-synthetic-tantra-golden-001",
+      "dataset_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "board": "synthetic-tantra",
+      "medium": "api",
+      "language": "en",
+      "owner": "tantra_lead",
+      "created_at": "2026-10-28T06:33:28.208213+00:00",
+      "updated_at": "2026-10-28T06:33:30.181056+00:00",
+      "status": "CERTIFIED",
+      "history": [
+        {
+          "transition_id": "txn-605997d1f64d",
+          "from_status": null,
+          "to_status": "REGISTERED",
+          "reason": "Golden path synthetic test registration.",
+          "actor": "tantra_fa\u00e7ade",
+          "timestamp": "2026-10-28T06:33:28.208255+00:00"
+        },
+        {
+          "transition_id": "txn-c414e51d1a7b",
+          "from_status": "REGISTERED",
+          "to_status": "INGESTED",
+          "reason": "Ingested.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:28.782257+00:00"
+        },
+        {
+          "transition_id": "txn-726f130d0b52",
+          "from_status": "INGESTED",
+          "to_status": "VALIDATED",
+          "reason": "Validated.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:29.049452+00:00"
+        },
+        {
+          "transition_id": "txn-f53fc579c884",
+          "from_status": "VALIDATED",
+          "to_status": "VERIFIED",
+          "reason": "Verified.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.073506+00:00"
+        },
+        {
+          "transition_id": "txn-0072fccf4a06",
+          "from_status": "VERIFIED",
+          "to_status": "CERTIFIED",
+          "reason": "Certified.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.181036+00:00"
+        }
+      ]
+    }
+  },
+  {
+    "step": 11,
+    "action": "POST /packages/promote -> RETRIEVAL_READY",
+    "status": 200,
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "dataset_id": "ds-synthetic-tantra-golden-001",
+      "dataset_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "board": "synthetic-tantra",
+      "medium": "api",
+      "language": "en",
+      "owner": "tantra_lead",
+      "created_at": "2026-10-28T06:33:28.208213+00:00",
+      "updated_at": "2026-10-28T06:33:30.288957+00:00",
+      "status": "RETRIEVAL_READY",
+      "history": [
+        {
+          "transition_id": "txn-605997d1f64d",
+          "from_status": null,
+          "to_status": "REGISTERED",
+          "reason": "Golden path synthetic test registration.",
+          "actor": "tantra_fa\u00e7ade",
+          "timestamp": "2026-10-28T06:33:28.208255+00:00"
+        },
+        {
+          "transition_id": "txn-c414e51d1a7b",
+          "from_status": "REGISTERED",
+          "to_status": "INGESTED",
+          "reason": "Ingested.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:28.782257+00:00"
+        },
+        {
+          "transition_id": "txn-726f130d0b52",
+          "from_status": "INGESTED",
+          "to_status": "VALIDATED",
+          "reason": "Validated.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:29.049452+00:00"
+        },
+        {
+          "transition_id": "txn-f53fc579c884",
+          "from_status": "VALIDATED",
+          "to_status": "VERIFIED",
+          "reason": "Verified.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.073506+00:00"
+        },
+        {
+          "transition_id": "txn-0072fccf4a06",
+          "from_status": "VERIFIED",
+          "to_status": "CERTIFIED",
+          "reason": "Certified.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.181036+00:00"
+        },
+        {
+          "transition_id": "txn-e79aa82ac96a",
+          "from_status": "CERTIFIED",
+          "to_status": "RETRIEVAL_READY",
+          "reason": "Retrieval ready.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.288934+00:00"
+        }
+      ]
+    }
+  },
+  {
+    "step": 12,
+    "action": "GET /tantra/packages/pkg-73e2c099dd95/retrieval-readiness",
+    "status": 200,
+    "readiness": "CERTIFIED_RETRIEVABLE",
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "status": "CERTIFIED_RETRIEVABLE",
+      "rules": [
+        {
+          "rule": "PACKAGE_CERTIFIED",
+          "passed": true,
+          "detail": "Package status is RETRIEVAL_READY."
+        },
+        {
+          "rule": "NOT_DEPRECATED_OR_ARCHIVED",
+          "passed": true,
+          "detail": "Package is active."
+        },
+        {
+          "rule": "METADATA_COMPLETE",
+          "passed": true,
+          "detail": "All required package metadata fields are present."
+        },
+        {
+          "rule": "LINEAGE_REGISTERED",
+          "passed": true,
+          "detail": "Knowledge object with source_reference is registered."
+        }
+      ],
+      "corrective_actions": [],
+      "generated_at": "2026-10-28T06:33:30.414349+00:00"
+    }
+  },
+  {
+    "step": 13,
+    "action": "GET /discovery/packages?package_id=pkg-73e2c099dd95",
+    "status": 200,
+    "count": 1,
+    "data": {
+      "count": 1,
+      "packages": [
+        {
+          "package_id": "pkg-73e2c099dd95",
+          "dataset_id": "ds-synthetic-tantra-golden-001",
+          "dataset_version": "1.0.0",
+          "schema_version": "1.0.0",
+          "board": "synthetic-tantra",
+          "medium": "api",
+          "language": "en",
+          "owner": "tantra_lead",
+          "created_at": "2026-10-28T06:33:28.208213+00:00",
+          "updated_at": "2026-10-28T06:33:30.288957+00:00",
+          "status": "RETRIEVAL_READY",
+          "history": [
+            {
+              "transition_id": "txn-605997d1f64d",
+              "from_status": null,
+              "to_status": "REGISTERED",
+              "reason": "Golden path synthetic test registration.",
+              "actor": "tantra_fa\u00e7ade",
+              "timestamp": "2026-10-28T06:33:28.208255+00:00"
+            },
+            {
+              "transition_id": "txn-c414e51d1a7b",
+              "from_status": "REGISTERED",
+              "to_status": "INGESTED",
+              "reason": "Ingested.",
+              "actor": "tantra_runner",
+              "timestamp": "2026-10-28T06:33:28.782257+00:00"
+            },
+            {
+              "transition_id": "txn-726f130d0b52",
+              "from_status": "INGESTED",
+              "to_status": "VALIDATED",
+              "reason": "Validated.",
+              "actor": "tantra_runner",
+              "timestamp": "2026-10-28T06:33:29.049452+00:00"
+            },
+            {
+              "transition_id": "txn-f53fc579c884",
+              "from_status": "VALIDATED",
+              "to_status": "VERIFIED",
+              "reason": "Verified.",
+              "actor": "tantra_runner",
+              "timestamp": "2026-10-28T06:33:30.073506+00:00"
+            },
+            {
+              "transition_id": "txn-0072fccf4a06",
+              "from_status": "VERIFIED",
+              "to_status": "CERTIFIED",
+              "reason": "Certified.",
+              "actor": "tantra_runner",
+              "timestamp": "2026-10-28T06:33:30.181036+00:00"
+            },
+            {
+              "transition_id": "txn-e79aa82ac96a",
+              "from_status": "CERTIFIED",
+              "to_status": "RETRIEVAL_READY",
+              "reason": "Retrieval ready.",
+              "actor": "tantra_runner",
+              "timestamp": "2026-10-28T06:33:30.288934+00:00"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "step": 14,
+    "action": "GET /tantra/packages/pkg-73e2c099dd95/runtime",
+    "status": 200,
+    "data": {
+      "package": {
+        "package_id": "pkg-73e2c099dd95",
+        "dataset_id": "ds-synthetic-tantra-golden-001",
+        "dataset_version": "1.0.0",
+        "schema_version": "1.0.0",
+        "board": "synthetic-tantra",
+        "medium": "api",
+        "language": "en",
+        "owner": "tantra_lead",
+        "created_at": "2026-10-28T06:33:28.208213+00:00",
+        "updated_at": "2026-10-28T06:33:30.288957+00:00",
+        "status": "RETRIEVAL_READY",
+        "history": [
+          {
+            "transition_id": "txn-605997d1f64d",
+            "from_status": null,
+            "to_status": "REGISTERED",
+            "reason": "Golden path synthetic test registration.",
+            "actor": "tantra_fa\u00e7ade",
+            "timestamp": "2026-10-28T06:33:28.208255+00:00"
+          },
+          {
+            "transition_id": "txn-c414e51d1a7b",
+            "from_status": "REGISTERED",
+            "to_status": "INGESTED",
+            "reason": "Ingested.",
+            "actor": "tantra_runner",
+            "timestamp": "2026-10-28T06:33:28.782257+00:00"
+          },
+          {
+            "transition_id": "txn-726f130d0b52",
+            "from_status": "INGESTED",
+            "to_status": "VALIDATED",
+            "reason": "Validated.",
+            "actor": "tantra_runner",
+            "timestamp": "2026-10-28T06:33:29.049452+00:00"
+          },
+          {
+            "transition_id": "txn-f53fc579c884",
+            "from_status": "VALIDATED",
+            "to_status": "VERIFIED",
+            "reason": "Verified.",
+            "actor": "tantra_runner",
+            "timestamp": "2026-10-28T06:33:30.073506+00:00"
+          },
+          {
+            "transition_id": "txn-0072fccf4a06",
+            "from_status": "VERIFIED",
+            "to_status": "CERTIFIED",
+            "reason": "Certified.",
+            "actor": "tantra_runner",
+            "timestamp": "2026-10-28T06:33:30.181036+00:00"
+          },
+          {
+            "transition_id": "txn-e79aa82ac96a",
+            "from_status": "CERTIFIED",
+            "to_status": "RETRIEVAL_READY",
+            "reason": "Retrieval ready.",
+            "actor": "tantra_runner",
+            "timestamp": "2026-10-28T06:33:30.288934+00:00"
+          }
+        ]
+      },
+      "lineage": {
+        "package_id": "pkg-73e2c099dd95",
+        "knowledge_object_registered": true,
+        "knowledge_object_id": "kobj-0c58a681376e",
+        "knowledge_hash": "defdca5b5c2503898bc6b05f4898a8850d59d3da21190f56440547fb6e0f0912",
+        "source_reference": "src-gev-celestrak",
+        "lineage_reference": null,
+        "derivation_path": [
+          "synthetic_raw",
+          "synthetic_validated"
+        ],
+        "ancestors": [],
+        "descendants": [],
+        "known_gaps": [
+          "knowledge_object_id: Live-checked 2026-07-08 (scripts/confirm_mdu_contract.py, BHIV-DS-MARITIME-AIS-LIVE-001): does NOT exist as a concept in MDU's real model. MDU provenance is an append-only event list (ORIGIN/INGESTION/VALIDATION/...), each with its own event 'id' plus a shared 'dataset_id' -- there is no single knowledge-object identifier. Needs a design conversation with Nupur, not just a rename.",
+          "lineage_reference: Live-checked 2026-07-08 (scripts/confirm_mdu_contract.py, BHIV-DS-MARITIME-AIS-LIVE-001): does NOT exist as a field. MDU's lineage is the ordered event list itself, not a pointer field on a record. Needs a design conversation with Nupur on how MASTERDB should reference/consume that list.",
+          "derivation_path: Live-checked 2026-07-08 (scripts/confirm_mdu_contract.py, BHIV-DS-MARITIME-AIS-LIVE-001): does NOT exist as a field. Closest real analog is 'transformation_reference' (null on every observed event so far) plus event ordering. Needs confirmation from Nupur before MASTERDB relies on either."
+        ],
+        "mdu_provenance": {
+          "source": "unavailable",
+          "dataset_id": "ds-synthetic-tantra-golden-001",
+          "reason": "MDU provenance fetch failed: MDU request failed for /api/v1/datasets/canonical/ds-synthetic-tantra-golden-001: Client error '404 Not Found' for url 'https://bhiv-mdu-api.onrender.com/api/v1/datasets/canonical/ds-synthetic-tantra-golden-001'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+        }
+      },
+      "retrieval_readiness": {
+        "package_id": "pkg-73e2c099dd95",
+        "status": "CERTIFIED_RETRIEVABLE",
+        "rules": [
+          {
+            "rule": "PACKAGE_CERTIFIED",
+            "passed": true,
+            "detail": "Package status is RETRIEVAL_READY."
+          },
+          {
+            "rule": "NOT_DEPRECATED_OR_ARCHIVED",
+            "passed": true,
+            "detail": "Package is active."
+          },
+          {
+            "rule": "METADATA_COMPLETE",
+            "passed": true,
+            "detail": "All required package metadata fields are present."
+          },
+          {
+            "rule": "LINEAGE_REGISTERED",
+            "passed": true,
+            "detail": "Knowledge object with source_reference is registered."
+          }
+        ],
+        "corrective_actions": [],
+        "generated_at": "2026-10-28T06:33:30.912482+00:00"
+      },
+      "certification_status": null
+    }
+  },
+  {
+    "step": 15,
+    "action": "GET /packages/pkg-73e2c099dd95/audit",
+    "status": 200,
+    "complete": true,
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "complete": true,
+      "issues": [],
+      "replay_consistent": true,
+      "replay_error": null,
+      "transition_count": 6
+    }
+  },
+  {
+    "step": 16,
+    "action": "GET /packages/pkg-73e2c099dd95/replay",
+    "status": 200,
+    "replay_consistent": true,
+    "replayed_status": "RETRIEVAL_READY",
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "replay_consistent": true,
+      "replayed_status": "RETRIEVAL_READY"
+    }
+  },
+  {
+    "step": 17,
+    "action": "POST /packages/deprecate",
+    "status": 200,
+    "package_status": "DEPRECATED",
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "dataset_id": "ds-synthetic-tantra-golden-001",
+      "dataset_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "board": "synthetic-tantra",
+      "medium": "api",
+      "language": "en",
+      "owner": "tantra_lead",
+      "created_at": "2026-10-28T06:33:28.208213+00:00",
+      "updated_at": "2026-10-28T06:33:31.422217+00:00",
+      "status": "DEPRECATED",
+      "history": [
+        {
+          "transition_id": "txn-605997d1f64d",
+          "from_status": null,
+          "to_status": "REGISTERED",
+          "reason": "Golden path synthetic test registration.",
+          "actor": "tantra_fa\u00e7ade",
+          "timestamp": "2026-10-28T06:33:28.208255+00:00"
+        },
+        {
+          "transition_id": "txn-c414e51d1a7b",
+          "from_status": "REGISTERED",
+          "to_status": "INGESTED",
+          "reason": "Ingested.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:28.782257+00:00"
+        },
+        {
+          "transition_id": "txn-726f130d0b52",
+          "from_status": "INGESTED",
+          "to_status": "VALIDATED",
+          "reason": "Validated.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:29.049452+00:00"
+        },
+        {
+          "transition_id": "txn-f53fc579c884",
+          "from_status": "VALIDATED",
+          "to_status": "VERIFIED",
+          "reason": "Verified.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.073506+00:00"
+        },
+        {
+          "transition_id": "txn-0072fccf4a06",
+          "from_status": "VERIFIED",
+          "to_status": "CERTIFIED",
+          "reason": "Certified.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.181036+00:00"
+        },
+        {
+          "transition_id": "txn-e79aa82ac96a",
+          "from_status": "CERTIFIED",
+          "to_status": "RETRIEVAL_READY",
+          "reason": "Retrieval ready.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.288934+00:00"
+        },
+        {
+          "transition_id": "txn-00bb6547b34f",
+          "from_status": "RETRIEVAL_READY",
+          "to_status": "DEPRECATED",
+          "reason": "End of test deprecation.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:31.422194+00:00"
+        }
+      ]
+    }
+  },
+  {
+    "step": 18,
+    "action": "GET /tantra/packages/pkg-73e2c099dd95/retrieval-readiness (after deprecate)",
+    "status": 200,
+    "readiness": "NOT_RETRIEVABLE",
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "status": "NOT_RETRIEVABLE",
+      "rules": [
+        {
+          "rule": "PACKAGE_CERTIFIED",
+          "passed": false,
+          "detail": "Package status is DEPRECATED; CERTIFIED or RETRIEVAL_READY is required."
+        },
+        {
+          "rule": "NOT_DEPRECATED_OR_ARCHIVED",
+          "passed": false,
+          "detail": "Package status is DEPRECATED."
+        },
+        {
+          "rule": "METADATA_COMPLETE",
+          "passed": true,
+          "detail": "All required package metadata fields are present."
+        },
+        {
+          "rule": "LINEAGE_REGISTERED",
+          "passed": true,
+          "detail": "Knowledge object with source_reference is registered."
+        }
+      ],
+      "corrective_actions": [
+        "Promote the package through VERIFIED -> CERTIFIED before requesting retrieval readiness.",
+        "This package has been withdrawn; register a new package version instead of retrieving this one."
+      ],
+      "generated_at": "2026-10-28T06:33:31.519061+00:00"
+    }
+  },
+  {
+    "step": 19,
+    "action": "POST /packages/promote -> ARCHIVED",
+    "status": 200,
+    "package_status": "ARCHIVED",
+    "data": {
+      "package_id": "pkg-73e2c099dd95",
+      "dataset_id": "ds-synthetic-tantra-golden-001",
+      "dataset_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "board": "synthetic-tantra",
+      "medium": "api",
+      "language": "en",
+      "owner": "tantra_lead",
+      "created_at": "2026-10-28T06:33:28.208213+00:00",
+      "updated_at": "2026-10-28T06:33:31.638784+00:00",
+      "status": "ARCHIVED",
+      "history": [
+        {
+          "transition_id": "txn-605997d1f64d",
+          "from_status": null,
+          "to_status": "REGISTERED",
+          "reason": "Golden path synthetic test registration.",
+          "actor": "tantra_fa\u00e7ade",
+          "timestamp": "2026-10-28T06:33:28.208255+00:00"
+        },
+        {
+          "transition_id": "txn-c414e51d1a7b",
+          "from_status": "REGISTERED",
+          "to_status": "INGESTED",
+          "reason": "Ingested.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:28.782257+00:00"
+        },
+        {
+          "transition_id": "txn-726f130d0b52",
+          "from_status": "INGESTED",
+          "to_status": "VALIDATED",
+          "reason": "Validated.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:29.049452+00:00"
+        },
+        {
+          "transition_id": "txn-f53fc579c884",
+          "from_status": "VALIDATED",
+          "to_status": "VERIFIED",
+          "reason": "Verified.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.073506+00:00"
+        },
+        {
+          "transition_id": "txn-0072fccf4a06",
+          "from_status": "VERIFIED",
+          "to_status": "CERTIFIED",
+          "reason": "Certified.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.181036+00:00"
+        },
+        {
+          "transition_id": "txn-e79aa82ac96a",
+          "from_status": "CERTIFIED",
+          "to_status": "RETRIEVAL_READY",
+          "reason": "Retrieval ready.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:30.288934+00:00"
+        },
+        {
+          "transition_id": "txn-00bb6547b34f",
+          "from_status": "RETRIEVAL_READY",
+          "to_status": "DEPRECATED",
+          "reason": "End of test deprecation.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:31.422194+00:00"
+        },
+        {
+          "transition_id": "txn-cf6d0ba713a0",
+          "from_status": "DEPRECATED",
+          "to_status": "ARCHIVED",
+          "reason": "Archived.",
+          "actor": "tantra_runner",
+          "timestamp": "2026-10-28T06:33:31.638759+00:00"
+        }
+      ]
+    }
+  },
+  {
+    "step": 20,
+    "action": "POST /packages/promote (ARCHIVED -> INGESTED, expect 400)",
+    "status": 400,
+    "error": {
+      "error": {
+        "type": "http_error",
+        "message": "Cannot transition package pkg-73e2c099dd95 from ARCHIVED to INGESTED. Allowed transitions from ARCHIVED: none (terminal state).",
+        "path": "/packages/promote"
+      }
+    }
+  },
+  {
+    "step": 21,
+    "action": "GET /packages/pkg-unknown (expect 404)",
+    "status": 404,
+    "error": {
+      "error": {
+        "type": "http_error",
+        "message": "'No package found for package_id=pkg-unknown-000000000000'",
+        "path": "/packages/pkg-unknown-000000000000"
+      }
+    }
+  },
+  {
+    "step": 22,
+    "action": "POST /knowledge-object with missing parent (expect 400)",
+    "status": 400,
+    "error": {
+      "error": {
+        "type": "http_error",
+        "message": "parent_package pkg-does-not-exist does not exist in the registry.",
+        "path": "/packages/pkg-73e2c099dd95/knowledge-object"
+      }
+    }
+  }
+]
