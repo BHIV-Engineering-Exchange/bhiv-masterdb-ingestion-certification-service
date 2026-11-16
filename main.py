@@ -909,7 +909,7 @@ def _shared_service(service_name: str) -> SharedRecordStore:
 
 
 @app.post("/validate")
-def validate_dataset(request: ValidationRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+def validate_dataset(request: ValidationRequest, identity: AuthIdentity = Depends(require_admin_operator)) -> dict:
     try:
         report = validation_service.validate(
             dataset_path=request.dataset_path,
@@ -926,7 +926,7 @@ def validate_dataset(request: ValidationRequest, identity: AuthIdentity = Depend
 
 
 @app.post("/certify")
-def certify_dataset(request: CertificationRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+def certify_dataset(request: CertificationRequest, identity: AuthIdentity = Depends(require_admin_operator)) -> dict:
     try:
         report = certification_service.certify(
             dataset_id=request.dataset_id,
@@ -1208,7 +1208,7 @@ def cancel_upload(upload_id: str, reason: UploadCancelRequest,
 
 
 @app.post("/packages/register")
-def register_package(request: PackageRegisterRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+def register_package(request: PackageRegisterRequest, identity: AuthIdentity = Depends(require_admin_operator)) -> dict:
     try:
         package = package_registry_service.register(
             dataset_id=request.dataset_id,
@@ -1228,7 +1228,7 @@ def register_package(request: PackageRegisterRequest, identity: AuthIdentity = D
 
 
 @app.post("/packages/promote")
-def promote_package(request: PackagePromoteRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+def promote_package(request: PackagePromoteRequest, identity: AuthIdentity = Depends(require_admin_operator)) -> dict:
     if not (set(identity.roles) & (ADMIN_ROLES | OPERATOR_ROLES)):
         log_security_decision(
             logger=logger,
@@ -1253,7 +1253,7 @@ def promote_package(request: PackagePromoteRequest, identity: AuthIdentity = Dep
 
 
 @app.post("/packages/deprecate")
-def deprecate_package(request: PackageDeprecateRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+def deprecate_package(request: PackageDeprecateRequest, identity: AuthIdentity = Depends(require_admin_operator)) -> dict:
     try:
         package = package_registry_service.deprecate(
             package_id=request.package_id,
@@ -1268,7 +1268,7 @@ def deprecate_package(request: PackageDeprecateRequest, identity: AuthIdentity =
 
 
 @app.get("/packages/{package_id}")
-def get_package(package_id: str) -> dict:
+def get_package(package_id: str, identity: AuthIdentity = Depends(get_identity)) -> dict:
     try:
         return package_registry_service.get(package_id).model_dump(mode="json")
     except PackageNotFoundError as exc:
@@ -1317,7 +1317,7 @@ def audit_package(package_id: str) -> dict:
 
 
 @app.post("/packages/{package_id}/knowledge-object")
-def register_knowledge_object(package_id: str, request: KnowledgeObjectRegisterRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+def register_knowledge_object(package_id: str, request: KnowledgeObjectRegisterRequest, identity: AuthIdentity = Depends(require_admin_operator)) -> dict:
     if request.package_id != package_id:
         raise HTTPException(
             status_code=400,
@@ -1369,7 +1369,9 @@ def get_package_retrieval(package_id: str) -> dict:
 @app.get("/mdu/status")
 def mdu_status() -> dict:
     return {
-        "live": mdu_contract_adapter.is_live(),
+        "configured": bool(mdu_contract_adapter.is_live()),
+        "live": None,
+        "reachability": "not_checked",
         "contract_finalized": mdu_contract_adapter.is_contract_finalized(),
         "known_gaps": mdu_contract_adapter.known_gaps(),
     }
@@ -1404,7 +1406,7 @@ def mdu_schema_compatibility(dataset_id: str, local_schema_version: str) -> dict
 
 
 @app.post("/tantra/datasets/register")
-def tantra_register_dataset(request: PackageRegisterRequest) -> dict:
+def tantra_register_dataset(request: PackageRegisterRequest, identity: AuthIdentity = Depends(require_admin_operator)) -> dict:
     try:
         package = tantra_interface_service.register_dataset(
             dataset_id=request.dataset_id,
@@ -1440,7 +1442,7 @@ def tantra_certification_status(dataset_id: str) -> dict:
 
 
 @app.get("/tantra/packages/{package_id}/runtime")
-def tantra_runtime_package_lookup(package_id: str) -> dict:
+def tantra_runtime_package_lookup(package_id: str, identity: AuthIdentity = Depends(get_identity)) -> dict:
     try:
         return tantra_interface_service.runtime_package_lookup(package_id)
     except PackageNotFoundError as exc:
@@ -1460,6 +1462,7 @@ def discover_packages(
     package_id: Optional[str] = Query(default=None),
     dataset_id: Optional[str] = Query(default=None),
     board: Optional[str] = Query(default=None),
+    identity: AuthIdentity = Depends(get_identity),
     medium: Optional[str] = Query(default=None),
     version: Optional[str] = Query(default=None),
     status: Optional[PackageStatus] = Query(default=None),
@@ -1524,7 +1527,7 @@ def shared_version_compatibility(local_version: str, remote_version: str) -> dic
 
 
 @app.post("/shared/{service_name}/register")
-def register_shared_record(service_name: str, request: SharedRecordRegisterRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+def register_shared_record(service_name: str, request: SharedRecordRegisterRequest, identity: AuthIdentity = Depends(require_admin_operator)) -> dict:
     service = _shared_service(service_name)
     try:
         record = service.register(
@@ -1541,7 +1544,7 @@ def register_shared_record(service_name: str, request: SharedRecordRegisterReque
 
 
 @app.put("/shared/{service_name}/{record_id}")
-def update_shared_record(service_name: str, record_id: str, request: SharedRecordUpdateRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+def update_shared_record(service_name: str, record_id: str, request: SharedRecordUpdateRequest, identity: AuthIdentity = Depends(require_admin_operator)) -> dict:
     service = _shared_service(service_name)
     try:
         record = service.update(
@@ -1560,7 +1563,7 @@ def update_shared_record(service_name: str, record_id: str, request: SharedRecor
 
 
 @app.post("/shared/{service_name}/{record_id}/deprecate")
-def deprecate_shared_record(service_name: str, record_id: str, request: SharedRecordDeprecateRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+def deprecate_shared_record(service_name: str, record_id: str, request: SharedRecordDeprecateRequest, identity: AuthIdentity = Depends(require_admin_operator)) -> dict:
     service = _shared_service(service_name)
     try:
         record = service.deprecate(record_id=record_id, actor=identity.actor, reason=request.reason)
@@ -1628,14 +1631,14 @@ def resolve_shared_record_dependencies(service_name: str, record_id: str) -> dic
 
 
 @app.get("/datasets")
-def list_datasets() -> dict:
+def list_datasets(identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Return all datasets known to the retrieval service."""
     datasets = dataset_retrieval_service.list_datasets()
     return {"count": len(datasets), "datasets": datasets}
 
 
 @app.get("/datasets/{dataset_id}")
-def get_dataset_detail(dataset_id: str) -> dict:
+def get_dataset_detail(dataset_id: str, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Return full dataset detail including history, knowledge object, and retrieval evidence."""
     if dataset_id == "ds-gev-opensky-flights":
         return get_opensky_flight_dataset()
@@ -1724,7 +1727,7 @@ def stream_dataset(request: StreamRequest, identity: AuthIdentity = Depends(get_
 
 
 @app.post("/reference")
-def reference_dataset(request: ReferenceRequest) -> dict:
+def reference_dataset(request: ReferenceRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
     """Generate a stable reference/citation for a dataset."""
     try:
         result = dataset_retrieval_service.reference(
@@ -2149,7 +2152,7 @@ def issue_token(request: TokenRequest) -> dict:
             access_token=token, actor=request.actor, roles=trusted_roles, expires_at=expires_at
         ).model_dump(mode="json")
     except AuthTokenError as exc:
-        status_code = 403 if str(exc) == "DENY:MISSING_ADMIN_PASSWORD" else 401
+        status_code = 403 if str(exc) == "DENY:MISSING_ADMIN_PASSWORD" or "prohibited in production" in str(exc).lower() else 401
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
@@ -2604,14 +2607,23 @@ def request_capability_access(
     identity: AuthIdentity = Depends(get_identity),
 ) -> AccessContract:
     """Steps 4 & 5: Request capability access authorization based on identity, roles & purpose."""
+    if os.environ.get("ENVIRONMENT", "").lower() in ("production", "prod") and not identity.is_tantra_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Production capability access requires a cryptographically verified TANTRA RS256 identity.",
+        )
     try:
         return tantra_interface_service.request_capability_access(
             actor=identity.actor, roles=identity.roles, request_data=request_data
         )
     except CapabilityNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except CapabilityAccessDeniedError as exc:
+    except (CapabilityAccessDeniedError, VanaGovernanceDeniedError) as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except VanaUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.post("/capabilities/{capability_id}/retrieve", response_model=CapabilityRetrieveResponse)
@@ -2622,6 +2634,11 @@ def retrieve_capability_data(
     identity: AuthIdentity = Depends(get_identity),
 ) -> CapabilityRetrieveResponse:
     """Steps 6, 7 & 8: Authorized data retrieval via canonical TANTRA capability access path."""
+    if os.environ.get("ENVIRONMENT", "").lower() in ("production", "prod") and not identity.is_tantra_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Production capability access requires a cryptographically verified TANTRA RS256 identity.",
+        )
     try:
         return tantra_interface_service.retrieve_capability_data(
             actor=identity.actor,
@@ -2631,8 +2648,12 @@ def retrieve_capability_data(
         )
     except CapabilityNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except CapabilityAccessDeniedError as exc:
+    except (CapabilityAccessDeniedError, VanaGovernanceDeniedError) as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except VanaUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.get("/access/{request_id}", response_model=AccessContract)
@@ -2853,8 +2874,7 @@ def get_source(
 @app.post("/connectors/geospatial/ingest", status_code=200)
 def geospatial_connector_ingest(
     payload: Dict[str, Any],
-    identity: AuthIdentity = Depends(get_identity),
-    _: None = Depends(require_admin_operator),
+    identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """
     Source-Independent Geospatial Connector Pipeline:
@@ -2874,7 +2894,7 @@ def geospatial_connector_ingest(
 
 @app.post("/earthquakes/usgs/ingest")
 def ingest_usgs_earthquakes(
-    identity: AuthIdentity = Depends(get_identity),
+    identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch the live USGS daily feed and idempotently persist its observations."""
     try:
@@ -2921,7 +2941,7 @@ def earthquake_map() -> FileResponse:
 @app.post("/aisstream/ingest")
 def ingest_aisstream_positions(
     payload: Dict[str, Any],
-    identity: AuthIdentity = Depends(get_identity),
+    identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch a bounded server-side AISStream position batch and persist vessel updates."""
     bounding_boxes = payload.get("bounding_boxes")
@@ -2975,7 +2995,7 @@ def list_aisstream_positions(
 
 @app.post("/aircraft/adsb/military/ingest")
 def ingest_military_aircraft(
-    identity: AuthIdentity = Depends(get_identity),
+    identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch publicly broadcast ADS-B military-feed observations and persist them."""
     try:
@@ -3016,7 +3036,7 @@ def list_military_aircraft(
 
 
 @app.post("/wildfires/firms/ingest")
-def ingest_firms_active_fires(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+def ingest_firms_active_fires(identity: AuthIdentity = Depends(require_admin_operator)) -> Dict[str, Any]:
     """Fetch NASA FIRMS near-real-time VIIRS detections and persist valid rows."""
     global firms_last_verified_at
     try:
@@ -3048,7 +3068,7 @@ def list_firms_active_fires(
 
 @app.post("/traffic/tomtom/ingest")
 def ingest_tomtom_traffic(
-    payload: Dict[str, Any], identity: AuthIdentity = Depends(get_identity),
+    payload: Dict[str, Any], identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch bounded real TomTom flow tiles and persist decoded road segments."""
     global traffic_last_verified_at, traffic_verified_tiles, traffic_last_fetch_error
@@ -3098,7 +3118,7 @@ def list_tomtom_traffic(
 
 @app.post("/weather/wind/{model}/ingest")
 def ingest_wind_forecast(
-    model: str, payload: Dict[str, Any], identity: AuthIdentity = Depends(get_identity),
+    model: str, payload: Dict[str, Any], identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch GFS/ECMWF grids through GEV, sample points, then store point forecasts."""
     model_key = model.lower()
@@ -3147,7 +3167,7 @@ def list_wind_forecasts(
 
 @app.post("/weather/open-meteo/ingest")
 def ingest_open_meteo_current(
-    payload: Dict[str, Any], identity: AuthIdentity = Depends(get_identity),
+    payload: Dict[str, Any], identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch Open-Meteo model-derived current surface conditions for points."""
     source_id = "src-open-meteo-current-weather"
@@ -3299,7 +3319,7 @@ def proxy_noaa_radar_tile(
 
 
 @app.post("/weather/radar/verify")
-def verify_noaa_radar(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+def verify_noaa_radar(identity: AuthIdentity = Depends(require_admin_operator)) -> Dict[str, Any]:
     """Fetch live capabilities and one in-coverage tile, then read back metadata."""
     try:
         manifest, snapshot = _fetch_store_radar_manifest()
@@ -3442,12 +3462,12 @@ def proxy_lightning_density_tile(
 
 
 @app.post("/weather/lightning/verify")
-def verify_lightning_density(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+def verify_lightning_density(identity: AuthIdentity = Depends(require_admin_operator)) -> Dict[str, Any]:
     return verify_satellite_cloud_product(product="lightning", identity=identity)
 
 
 @app.post("/cyclones/nhc/ingest")
-def ingest_noaa_cyclones(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+def ingest_noaa_cyclones(identity: AuthIdentity = Depends(require_admin_operator)) -> Dict[str, Any]:
     """Fetch current NOAA cyclone status and provider-attached GIS features."""
     try:
         feed = fetch_current_cyclones()
@@ -3574,7 +3594,7 @@ def proxy_satellite_cloud_tile(
 @app.post("/weather/satellite/verify")
 def verify_satellite_cloud_product(
     product: str = Query(..., pattern="^(clouds|clouds-regional|lightning)$"),
-    identity: AuthIdentity = Depends(get_identity),
+    identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch real capabilities and one in-coverage tile, then confirm registry read-back."""
     try:
@@ -3601,7 +3621,7 @@ def verify_satellite_cloud_product(
 
 
 @app.post("/natural-earth/{dataset}/ingest")
-def ingest_natural_earth_dataset(dataset: str, identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+def ingest_natural_earth_dataset(dataset: str, identity: AuthIdentity = Depends(require_admin_operator)) -> Dict[str, Any]:
     """Validate and persist a bundled Natural Earth static snapshot."""
     if dataset not in NaturalEarthFeatureService.DATASETS:
         raise HTTPException(status_code=404, detail="Unknown Natural Earth dataset")
@@ -3676,7 +3696,7 @@ def read_natural_earth_features(dataset: str, limit: int = Query(100, ge=1, le=5
 
 
 @app.post("/dams/ingest")
-def ingest_gods_eye_view_dams(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+def ingest_gods_eye_view_dams(identity: AuthIdentity = Depends(require_admin_operator)) -> Dict[str, Any]:
     """Import the real bundled GeoJSONL snapshot and verify persisted records."""
     global dam_snapshot_last_verified_at
     try:
@@ -3768,7 +3788,7 @@ def list_gods_eye_view_dam_features(
 
 
 @app.post("/events/bhote-koshi/ingest")
-def ingest_bhote_koshi_event(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+def ingest_bhote_koshi_event(identity: AuthIdentity = Depends(require_admin_operator)) -> Dict[str, Any]:
     """Ingest the static historical event pack and verify each persisted collection."""
     global bhote_koshi_last_verified_at
     try:
@@ -3884,7 +3904,7 @@ def get_photorealistic_tiles_manifest(
 
 @app.post("/geospatial/3d-tiles/photorealistic/verify")
 def verify_photorealistic_tiles(
-    identity: AuthIdentity = Depends(get_identity),
+    identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch the provider's actual tileset root and a tile without storing it."""
     global photoreal_tiles_last_verification
@@ -3963,7 +3983,7 @@ def get_satellite_imagery_manifest(
 
 @app.post("/geospatial/satellite-imagery/verify")
 def verify_satellite_imagery_endpoint(
-    identity: AuthIdentity = Depends(get_identity),
+    identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch a real provider tile; persist only sanitized metadata and read it back."""
     global satellite_imagery_last_verification
@@ -4011,7 +4031,7 @@ def get_world_terrain_manifest(
 
 @app.post("/geospatial/terrain/verify")
 def verify_world_terrain_endpoint(
-    identity: AuthIdentity = Depends(get_identity),
+    identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch layer metadata and one real quantized-mesh tile; then verify registry read-back."""
     global world_terrain_last_verification
@@ -4060,7 +4080,7 @@ def get_vector_basemap_manifest(
 
 @app.post("/geospatial/vector-basemap/verify")
 def verify_vector_basemap_endpoint(
-    identity: AuthIdentity = Depends(get_identity),
+    identity: AuthIdentity = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """Fetch OpenFreeMap TileJSON and a real vector tile; verify registry read-back."""
     global vector_basemap_last_verification
@@ -4533,6 +4553,7 @@ def get_opensky_flights(
     icao24: Optional[str] = Query(None, description="24-bit ICAO aircraft hex transponder address"),
     callsign: Optional[str] = Query(None, description="Aircraft flight callsign"),
     limit: int = Query(1000, ge=1, le=5000, description="Maximum number of state vectors to return"),
+    identity: AuthIdentity = Depends(get_identity),
 ) -> dict:
     """
     God's Eye View OpenSky Flight Telemetry API.
@@ -4565,7 +4586,7 @@ def get_opensky_flights(
 
 @app.get("/api/datasets/ds-gev-opensky-flights", tags=["datasets", "flights"])
 @app.get("/datasets/ds-gev-opensky-flights", tags=["datasets", "flights"])
-def get_opensky_flight_dataset() -> dict:
+def get_opensky_flight_dataset(identity: AuthIdentity = Depends(get_identity)) -> dict:
     """
     Dedicated endpoint for the God's Eye View OpenSky flight telemetry dataset:
     - Dataset ID: ds-gev-opensky-flights
@@ -4629,6 +4650,7 @@ def get_opensky_flight_dataset_records(
     icao24: Optional[str] = Query(None, description="24-bit ICAO aircraft hex transponder address"),
     callsign: Optional[str] = Query(None, description="Aircraft flight callsign"),
     limit: int = Query(1000, ge=1, le=5000, description="Maximum number of state vectors to return"),
+    identity: AuthIdentity = Depends(get_identity),
 ) -> dict:
     """
     Returns authentic OpenSky flight records from datasets/opensky_states.json with optional coordinate/filtering.

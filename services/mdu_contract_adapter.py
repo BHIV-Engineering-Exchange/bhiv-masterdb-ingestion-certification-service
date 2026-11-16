@@ -172,6 +172,9 @@ class MDUContractAdapter:
 
     # -- Phase 1: live contract consumption -----------------------------------
 
+    def is_configured(self) -> bool:
+        return self.client.is_configured()
+
     def is_live(self) -> bool:
         return self.client.is_configured()
 

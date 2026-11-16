@@ -14,6 +14,7 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 
 def build_identity_dependency(auth_service: AuthService):
     def get_identity(
+        # pyrefly: ignore[bad-function-definition]
         request: Request = None,
         credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer_scheme),
     ) -> AuthIdentity:

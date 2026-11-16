@@ -1484,10 +1484,7 @@ class CapabilityRegistryService:
             minimum = float(min_magnitude) if min_magnitude is not None else None
             maximum = float(max_magnitude) if max_magnitude is not None else None
         except (TypeError, ValueError) as exc:
-            raise HTTPException(
-                status_code=400,
-                detail="Query parameters `min_magnitude`/`max_magnitude` must be numeric",
-            ) from exc
+            raise ValueError("Query parameters `min_magnitude`/`max_magnitude` must be numeric") from exc
         if any(value is not None and (not math.isfinite(value) or not (-2 <= value <= 10)) for value in (minimum, maximum)):
             raise ValueError("magnitude filters must be between -2 and 10")
         if minimum is not None and maximum is not None and minimum > maximum:

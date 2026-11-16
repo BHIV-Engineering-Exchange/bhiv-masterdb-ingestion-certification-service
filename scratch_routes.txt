@@ -1,0 +1,720 @@
+﻿
+> main.py:911:@app.post("/validate")
+  main.py:912:def validate_dataset(request: ValidationRequest, identity: AuthIdentity = Depends(get_identity)) -> dict:
+  main.py:913:    try:
+  main.py:914:        report = validation_service.validate(
+  main.py:915:            dataset_path=request.dataset_path,
+  main.py:916:            metadata_path=request.metadata_path,
+> main.py:928:@app.post("/certify")
+  main.py:929:def certify_dataset(request: CertificationRequest, identity: AuthIdentity = Depends(get_identity)) -> 
+dict:
+  main.py:930:    try:
+  main.py:931:        report = certification_service.certify(
+  main.py:932:            dataset_id=request.dataset_id,
+  main.py:933:            dataset_path=request.dataset_path,
+> main.py:1125:@app.post("/upload/{upload_id}/validate")
+  main.py:1126:def validate_upload(upload_id: str, identity: AuthIdentity = Depends(get_identity)) -> dict:
+  main.py:1127:    """Validate uploaded file (checksum verification)."""
+  main.py:1128:    try:
+  main.py:1129:        job = upload_service.get_upload(upload_id)
+  main.py:1130:        if job.actor != identity.actor and ADMIN_ROLE not in identity.roles and "operator" not in 
+identity.roles:
+> main.py:1210:@app.post("/packages/register")
+  main.py:1211:def register_package(request: PackageRegisterRequest, identity: AuthIdentity = Depends(get_identity)) 
+-> dict:
+  main.py:1212:    try:
+  main.py:1213:        package = package_registry_service.register(
+  main.py:1214:            dataset_id=request.dataset_id,
+  main.py:1215:            dataset_version=request.dataset_version,
+> main.py:1230:@app.post("/packages/promote")
+  main.py:1231:def promote_package(request: PackagePromoteRequest, identity: AuthIdentity = Depends(get_identity)) -> 
+dict:
+  main.py:1232:    if not (set(identity.roles) & (ADMIN_ROLES | OPERATOR_ROLES)):
+  main.py:1233:        log_security_decision(
+  main.py:1234:            logger=logger,
+  main.py:1235:            outcome="DENY",
+> main.py:1237:            policy_reference="/packages/promote",
+  main.py:1238:            actor_reference=identity.actor,
+  main.py:1239:        )
+  main.py:1240:        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
+  main.py:1241:    try:
+  main.py:1242:        package = package_registry_service.promote(
+> main.py:1255:@app.post("/packages/deprecate")
+  main.py:1256:def deprecate_package(request: PackageDeprecateRequest, identity: AuthIdentity = Depends(get_identity)) 
+-> dict:
+  main.py:1257:    try:
+  main.py:1258:        package = package_registry_service.deprecate(
+  main.py:1259:            package_id=request.package_id,
+  main.py:1260:            actor=identity.actor,
+> main.py:1319:@app.post("/packages/{package_id}/knowledge-object")
+  main.py:1320:def register_knowledge_object(package_id: str, request: KnowledgeObjectRegisterRequest, identity: 
+AuthIdentity = Depends(get_identity)) -> dict:
+  main.py:1321:    if request.package_id != package_id:
+  main.py:1322:        raise HTTPException(
+  main.py:1323:            status_code=400,
+  main.py:1324:            detail="package_id in the path and request body must match.",
+> main.py:1406:@app.post("/tantra/datasets/register")
+  main.py:1407:def tantra_register_dataset(request: PackageRegisterRequest) -> dict:
+  main.py:1408:    try:
+  main.py:1409:        package = tantra_interface_service.register_dataset(
+  main.py:1410:            dataset_id=request.dataset_id,
+  main.py:1411:            dataset_version=request.dataset_version,
+> main.py:1426:@app.get("/tantra/packages/{package_id}/retrieval-readiness")
+  main.py:1427:def tantra_retrieval_readiness(package_id: str) -> dict:
+  main.py:1428:    try:
+  main.py:1429:        return tantra_interface_service.retrieval_readiness(package_id)
+  main.py:1430:    except PackageNotFoundError as exc:
+  main.py:1431:        raise HTTPException(status_code=404, detail=str(exc)) from exc
+> main.py:1442:@app.get("/tantra/packages/{package_id}/runtime")
+  main.py:1443:def tantra_runtime_package_lookup(package_id: str) -> dict:
+  main.py:1444:    try:
+  main.py:1445:        return tantra_interface_service.runtime_package_lookup(package_id)
+  main.py:1446:    except PackageNotFoundError as exc:
+  main.py:1447:        raise HTTPException(status_code=404, detail=str(exc)) from exc
+> main.py:1458:@app.get("/discovery/packages")
+  main.py:1459:def discover_packages(
+  main.py:1460:    package_id: Optional[str] = Query(default=None),
+  main.py:1461:    dataset_id: Optional[str] = Query(default=None),
+  main.py:1462:    board: Optional[str] = Query(default=None),
+  main.py:1463:    medium: Optional[str] = Query(default=None),
+> main.py:1630:@app.get("/datasets")
+  main.py:1631:def list_datasets() -> dict:
+  main.py:1632:    """Return all datasets known to the retrieval service."""
+  main.py:1633:    datasets = dataset_retrieval_service.list_datasets()
+  main.py:1634:    return {"count": len(datasets), "datasets": datasets}
+  main.py:1635:
+> main.py:1637:@app.get("/datasets/{dataset_id}")
+  main.py:1638:def get_dataset_detail(dataset_id: str) -> dict:
+  main.py:1639:    """Return full dataset detail including history, knowledge object, and retrieval evidence."""
+  main.py:1640:    if dataset_id == "ds-gev-opensky-flights":
+  main.py:1641:        return get_opensky_flight_dataset()
+  main.py:1642:    try:
+> main.py:1648:@app.get("/datasets/{dataset_id}/schema")
+  main.py:1649:def get_dataset_schema(dataset_id: str) -> dict:
+  main.py:1650:    """Return the schema contract for a dataset (MDU-live if available; registry-declared fallback)."""
+  main.py:1651:    return dataset_retrieval_service.get_dataset_schema(dataset_id)
+  main.py:1652:
+  main.py:1653:
+> main.py:1654:@app.get("/datasets/{dataset_id}/versions")
+  main.py:1655:def get_dataset_versions(dataset_id: str) -> dict:
+  main.py:1656:    """Return all registered versions of a dataset, sorted by creation time."""
+  main.py:1657:    try:
+  main.py:1658:        return dataset_retrieval_service.get_dataset_versions(dataset_id)
+  main.py:1659:    except PackageNotFoundError as exc:
+> main.py:1663:@app.get("/datasets/{dataset_id}/provenance")
+  main.py:1664:def get_dataset_provenance(dataset_id: str) -> dict:
+  main.py:1665:    """Return MASTERDB lineage + MDU provenance for a dataset."""
+  main.py:1666:    try:
+  main.py:1667:        return dataset_retrieval_service.get_dataset_provenance(dataset_id)
+  main.py:1668:    except PackageNotFoundError as exc:
+> main.py:1726:@app.post("/reference")
+  main.py:1727:def reference_dataset(request: ReferenceRequest) -> dict:
+  main.py:1728:    """Generate a stable reference/citation for a dataset."""
+  main.py:1729:    try:
+  main.py:1730:        result = dataset_retrieval_service.reference(
+  main.py:1731:            dataset_id=request.dataset_id,
+> main.py:1918:@app.get("/bcaes/validate/classification")
+  main.py:1919:def validate_bcaes_classification() -> dict:
+  main.py:1920:    return bcaes_registry_service.validate_classification()
+  main.py:1921:
+  main.py:1922:
+> main.py:1923:@app.get("/bcaes/validate/duplicates")
+  main.py:1924:def validate_bcaes_duplicates() -> dict:
+  main.py:1925:    return bcaes_registry_service.detect_duplicates()
+  main.py:1926:
+  main.py:1927:
+> main.py:1928:@app.get("/bcaes/validate/ownership")
+  main.py:1929:def validate_bcaes_ownership() -> dict:
+  main.py:1930:    return bcaes_registry_service.validate_ownership()
+  main.py:1931:
+  main.py:1932:
+> main.py:1933:@app.get("/bcaes/validate/authority-boundaries")
+  main.py:1934:def validate_bcaes_authority_boundaries() -> dict:
+  main.py:1935:    return bcaes_registry_service.validate_authority_boundaries()
+  main.py:1936:
+  main.py:1937:
+> main.py:1938:@app.get("/bcaes/validate/version-compatibility")
+  main.py:1939:def validate_bcaes_version_compatibility() -> dict:
+  main.py:1940:    return bcaes_registry_service.validate_version_compatibility()
+  main.py:1941:
+  main.py:1942:
+> main.py:1943:@app.get("/bcaes/validate/dependency-integrity")
+  main.py:1944:def validate_bcaes_dependency_integrity() -> dict:
+  main.py:1945:    return bcaes_registry_service.validate_dependency_integrity()
+  main.py:1946:
+  main.py:1947:
+> main.py:1948:@app.get("/bcaes/validate/architecture")
+  main.py:1949:def validate_bcaes_architecture() -> dict:
+  main.py:1950:    return bcaes_registry_service.validate_architecture()
+  main.py:1951:
+  main.py:1952:
+  main.py:1953:# ---------------------------------------------------------------------------
+> main.py:2307:            "certification": "/validate, /certify",
+  main.py:2308:            "knowledge_packages": "/packages/*",
+> main.py:2309:            "knowledge_objects": "/knowledge-objects/*",
+  main.py:2310:            "shared_data": "/shared/*",
+  main.py:2311:            "bcaes_registry": "/bcaes/*",
+  main.py:2312:            "canonical_repository": "/canonical-repository/*",
+> main.py:2313:            "central_data_platform": "/datasets, /datasets/{dataset_id}, /datasets/{dataset_id}/schema, 
+/datasets/{dataset_id}/versions, /datasets/{dataset_id}/provenance, /query, /export, /stream, /reference",
+  main.py:2314:            "evidence_preservation": "/evidence/{evidence_id}, /provenance/{dataset_id}, 
+/provenance/{package_id}, /bucket/status",
+  main.py:2315:            "auth": "/auth/token",
+  main.py:2316:            "runtime": "/runtime/identity, /health, /ready, /metrics",
+  main.py:2317:        },
+  main.py:2318:        "auth": {
+> main.py:2328:            "bcaes_registry_architecture": "/bcaes/validate/architecture",
+  main.py:2329:            "canonical_repository_document": "/canonical-repository/documents/{document_id}/verify",
+  main.py:2330:        },
+  main.py:2331:        "status": "not_yet_registered",
+  main.py:2332:        "note": "Self-description manifest only. No live TANTRA Runtime "
+  main.py:2333:        "Registry endpoint has been confirmed reachable from this "
+> main.py:2501:                "endpoint": "/bcaes/validate/architecture",
+  main.py:2502:                "mechanism": "replay_hash over full registry state; identical across repeated calls "
+  main.py:2503:                "against unchanged state",
+  main.py:2504:                "current_replay_hash": architecture["replay_hash"],
+  main.py:2505:                "currently_passes": architecture["passed"],
+  main.py:2506:            },
+> main.py:2875:@app.post("/earthquakes/usgs/ingest")
+  main.py:2876:def ingest_usgs_earthquakes(
+  main.py:2877:    identity: AuthIdentity = Depends(get_identity),
+  main.py:2878:) -> Dict[str, Any]:
+  main.py:2879:    """Fetch the live USGS daily feed and idempotently persist its observations."""
+  main.py:2880:    try:
+> main.py:2921:@app.post("/aisstream/ingest")
+  main.py:2922:def ingest_aisstream_positions(
+  main.py:2923:    payload: Dict[str, Any],
+  main.py:2924:    identity: AuthIdentity = Depends(get_identity),
+  main.py:2925:) -> Dict[str, Any]:
+  main.py:2926:    """Fetch a bounded server-side AISStream position batch and persist vessel updates."""
+> main.py:2976:@app.post("/aircraft/adsb/military/ingest")
+  main.py:2977:def ingest_military_aircraft(
+  main.py:2978:    identity: AuthIdentity = Depends(get_identity),
+  main.py:2979:) -> Dict[str, Any]:
+  main.py:2980:    """Fetch publicly broadcast ADS-B military-feed observations and persist them."""
+  main.py:2981:    try:
+> main.py:3008:@app.get("/aircraft/adsb/military/observations")
+  main.py:3009:def list_military_aircraft(
+  main.py:3010:    limit: int = Query(100, ge=1, le=1000),
+  main.py:3011:    offset: int = Query(0, ge=0),
+  main.py:3012:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3013:) -> Dict[str, Any]:
+> main.py:3018:@app.post("/wildfires/firms/ingest")
+  main.py:3019:def ingest_firms_active_fires(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3020:    """Fetch NASA FIRMS near-real-time VIIRS detections and persist valid rows."""
+  main.py:3021:    global firms_last_verified_at
+  main.py:3022:    try:
+  main.py:3023:        feed = fetch_active_fires()
+> main.py:3040:@app.get("/wildfires/firms/observations")
+  main.py:3041:def list_firms_active_fires(
+  main.py:3042:    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+  main.py:3043:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3044:) -> Dict[str, Any]:
+  main.py:3045:    records = fire_observation_service.list(limit=limit, offset=offset)
+> main.py:3049:@app.post("/traffic/tomtom/ingest")
+  main.py:3050:def ingest_tomtom_traffic(
+  main.py:3051:    payload: Dict[str, Any], identity: AuthIdentity = Depends(get_identity),
+  main.py:3052:) -> Dict[str, Any]:
+  main.py:3053:    """Fetch bounded real TomTom flow tiles and persist decoded road segments."""
+  main.py:3054:    global traffic_last_verified_at, traffic_verified_tiles, traffic_last_fetch_error
+> main.py:3083:@app.get("/traffic/tomtom/observations")
+  main.py:3084:def list_tomtom_traffic(
+  main.py:3085:    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+  main.py:3086:    z: Optional[int] = Query(default=None, ge=8, le=16),
+  main.py:3087:    x: Optional[int] = Query(default=None, ge=0), y: Optional[int] = Query(default=None, ge=0),
+  main.py:3088:    identity: AuthIdentity = Depends(get_identity),
+> main.py:3099:@app.post("/weather/wind/{model}/ingest")
+  main.py:3100:def ingest_wind_forecast(
+  main.py:3101:    model: str, payload: Dict[str, Any], identity: AuthIdentity = Depends(get_identity),
+  main.py:3102:) -> Dict[str, Any]:
+  main.py:3103:    """Fetch GFS/ECMWF grids through GEV, sample points, then store point forecasts."""
+  main.py:3104:    model_key = model.lower()
+> main.py:3136:@app.get("/weather/wind/forecasts")
+  main.py:3137:def list_wind_forecasts(
+  main.py:3138:    model: str = Query(..., pattern="^(gfs|ecmwf)$"),
+  main.py:3139:    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+  main.py:3140:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3141:) -> Dict[str, Any]:
+> main.py:3148:@app.post("/weather/open-meteo/ingest")
+  main.py:3149:def ingest_open_meteo_current(
+  main.py:3150:    payload: Dict[str, Any], identity: AuthIdentity = Depends(get_identity),
+  main.py:3151:) -> Dict[str, Any]:
+  main.py:3152:    """Fetch Open-Meteo model-derived current surface conditions for points."""
+  main.py:3153:    source_id = "src-open-meteo-current-weather"
+> main.py:3182:@app.get("/weather/open-meteo/current")
+  main.py:3183:def list_open_meteo_current(
+  main.py:3184:    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+  main.py:3185:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3186:) -> Dict[str, Any]:
+  main.py:3187:    records = weather_observation_service.list(WeatherObservationService.CURRENT_DATASET, limit=limit, 
+offset=offset)
+> main.py:3239:        "imageUrl": "/weather/radar/image?time=" + str(manifest["latest"]),
+> main.py:3240:        "tileTemplate": "/weather/radar/tile?time={time}&z={z}&x={x}&y={y}",
+  main.py:3241:        "last_image_retrieval": radar_source_state.get("last_image_retrieval"),
+  main.py:3242:    })
+  main.py:3243:    return result
+  main.py:3244:
+  main.py:3245:
+> main.py:3246:@app.get("/weather/radar/manifest")
+  main.py:3247:def get_noaa_radar_manifest(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3248:    """Return live nowCOAST radar capabilities and persist its metadata snapshot."""
+  main.py:3249:    try:
+  main.py:3250:        manifest, snapshot = _fetch_store_radar_manifest()
+  main.py:3251:        return _radar_manifest_response(manifest, snapshot)
+> main.py:3257:@app.get("/weather/radar/image")
+  main.py:3258:def proxy_noaa_radar_image(
+  main.py:3259:    time: str, size: str = Query("4096x2048"), bbox: Optional[str] = Query(default=None),
+  main.py:3260:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3261:) -> Response:
+  main.py:3262:    """Proxy a bounded full-extent or detail-window PNG radar image."""
+> main.py:3279:@app.get("/weather/radar/tile")
+  main.py:3280:def proxy_noaa_radar_tile(
+  main.py:3281:    time: str, z: int = Query(..., ge=0, le=6), x: int = Query(..., ge=0), y: int = Query(..., ge=0),
+  main.py:3282:    size: str = Query("256"), identity: AuthIdentity = Depends(get_identity),
+  main.py:3283:) -> Response:
+  main.py:3284:    """Proxy a single geographic NOAA radar tile; raster bytes are never row-stored."""
+> main.py:3301:@app.post("/weather/radar/verify")
+  main.py:3302:def verify_noaa_radar(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3303:    """Fetch live capabilities and one in-coverage tile, then read back metadata."""
+  main.py:3304:    try:
+  main.py:3305:        manifest, snapshot = _fetch_store_radar_manifest()
+  main.py:3306:        bounds = manifest["bounds"]
+> main.py:3377:        "imageUrl": f"/weather/satellite/image?product={product}&time={manifest['latest']}",
+> main.py:3378:        "tileTemplate": 
+f"/weather/satellite/tile?product={product}&time={{time}}&z={{z}}&x={{x}}&y={{y}}",
+  main.py:3379:        "last_image_retrieval": satellite_cloud_state[product].get("last_image_retrieval"),
+  main.py:3380:    })
+  main.py:3381:    return result
+  main.py:3382:
+  main.py:3383:
+> main.py:3384:@app.get("/weather/satellite/manifest")
+  main.py:3385:def get_satellite_cloud_manifest(
+  main.py:3386:    product: str = Query(..., pattern="^(clouds|clouds-regional|lightning)$"),
+  main.py:3387:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3388:) -> Dict[str, Any]:
+  main.py:3389:    """Return live capabilities for a supported nowCOAST satellite infrared product."""
+> main.py:3400:@app.get("/weather/satellite/image")
+  main.py:3401:def proxy_satellite_cloud_image(
+  main.py:3402:    product: str = Query(..., pattern="^(clouds|clouds-regional|lightning)$"),
+  main.py:3403:    time: str = Query(...), size: Optional[str] = Query(default=None), bbox: Optional[str] = 
+Query(default=None),
+  main.py:3404:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3405:) -> Response:
+> main.py:3423:@app.get("/weather/lightning/manifest")
+  main.py:3424:def get_lightning_density_manifest(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3425:    return get_satellite_cloud_manifest(product="lightning", identity=identity)
+  main.py:3426:
+  main.py:3427:
+> main.py:3428:@app.get("/weather/lightning/image")
+  main.py:3429:def proxy_lightning_density_image(
+  main.py:3430:    time: str, size: Optional[str] = Query(default=None), bbox: Optional[str] = Query(default=None),
+  main.py:3431:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3432:) -> Response:
+  main.py:3433:    return proxy_satellite_cloud_image(product="lightning", time=time, size=size, bbox=bbox, 
+identity=identity)
+> main.py:3436:@app.get("/weather/lightning/tile")
+  main.py:3437:def proxy_lightning_density_tile(
+  main.py:3438:    time: str, z: int = Query(..., ge=0, le=6), x: int = Query(..., ge=0), y: int = Query(..., ge=0),
+  main.py:3439:    size: str = Query("256"), identity: AuthIdentity = Depends(get_identity),
+  main.py:3440:) -> Response:
+  main.py:3441:    return proxy_satellite_cloud_tile(product="lightning", time=time, z=z, x=x, y=y, size=size, 
+identity=identity)
+> main.py:3444:@app.post("/weather/lightning/verify")
+  main.py:3445:def verify_lightning_density(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3446:    return verify_satellite_cloud_product(product="lightning", identity=identity)
+  main.py:3447:
+  main.py:3448:
+> main.py:3449:@app.post("/cyclones/nhc/ingest")
+  main.py:3450:def ingest_noaa_cyclones(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3451:    """Fetch current NOAA cyclone status and provider-attached GIS features."""
+  main.py:3452:    try:
+  main.py:3453:        feed = fetch_current_cyclones()
+  main.py:3454:        result = cyclone_observation_service.ingest(feed)
+> main.py:3508:@app.get("/cyclones/nhc/storms")
+  main.py:3509:def list_noaa_cyclones(
+  main.py:3510:    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+  main.py:3511:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3512:) -> Dict[str, Any]:
+  main.py:3513:    records = cyclone_observation_service.list(CYCLONE_DATASETS["storms"], limit=limit, offset=offset)
+> main.py:3527:@app.get("/cyclones/nhc/forecast-points")
+  main.py:3528:def list_noaa_cyclone_forecast_points(
+  main.py:3529:    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+  main.py:3530:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3531:) -> Dict[str, Any]:
+  main.py:3532:    return _cyclone_feature_response("points", limit, offset)
+> main.py:3535:@app.get("/cyclones/nhc/tracks")
+  main.py:3536:def list_noaa_cyclone_tracks(
+  main.py:3537:    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+  main.py:3538:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3539:) -> Dict[str, Any]:
+  main.py:3540:    return _cyclone_feature_response("tracks", limit, offset)
+> main.py:3543:@app.get("/cyclones/nhc/cones")
+  main.py:3544:def list_noaa_cyclone_forecast_cones(
+  main.py:3545:    limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0),
+  main.py:3546:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3547:) -> Dict[str, Any]:
+  main.py:3548:    return _cyclone_feature_response("cones", limit, offset)
+> main.py:3551:@app.get("/weather/satellite/tile")
+  main.py:3552:def proxy_satellite_cloud_tile(
+  main.py:3553:    product: str = Query(..., pattern="^(clouds|clouds-regional|lightning)$"), time: str = Query(...),
+  main.py:3554:    z: int = Query(..., ge=0, le=6), x: int = Query(..., ge=0), y: int = Query(..., ge=0),
+  main.py:3555:    size: str = Query("256"), identity: AuthIdentity = Depends(get_identity),
+  main.py:3556:) -> Response:
+> main.py:3574:@app.post("/weather/satellite/verify")
+  main.py:3575:def verify_satellite_cloud_product(
+  main.py:3576:    product: str = Query(..., pattern="^(clouds|clouds-regional|lightning)$"),
+  main.py:3577:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3578:) -> Dict[str, Any]:
+  main.py:3579:    """Fetch real capabilities and one in-coverage tile, then confirm registry read-back."""
+> main.py:3603:@app.post("/natural-earth/{dataset}/ingest")
+  main.py:3604:def ingest_natural_earth_dataset(dataset: str, identity: AuthIdentity = Depends(get_identity)) -> 
+Dict[str, Any]:
+  main.py:3605:    """Validate and persist a bundled Natural Earth static snapshot."""
+  main.py:3606:    if dataset not in NaturalEarthFeatureService.DATASETS:
+  main.py:3607:        raise HTTPException(status_code=404, detail="Unknown Natural Earth dataset")
+  main.py:3608:    source_id = f"src-gev-natural-earth-{dataset}"
+> main.py:3660:@app.get("/natural-earth/{dataset}/attributes")
+  main.py:3661:def read_natural_earth_attributes(dataset: str, limit: int = Query(100, ge=1, le=5000),
+  main.py:3662:                                  offset: int = Query(0, ge=0),
+  main.py:3663:                                  identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3664:    if dataset not in NaturalEarthFeatureService.DATASETS:
+  main.py:3665:        raise HTTPException(status_code=404, detail="Unknown Natural Earth dataset")
+> main.py:3669:@app.get("/natural-earth/{dataset}/features")
+  main.py:3670:def read_natural_earth_features(dataset: str, limit: int = Query(100, ge=1, le=5000),
+  main.py:3671:                                offset: int = Query(0, ge=0),
+  main.py:3672:                                identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3673:    if dataset not in NaturalEarthFeatureService.DATASETS:
+  main.py:3674:        raise HTTPException(status_code=404, detail="Unknown Natural Earth dataset")
+> main.py:3678:@app.post("/dams/ingest")
+  main.py:3679:def ingest_gods_eye_view_dams(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3680:    """Import the real bundled GeoJSONL snapshot and verify persisted records."""
+  main.py:3681:    global dam_snapshot_last_verified_at
+  main.py:3682:    try:
+  main.py:3683:        feed = fetch_dams()
+> main.py:3770:@app.post("/events/bhote-koshi/ingest")
+  main.py:3771:def ingest_bhote_koshi_event(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3772:    """Ingest the static historical event pack and verify each persisted collection."""
+  main.py:3773:    global bhote_koshi_last_verified_at
+  main.py:3774:    try:
+  main.py:3775:        feed = fetch_bhote_koshi_event()
+> main.py:3837:@app.get("/events/bhote-koshi")
+  main.py:3838:def get_bhote_koshi_event(identity: AuthIdentity = Depends(get_identity)) -> Dict[str, Any]:
+  main.py:3839:    record = bhote_koshi_event_service.get_event()
+  main.py:3840:    if record is None:
+  main.py:3841:        raise HTTPException(status_code=404, detail="Bhote Koshi event has not been ingested")
+  main.py:3842:    return record
+> main.py:3845:@app.get("/events/bhote-koshi/features")
+  main.py:3846:def get_bhote_koshi_features(
+  main.py:3847:    limit: int = Query(100, ge=1, le=1000),
+  main.py:3848:    offset: int = Query(0, ge=0),
+  main.py:3849:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3850:) -> Dict[str, Any]:
+> main.py:3854:@app.get("/events/bhote-koshi/media")
+  main.py:3855:def get_bhote_koshi_media_references(
+  main.py:3856:    limit: int = Query(100, ge=1, le=1000),
+  main.py:3857:    offset: int = Query(0, ge=0),
+  main.py:3858:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3859:) -> Dict[str, Any]:
+> main.py:3870:@app.get("/geospatial/3d-tiles/photorealistic/manifest")
+  main.py:3871:def get_photorealistic_tiles_manifest(
+  main.py:3872:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3873:) -> Dict[str, Any]:
+  main.py:3874:    """Return safe service metadata; never return browser/provider credentials."""
+  main.py:3875:    manifest = photoreal_tiles_safe_manifest(photoreal_tiles_last_verification)
+> main.py:3885:@app.post("/geospatial/3d-tiles/photorealistic/verify")
+  main.py:3886:def verify_photorealistic_tiles(
+  main.py:3887:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3888:) -> Dict[str, Any]:
+  main.py:3889:    """Fetch the provider's actual tileset root and a tile without storing it."""
+  main.py:3890:    global photoreal_tiles_last_verification
+> main.py:3949:@app.get("/geospatial/satellite-imagery/manifest")
+  main.py:3950:def get_satellite_imagery_manifest(
+  main.py:3951:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3952:) -> Dict[str, Any]:
+  main.py:3953:    """Return provider metadata without exposing any provider credentials."""
+  main.py:3954:    manifest = satellite_imagery_safe_manifest(satellite_imagery_last_verification)
+> main.py:3964:@app.post("/geospatial/satellite-imagery/verify")
+  main.py:3965:def verify_satellite_imagery_endpoint(
+  main.py:3966:    identity: AuthIdentity = Depends(get_identity),
+  main.py:3967:) -> Dict[str, Any]:
+  main.py:3968:    """Fetch a real provider tile; persist only sanitized metadata and read it back."""
+  main.py:3969:    global satellite_imagery_last_verification
+> main.py:3997:@app.get("/geospatial/terrain/manifest")
+  main.py:3998:def get_world_terrain_manifest(
+  main.py:3999:    identity: AuthIdentity = Depends(get_identity),
+  main.py:4000:) -> Dict[str, Any]:
+  main.py:4001:    """Return terrain provider and coverage metadata without credentials."""
+  main.py:4002:    manifest = world_terrain_safe_manifest(world_terrain_last_verification)
+> main.py:4012:@app.post("/geospatial/terrain/verify")
+  main.py:4013:def verify_world_terrain_endpoint(
+  main.py:4014:    identity: AuthIdentity = Depends(get_identity),
+  main.py:4015:) -> Dict[str, Any]:
+  main.py:4016:    """Fetch layer metadata and one real quantized-mesh tile; then verify registry read-back."""
+  main.py:4017:    global world_terrain_last_verification
+> main.py:4046:@app.get("/geospatial/vector-basemap/manifest")
+  main.py:4047:def get_vector_basemap_manifest(
+  main.py:4048:    identity: AuthIdentity = Depends(get_identity),
+  main.py:4049:) -> Dict[str, Any]:
+  main.py:4050:    """Return the OpenFreeMap vector tile service metadata without credentials."""
+  main.py:4051:    manifest = vector_basemap_safe_manifest(vector_basemap_last_verification)
+> main.py:4061:@app.post("/geospatial/vector-basemap/verify")
+  main.py:4062:def verify_vector_basemap_endpoint(
+  main.py:4063:    identity: AuthIdentity = Depends(get_identity),
+  main.py:4064:) -> Dict[str, Any]:
+  main.py:4065:    """Fetch OpenFreeMap TileJSON and a real vector tile; verify registry read-back."""
+  main.py:4066:    global vector_basemap_last_verification
+> main.py:4126:            "feature_endpoint": "/natural-earth/regions/features", "attribute_endpoint": 
+"/natural-earth/regions/attributes",
+> main.py:4127:            "ingestion_endpoint": "/natural-earth/regions/ingest", "verification_endpoint": 
+"/natural-earth/regions/ingest",
+  main.py:4128:            "source_feature_count": 1046, "record_count": 
+natural_earth_feature_service.readback_counts("regions")["attributes"],
+  main.py:4129:            "geometry_record_count": 
+natural_earth_feature_service.readback_counts("regions")["geometries"],
+  main.py:4130:            "last_updated_at_utc": natural_earth_last_verified_at["regions"],
+  main.py:4131:        },
+  main.py:4132:        {
+> main.py:4139:            "feature_endpoint": "/natural-earth/marine/features", "attribute_endpoint": 
+"/natural-earth/marine/attributes",
+> main.py:4140:            "ingestion_endpoint": "/natural-earth/marine/ingest", "verification_endpoint": 
+"/natural-earth/marine/ingest",
+  main.py:4141:            "source_feature_count": 292, "record_count": 
+natural_earth_feature_service.readback_counts("marine")["attributes"],
+  main.py:4142:            "geometry_record_count": 
+natural_earth_feature_service.readback_counts("marine")["geometries"],
+  main.py:4143:            "last_updated_at_utc": natural_earth_last_verified_at["marine"],
+  main.py:4144:        },
+  main.py:4145:        {
+> main.py:4154:            "manifest_endpoint": "/geospatial/vector-basemap/manifest",
+> main.py:4155:            "verification_endpoint": "/geospatial/vector-basemap/verify",
+  main.py:4156:            "credential_configured": False,
+  main.py:4157:            "credential_values_included": False,
+  main.py:4158:            "tiles_loaded": vector_basemap_manifest["status"] == "LIVE_VERIFIED",
+  main.py:4159:            "last_updated_at_utc": vector_basemap_last_verification.get("verified_at_utc"),
+  main.py:4160:            "record_count": 0,
+> main.py:4171:            "manifest_endpoint": "/geospatial/terrain/manifest",
+> main.py:4172:            "verification_endpoint": "/geospatial/terrain/verify",
+  main.py:4173:            "credential_configured": terrain_manifest["credential_configured"],
+  main.py:4174:            "credential_values_included": False,
+  main.py:4175:            "tiles_loaded": terrain_manifest["status"] == "LIVE_VERIFIED",
+  main.py:4176:            "last_updated_at_utc": world_terrain_last_verification.get("verified_at_utc"),
+  main.py:4177:            "record_count": 0,
+> main.py:4188:            "manifest_endpoint": "/geospatial/satellite-imagery/manifest",
+> main.py:4189:            "verification_endpoint": "/geospatial/satellite-imagery/verify",
+  main.py:4190:            "credential_values_included": False,
+  main.py:4191:            "tiles_loaded": satellite_manifest["status"] == "LIVE_VERIFIED",
+  main.py:4192:            "last_updated_at_utc": satellite_imagery_last_verification.get("verified_at_utc"),
+  main.py:4193:            "record_count": 0,
+  main.py:4194:        },
+> main.py:4205:            "manifest_endpoint": "/geospatial/3d-tiles/photorealistic/manifest",
+> main.py:4206:            "verification_endpoint": "/geospatial/3d-tiles/photorealistic/verify",
+  main.py:4207:            "preferred_route": photoreal_manifest["preferred_route"],
+  main.py:4208:            "credential_configured": photoreal_manifest["credential_configured"],
+  main.py:4209:            "credential_values_included": False,
+  main.py:4210:            "tiles_loaded": photoreal_manifest["status"] == "LIVE_VERIFIED",
+  main.py:4211:            "last_updated_at_utc": photoreal_tiles_last_verification.get("verified_at_utc"),
+> main.py:4222:            "event_endpoint": "/events/bhote-koshi",
+> main.py:4223:            "feature_endpoint": "/events/bhote-koshi/features",
+> main.py:4224:            "media_endpoint": "/events/bhote-koshi/media",
+> main.py:4225:            "ingestion_endpoint": "/events/bhote-koshi/ingest",
+  main.py:4226:            "record_count": (
+  main.py:4227:                len(bhote_koshi_event_service.event_store.list_all())
+  main.py:4228:                + len(bhote_koshi_event_service.geometry_store.list_all())
+  main.py:4229:                + len(bhote_koshi_event_service.media_store.list_all())
+  main.py:4230:            ),
+> main.py:4247:            "ingestion_endpoint": "/dams/ingest",
+  main.py:4248:            "source_feature_count": 704,
+  main.py:4249:            "record_count": len(dam_feature_service.list_attributes(limit=1_000_000)),
+  main.py:4250:            "license": "Open Database License (ODbL) 1.0",
+  main.py:4251:            "attribution": "© OpenStreetMap contributors; Open Infrastructure Map",
+  main.py:4252:        },
+> main.py:4260:            "ingestion_endpoint": "/earthquakes/usgs/ingest",
+> main.py:4261:            "verification_endpoint": "/earthquakes/usgs/ingest",
+  main.py:4262:            "record_count": len(earthquake_observation_service.list(limit=1_000_000)),
+  main.py:4263:        },
+  main.py:4264:        {
+  main.py:4265:            "dataset_id": AISObservationService.DATASET_ID,
+  main.py:4266:            "name": "AISStream Vessel Positions",
+> main.py:4271:            "ingestion_endpoint": "/aisstream/ingest",
+  main.py:4272:            "credential_values_included": False,
+  main.py:4273:            "record_count": len(ais_observation_service.list(limit=1_000_000)),
+  main.py:4274:        },
+  main.py:4275:        {
+  main.py:4276:            "dataset_id": AircraftObservationService.DATASET_ID,
+> main.py:4281:            "observation_endpoint": "/aircraft/adsb/military/observations",
+> main.py:4282:            "ingestion_endpoint": "/aircraft/adsb/military/ingest",
+> main.py:4283:            "verification_endpoint": "/aircraft/adsb/military/ingest",
+  main.py:4284:            "record_count": len(aircraft_observation_service.list(limit=1_000_000)),
+  main.py:4285:        },
+  main.py:4286:        {
+  main.py:4287:            "dataset_id": FireObservationService.DATASET_ID,
+  main.py:4288:            "name": "NASA FIRMS Active Fire Detections",
+> main.py:4293:            "observation_endpoint": "/wildfires/firms/observations",
+> main.py:4294:            "ingestion_endpoint": "/wildfires/firms/ingest",
+  main.py:4295:            "record_count": len(fire_observation_service.list(limit=1_000_000)),
+  main.py:4296:        },
+  main.py:4297:        {
+  main.py:4298:            "dataset_id": TrafficObservationService.DATASET_ID,
+  main.py:4299:            "name": "TomTom Traffic Flow Segments",
+> main.py:4305:            "observation_endpoint": "/traffic/tomtom/observations",
+> main.py:4306:            "ingestion_endpoint": "/traffic/tomtom/ingest",
+  main.py:4307:            "record_count": len(traffic_observation_service.list(limit=1_000_000)),
+  main.py:4308:        },
+  main.py:4309:        {
+  main.py:4310:            "dataset_id": WeatherObservationService.WIND_DATASETS["GFS"],
+  main.py:4311:            "name": "NOAA GFS 10 m Wind Point Forecasts",
+> main.py:4318:            "observation_endpoint": "/weather/wind/forecasts?model=gfs",
+> main.py:4319:            "ingestion_endpoint": "/weather/wind/gfs/ingest",
+  main.py:4320:            "record_count": 
+len(weather_observation_service.list(WeatherObservationService.WIND_DATASETS["GFS"], limit=1_000_000)),
+  main.py:4321:        },
+  main.py:4322:        {
+  main.py:4323:            "dataset_id": WeatherObservationService.WIND_DATASETS["ECMWF"],
+  main.py:4324:            "name": "ECMWF IFS 10 m Wind Point Forecasts",
+> main.py:4331:            "observation_endpoint": "/weather/wind/forecasts?model=ecmwf",
+> main.py:4332:            "ingestion_endpoint": "/weather/wind/ecmwf/ingest",
+  main.py:4333:            "record_count": 
+len(weather_observation_service.list(WeatherObservationService.WIND_DATASETS["ECMWF"], limit=1_000_000)),
+  main.py:4334:        },
+  main.py:4335:        {
+  main.py:4336:            "dataset_id": WeatherObservationService.CURRENT_DATASET,
+  main.py:4337:            "name": "Open-Meteo Current Surface Weather",
+> main.py:4344:            "observation_endpoint": "/weather/open-meteo/current",
+> main.py:4345:            "ingestion_endpoint": "/weather/open-meteo/ingest",
+  main.py:4346:            "record_count": 
+len(weather_observation_service.list(WeatherObservationService.CURRENT_DATASET, limit=1_000_000)),
+  main.py:4347:        },
+  main.py:4348:        {
+  main.py:4349:            "dataset_id": SATELLITE_CLOUD_PRODUCTS["clouds"]["dataset_id"],
+  main.py:4350:            "name": "NOAA nowCOAST Global Satellite Infrared Imagery",
+> main.py:4363:            "observation_endpoint": "/weather/satellite/manifest?product=clouds",
+> main.py:4364:            "ingestion_endpoint": "/weather/satellite/verify?product=clouds",
+> main.py:4365:            "image_endpoint": "/weather/satellite/image?product=clouds&time={timestamp}",
+> main.py:4366:            "tile_endpoint": 
+"/weather/satellite/tile?product=clouds&time={timestamp}&z={z}&x={x}&y={y}",
+  main.py:4367:            "record_count": 0,
+  main.py:4368:        },
+  main.py:4369:        {
+  main.py:4370:            "dataset_id": SATELLITE_CLOUD_PRODUCTS["clouds-regional"]["dataset_id"],
+  main.py:4371:            "name": "NOAA nowCOAST GOES Regional Satellite Infrared Imagery",
+> main.py:4384:            "observation_endpoint": "/weather/satellite/manifest?product=clouds-regional",
+> main.py:4385:            "ingestion_endpoint": "/weather/satellite/verify?product=clouds-regional",
+> main.py:4386:            "image_endpoint": "/weather/satellite/image?product=clouds-regional&time={timestamp}",
+> main.py:4387:            "tile_endpoint": 
+"/weather/satellite/tile?product=clouds-regional&time={timestamp}&z={z}&x={x}&y={y}",
+  main.py:4388:            "record_count": 0,
+  main.py:4389:        },
+  main.py:4390:        {
+  main.py:4391:            "dataset_id": NOAA_WEATHER_IMAGERY_PRODUCTS["lightning"]["dataset_id"],
+  main.py:4392:            "name": "NOAA nowCOAST Lightning Strike Density Imagery",
+> main.py:4405:            "observation_endpoint": "/weather/lightning/manifest",
+> main.py:4406:            "ingestion_endpoint": "/weather/lightning/verify",
+> main.py:4407:            "image_endpoint": "/weather/lightning/image?time={timestamp}",
+> main.py:4408:            "tile_endpoint": "/weather/lightning/tile?time={timestamp}&z={z}&x={x}&y={y}",
+  main.py:4409:            "record_count": 0,
+  main.py:4410:        },
+  main.py:4411:        {
+  main.py:4412:            "dataset_id": "noaa_nowcoast_conus_base_reflectivity_radar",
+  main.py:4413:            "name": "NOAA nowCOAST CONUS Base Reflectivity Radar",
+> main.py:4426:            "observation_endpoint": "/weather/radar/manifest",
+> main.py:4427:            "ingestion_endpoint": "/weather/radar/verify",
+> main.py:4428:            "image_endpoint": "/weather/radar/image?time={timestamp}",
+> main.py:4429:            "tile_endpoint": "/weather/radar/tile?time={timestamp}&z={z}&x={x}&y={y}",
+  main.py:4430:            "record_count": 0,
+  main.py:4431:        },
+  main.py:4432:        {
+  main.py:4433:            "dataset_id": CYCLONE_DATASETS["storms"],
+  main.py:4434:            "name": "NOAA NHC/CPHC Current Tropical Cyclone Status",
+> main.py:4442:            "observation_endpoint": "/cyclones/nhc/storms",
+> main.py:4443:            "ingestion_endpoint": "/cyclones/nhc/ingest",
+  main.py:4444:            "record_count": len(cyclone_observation_service.list(CYCLONE_DATASETS["storms"], 
+limit=1000)),
+  main.py:4445:        },
+  main.py:4446:        {
+  main.py:4447:            "dataset_id": CYCLONE_DATASETS["points"],
+  main.py:4448:            "name": "NOAA Tropical Cyclone Forecast Points",
+> main.py:4454:            "observation_endpoint": "/cyclones/nhc/forecast-points",
+> main.py:4455:            "ingestion_endpoint": "/cyclones/nhc/ingest",
+  main.py:4456:            "record_count": len(cyclone_observation_service.list(CYCLONE_DATASETS["points"], 
+limit=1000)),
+  main.py:4457:        },
+  main.py:4458:        {
+  main.py:4459:            "dataset_id": CYCLONE_DATASETS["tracks"],
+  main.py:4460:            "name": "NOAA Tropical Cyclone Storm Tracks",
+> main.py:4466:            "observation_endpoint": "/cyclones/nhc/tracks",
+> main.py:4467:            "ingestion_endpoint": "/cyclones/nhc/ingest",
+  main.py:4468:            "record_count": len(cyclone_observation_service.list(CYCLONE_DATASETS["tracks"], 
+limit=1000)),
+  main.py:4469:        },
+  main.py:4470:        {
+  main.py:4471:            "dataset_id": CYCLONE_DATASETS["cones"],
+  main.py:4472:            "name": "NOAA Tropical Cyclone Forecast Cones",
+> main.py:4478:            "observation_endpoint": "/cyclones/nhc/cones",
+> main.py:4479:            "ingestion_endpoint": "/cyclones/nhc/ingest",
+  main.py:4480:            "record_count": len(cyclone_observation_service.list(CYCLONE_DATASETS["cones"], 
+limit=1000)),
+  main.py:4481:        },
+  main.py:4482:    ]
+  main.py:4483:    return {"count": len(datasets), "datasets": datasets, "note": "Includes live feeds, imagery 
+services, and explicitly labeled static source snapshots. Static datasets are not live feeds."}
+  main.py:4484:
+> main.py:4493:# GET /api/opensky
+> main.py:4494:# GET /api/opensky?lat=<latitude>&lon=<longitude>
+  main.py:4495:# ---------------------------------------------------------------------------
+  main.py:4496:
+  main.py:4497:
+  main.py:4498:def _fetch_opensky_flights_data(
+  main.py:4499:    lat: Optional[float] = None,
+> main.py:4527:@app.get("/api/opensky", tags=["flights", "geospatial"])
+> main.py:4528:@app.get("/api/flights", tags=["flights", "geospatial"])
+  main.py:4529:def get_opensky_flights(
+  main.py:4530:    lat: Optional[float] = Query(None, ge=-90.0, le=90.0, description="Center latitude in decimal 
+degrees (-90 to 90)"),
+  main.py:4531:    lon: Optional[float] = Query(None, ge=-180.0, le=180.0, description="Center longitude in decimal 
+degrees (-180 to 180)"),
+  main.py:4532:    radius_nm: float = Query(100.0, gt=0.0, le=500.0, description="Bounding search radius in nautical 
+miles"),
+  main.py:4533:    icao24: Optional[str] = Query(None, description="24-bit ICAO aircraft hex transponder address"),
+> main.py:4541:    - GET /api/opensky
+> main.py:4542:    - GET /api/opensky?lat=<latitude>&lon=<longitude>
+  main.py:4543:
+  main.py:4544:    Returns standard OpenSky state vectors (17-tuple format) compatible with
+  main.py:4545:    God's Eye View CesiumJS 3D Globe visualization, including automatic 60-second
+  main.py:4546:    rate-limit caching and governed offline fallback.
+  main.py:4547:    """
+> main.py:4560:# GET /api/datasets/ds-gev-opensky-flights
+> main.py:4561:# GET /api/datasets/ds-gev-opensky-flights/records
+> main.py:4562:# GET /datasets/ds-gev-opensky-flights
+  main.py:4563:# ---------------------------------------------------------------------------
+  main.py:4564:
+  main.py:4565:
+> main.py:4566:@app.get("/api/datasets/ds-gev-opensky-flights", tags=["datasets", "flights"])
+> main.py:4567:@app.get("/datasets/ds-gev-opensky-flights", tags=["datasets", "flights"])
+  main.py:4568:def get_opensky_flight_dataset() -> dict:
+  main.py:4569:    """
+  main.py:4570:    Dedicated endpoint for the God's Eye View OpenSky flight telemetry dataset:
+  main.py:4571:    - Dataset ID: ds-gev-opensky-flights
+  main.py:4572:    - File Location: datasets/opensky_states.json
+> main.py:4612:            "proxy_endpoint": "/api/opensky",
+  main.py:4613:            "synthetic": False,
+  main.py:4614:        },
+  main.py:4615:        "endpoints": {
+> main.py:4616:            "dataset_contract": "/api/datasets/ds-gev-opensky-flights",
+> main.py:4617:            "records": "/api/datasets/ds-gev-opensky-flights/records",
+> main.py:4618:            "query_api": "/api/opensky",
+> main.py:4619:            "query_alias": "/api/flights",
+  main.py:4620:        },
+  main.py:4621:    }
+  main.py:4622:
+  main.py:4623:
+> main.py:4624:@app.get("/api/datasets/ds-gev-opensky-flights/records", tags=["datasets", "flights"])
+  main.py:4625:def get_opensky_flight_dataset_records(
+  main.py:4626:    lat: Optional[float] = Query(None, ge=-90.0, le=90.0, description="Center latitude in decimal 
+degrees (-90 to 90)"),
+  main.py:4627:    lon: Optional[float] = Query(None, ge=-180.0, le=180.0, description="Center longitude in decimal 
+degrees (-180 to 180)"),
+  main.py:4628:    radius_nm: float = Query(100.0, gt=0.0, le=500.0, description="Bounding search radius in nautical 
+miles"),
+  main.py:4629:    icao24: Optional[str] = Query(None, description="24-bit ICAO aircraft hex transponder address"),
+
+
