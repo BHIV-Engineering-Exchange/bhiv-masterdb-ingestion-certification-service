@@ -243,6 +243,7 @@ from canonical_repository.store import PermissionDeniedError as CanonicalPermiss
 app = FastAPI(
     title="MASTERDB Core Knowledge Platform",
     version="1.3.0",
+    dependencies=[Depends(get_identity)],
 )
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
@@ -1108,6 +1109,8 @@ def initiate_upload(request: UploadInitiationRequest, identity: AuthIdentity = D
 
 @app.post("/upload/{upload_id}/content")
 async def upload_content(upload_id: str, request: Request, identity: AuthIdentity = Depends(get_identity)) -> dict:
+    if not _has_admin_or_operator(identity):
+        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     """Upload file content (raw bytes)."""
     try:
         job = upload_service.get_upload(upload_id)
