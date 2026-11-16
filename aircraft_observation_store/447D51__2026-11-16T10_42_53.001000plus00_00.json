@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "447D51",
+    "source": "adsb.lol",
+    "latitude": 48.240455,
+    "longitude": 14.978051,
+    "observation_time_utc": "2026-11-16T10:42:53.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "LION50",
+    "altitude_baro_ft": 4525,
+    "metadata": {
+        "r": "5M-IB",
+        "t": "A169",
+        "type": "adsb_icao",
+        "seen": 29.3,
+        "seen_pos": 29.317
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:42:54.101884+00:00",
+    "record_id": "447D51__2026-11-16T10_42_53.001000plus00_00"
+}

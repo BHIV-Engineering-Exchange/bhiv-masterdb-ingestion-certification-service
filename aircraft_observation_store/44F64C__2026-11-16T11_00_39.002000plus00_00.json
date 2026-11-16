@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "44F64C",
+    "source": "adsb.lol",
+    "latitude": 51.056005,
+    "longitude": 4.774211,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "GRFN401",
+    "altitude_baro_ft": 1200,
+    "ground_speed_kts": 136.0,
+    "track_degrees": 129.0,
+    "metadata": {
+        "r": "H-38",
+        "t": "A109",
+        "type": "mlat",
+        "seen": 0.1,
+        "seen_pos": 2.23
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.381924+00:00",
+    "record_id": "44F64C__2026-11-16T11_00_39.002000plus00_00"
+}

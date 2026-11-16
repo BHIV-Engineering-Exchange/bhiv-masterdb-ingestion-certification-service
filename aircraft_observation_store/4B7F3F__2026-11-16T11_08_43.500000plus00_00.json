@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "4B7F3F",
+    "source": "adsb.lol",
+    "latitude": 46.885117,
+    "longitude": 7.729294,
+    "observation_time_utc": "2026-11-16T11:08:43.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SUI787",
+    "altitude_baro_ft": 6975,
+    "ground_speed_kts": 210.0,
+    "track_degrees": 147.45,
+    "metadata": {
+        "r": "T-787",
+        "t": "GL7T",
+        "type": "adsb_icao",
+        "alt_geom": 7100,
+        "seen": 0.1,
+        "seen_pos": 0.397
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:08:44.896411+00:00",
+    "record_id": "4B7F3F__2026-11-16T11_08_43.500000plus00_00"
+}

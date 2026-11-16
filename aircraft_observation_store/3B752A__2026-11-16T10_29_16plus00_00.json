@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3B752A",
+    "source": "adsb.lol",
+    "latitude": 41.835146,
+    "longitude": 9.527446,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MAE42",
+    "altitude_baro_ft": 15050,
+    "ground_speed_kts": 297.8,
+    "track_degrees": 142.09,
+    "metadata": {
+        "r": "F-RBGG",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 15500,
+        "seen": 1.6,
+        "seen_pos": 5.206
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.098769+00:00",
+    "record_id": "3B752A__2026-11-16T10_29_16plus00_00"
+}

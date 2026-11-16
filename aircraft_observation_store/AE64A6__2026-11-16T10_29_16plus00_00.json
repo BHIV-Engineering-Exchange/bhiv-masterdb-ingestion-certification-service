@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE64A6",
+    "source": "adsb.lol",
+    "latitude": 37.389082,
+    "longitude": 127.29536,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "HOIST00",
+    "altitude_baro_ft": 2375,
+    "ground_speed_kts": 120.2,
+    "track_degrees": 177.14,
+    "metadata": {
+        "r": "19-21075",
+        "t": "H60",
+        "type": "adsb_icao",
+        "alt_geom": 2675,
+        "seen": 0.5,
+        "seen_pos": 0.469
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.196688+00:00",
+    "record_id": "AE64A6__2026-11-16T10_29_16plus00_00"
+}

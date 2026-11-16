@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tyga",
+    "source": "USGS",
+    "place": "44 km S of Jurm, Afghanistan",
+    "magnitude": 4.9,
+    "longitude": 70.9205,
+    "latitude": 36.4657,
+    "depth_km": 191.363,
+    "event_time_utc": "2026-11-15T21:37:21.082000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tyga",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.172781+00:00"
+}

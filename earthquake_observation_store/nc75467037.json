@@ -1,0 +1,13 @@
+{
+    "event_id": "nc75467037",
+    "source": "USGS",
+    "place": "4 km SSE of Pittsburg, CA",
+    "magnitude": 1.86,
+    "longitude": -121.865333557129,
+    "latitude": 37.9931678771973,
+    "depth_km": 17.6800003051758,
+    "event_time_utc": "2026-11-16T11:02:31.810000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nc75467037",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.920337+00:00"
+}

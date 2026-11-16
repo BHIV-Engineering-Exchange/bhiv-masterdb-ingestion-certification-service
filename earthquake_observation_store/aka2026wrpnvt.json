@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrpnvt",
+    "source": "USGS",
+    "place": "45 km E of Denali National Park, Alaska",
+    "magnitude": 2.5,
+    "longitude": -150.8,
+    "latitude": 63.523,
+    "depth_km": 3.2,
+    "event_time_utc": "2026-11-16T05:16:38.125000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrpnvt",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.028896+00:00"
+}

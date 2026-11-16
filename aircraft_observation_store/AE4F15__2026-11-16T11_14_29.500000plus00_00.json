@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "AE4F15",
+    "source": "adsb.lol",
+    "latitude": 55.547113,
+    "longitude": -6.445581,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RCH420",
+    "altitude_baro_ft": 33000,
+    "ground_speed_kts": 537.0,
+    "track_degrees": 104.0,
+    "metadata": {
+        "r": "10-0221",
+        "t": "C17",
+        "type": "mlat",
+        "seen": 1.5,
+        "seen_pos": 1.48
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.237628+00:00",
+    "record_id": "AE4F15__2026-11-16T11_14_29.500000plus00_00"
+}

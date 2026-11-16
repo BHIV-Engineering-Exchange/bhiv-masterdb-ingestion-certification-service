@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "46788B",
+    "source": "adsb.lol",
+    "latitude": 61.795628,
+    "longitude": 23.442383,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "HAPPY1",
+    "altitude_baro_ft": 17950,
+    "ground_speed_kts": 348.8,
+    "track_degrees": 356.05,
+    "metadata": {
+        "r": "LJ-3",
+        "t": "LJ35",
+        "type": "adsb_icao",
+        "alt_geom": 17125,
+        "seen": 0.2,
+        "seen_pos": 0.213
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.375390+00:00",
+    "record_id": "46788B__2026-11-16T11_39_27plus00_00"
+}

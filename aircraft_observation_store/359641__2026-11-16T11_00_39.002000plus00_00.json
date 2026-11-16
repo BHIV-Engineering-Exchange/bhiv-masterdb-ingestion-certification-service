@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "359641",
+    "source": "adsb.lol",
+    "latitude": 37.731445,
+    "longitude": -0.902807,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MRL40",
+    "altitude_baro_ft": 6050,
+    "ground_speed_kts": 246.7,
+    "track_degrees": 54.57,
+    "metadata": {
+        "r": "E.27-25",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 6625,
+        "seen": 0.5,
+        "seen_pos": 0.485
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.306889+00:00",
+    "record_id": "359641__2026-11-16T11_00_39.002000plus00_00"
+}

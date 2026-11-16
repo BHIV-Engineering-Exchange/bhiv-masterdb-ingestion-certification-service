@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "4CA1E8",
+    "source": "adsb.lol",
+    "latitude": 52.973688,
+    "longitude": -7.080389,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "F261",
+    "altitude_baro_ft": 4225,
+    "ground_speed_kts": 107.0,
+    "track_degrees": 238.0,
+    "metadata": {
+        "r": "261",
+        "t": "PC9",
+        "type": "mlat",
+        "seen": 0.5,
+        "seen_pos": 4.333
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:16.929204+00:00",
+    "record_id": "4CA1E8__2026-11-16T10_29_16plus00_00"
+}

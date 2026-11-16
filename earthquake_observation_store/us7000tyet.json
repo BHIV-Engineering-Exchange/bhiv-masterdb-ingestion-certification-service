@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tyet",
+    "source": "USGS",
+    "place": "3 km N of Capulin, New Mexico",
+    "magnitude": 3,
+    "longitude": -106.8072,
+    "latitude": 36.2595,
+    "depth_km": 9.921,
+    "event_time_utc": "2026-11-15T14:29:56.330000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tyet",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.304307+00:00"
+}

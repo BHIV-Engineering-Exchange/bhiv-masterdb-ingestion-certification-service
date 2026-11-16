@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "E49218",
+    "source": "adsb.lol",
+    "latitude": -19.570129,
+    "longitude": -44.856982,
+    "observation_time_utc": "2026-11-16T11:08:43.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "GEIV03",
+    "altitude_baro_ft": 32000,
+    "ground_speed_kts": 452.2,
+    "track_degrees": 328.84,
+    "metadata": {
+        "r": "3603",
+        "t": "E550",
+        "type": "adsb_icao",
+        "alt_geom": 33825,
+        "seen": 19.9,
+        "seen_pos": 19.905
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:08:44.732086+00:00",
+    "record_id": "E49218__2026-11-16T11_08_43.500000plus00_00"
+}

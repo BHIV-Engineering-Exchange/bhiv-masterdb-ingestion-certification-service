@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrifxz",
+    "source": "USGS",
+    "place": "45 km W of Happy Valley, Alaska",
+    "magnitude": 2.4,
+    "longitude": -152.534,
+    "latitude": 60.019,
+    "depth_km": 97.1,
+    "event_time_utc": "2026-11-16T01:37:36.629000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrifxz",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.105113+00:00"
+}

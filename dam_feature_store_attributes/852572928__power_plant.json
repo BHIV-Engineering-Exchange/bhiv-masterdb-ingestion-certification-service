@@ -1,0 +1,33 @@
+{
+    "record_id": "852572928__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 852572928,
+    "osm_id": 852572928,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Lockhart Dam",
+        "tags": {
+            "name": "Lockhart Dam",
+            "power": "plant",
+            "alt_name": "Lockhart Dam Powerhouse",
+            "building": "industrial",
+            "operator": "Lockhart Power",
+            "waterway": "dam",
+            "ref:US:EIA": "3275",
+            "ref:US:NID": "SC01059S003",
+            "start_date": "1921-01",
+            "plant:source": "hydro",
+            "plant:output:electricity": "18 MW"
+        },
+        "osm_id": 852572928,
+        "output": "18 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

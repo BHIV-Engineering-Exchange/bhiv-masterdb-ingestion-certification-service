@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "4A81F8",
+    "source": "adsb.lol",
+    "latitude": 51.385529,
+    "longitude": 22.200326,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SVF680",
+    "altitude_baro_ft": 43000,
+    "ground_speed_kts": 441.6,
+    "track_degrees": 336.51,
+    "metadata": {
+        "r": "102003",
+        "t": "GLF4",
+        "type": "adsb_icao",
+        "alt_geom": 42350,
+        "seen": 0.0,
+        "seen_pos": 0.498
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.353892+00:00",
+    "record_id": "4A81F8__2026-11-16T11_39_27plus00_00"
+}

@@ -1,0 +1,28 @@
+{
+    "record_id": "26567029__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 26567029,
+    "osm_id": 26567029,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "N\u00f6bbel\u00f6v Kraftstationen",
+        "tags": {
+            "name": "N\u00f6bbel\u00f6v Kraftstationen",
+            "power": "plant",
+            "operator": "Uniper Sverige AB",
+            "waterway": "dam",
+            "plant:source": "hydro",
+            "plant:output:electricity": "4.4 MW"
+        },
+        "osm_id": 26567029,
+        "output": "4.4 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

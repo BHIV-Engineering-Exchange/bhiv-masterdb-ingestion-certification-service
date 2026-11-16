@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tyfr",
+    "source": "USGS",
+    "place": "26 km E of Estique, Peru",
+    "magnitude": 4.2,
+    "longitude": -69.7721,
+    "latitude": -17.5342,
+    "depth_km": 170.709,
+    "event_time_utc": "2026-11-15T18:52:21.570000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tyfr",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.226298+00:00"
+}

@@ -1,0 +1,37 @@
+{
+    "record_id": "-16854894__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -16854894,
+    "osm_id": -16854894,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u03a6\u03c1\u03ac\u03b3\u03bc\u03b1 \u0391\u03c3\u03c9\u03bc\u03ac\u03c4\u03c9\u03bd",
+        "tags": {
+            "name": "\u03a6\u03c1\u03ac\u03b3\u03bc\u03b1 \u0391\u03c3\u03c9\u03bc\u03ac\u03c4\u03c9\u03bd",
+            "type": "multipolygon",
+            "power": "plant",
+            "height": "52",
+            "name:de": "Asomata Damm",
+            "name:el": "\u03a6\u03c1\u03ac\u03b3\u03bc\u03b1 \u0391\u03c3\u03c9\u03bc\u03ac\u03c4\u03c9\u03bd",
+            "name:en": "Asomata Dam",
+            "operator": "\u0394\u0395\u0397 \u0391\u0395",
+            "waterway": "dam",
+            "wikidata": "Q11959418",
+            "start_date": "1985",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "ref:EU:ENTSOE_EIC": "29WYISASOMATON-H",
+            "plant:output:electricity": "108 MW"
+        },
+        "osm_id": -16854894,
+        "output": "108 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

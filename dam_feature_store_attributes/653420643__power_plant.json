@@ -1,0 +1,32 @@
+{
+    "record_id": "653420643__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 653420643,
+    "osm_id": 653420643,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u91d1\u6c99\u6c34\u7535\u7ad9",
+        "tags": {
+            "area": "yes",
+            "name": "\u91d1\u6c99\u6c34\u7535\u7ad9",
+            "power": "plant",
+            "height": "66",
+            "name:en": "Jinsha Dam",
+            "waterway": "dam",
+            "wikidata": "Q19853879",
+            "wikipedia": "zh:\u91d1\u6c99\u6c34\u7535\u7ad9",
+            "plant:source": "hydro",
+            "plant:output:electricity": "560 MW"
+        },
+        "osm_id": 653420643,
+        "output": "560 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

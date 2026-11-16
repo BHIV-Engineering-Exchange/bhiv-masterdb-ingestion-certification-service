@@ -1,0 +1,40 @@
+{
+    "record_id": "255891175__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 255891175,
+    "osm_id": 255891175,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u5c0f\u6e7e\u575d",
+        "tags": {
+            "area": "yes",
+            "name": "\u5c0f\u6e7e\u575d",
+            "power": "plant",
+            "height": "292",
+            "name:de": "Xiaowan-Talsperre",
+            "name:en": "Xiaowan Dam",
+            "name:fr": "Barrage de Xiaowan",
+            "name:it": "Diga di Xiaowan",
+            "material": "concrete",
+            "operator": "\u4e2d\u56fd\u534e\u80fd\u96c6\u56e2",
+            "waterway": "dam",
+            "wikidata": "Q83532",
+            "start_date": "2010",
+            "operator:en": "China Huaneng Group",
+            "operator:zh": "\u4e2d\u56fd\u534e\u80fd\u96c6\u56e2",
+            "plant:source": "hydro",
+            "operator:wikidata": "Q842509",
+            "plant:output:electricity": "4200 MW"
+        },
+        "osm_id": 255891175,
+        "output": "4200 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

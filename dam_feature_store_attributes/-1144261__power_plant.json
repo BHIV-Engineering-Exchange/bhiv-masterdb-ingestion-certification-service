@@ -1,0 +1,35 @@
+{
+    "record_id": "-1144261__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -1144261,
+    "osm_id": -1144261,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Ice Harbor Dam",
+        "tags": {
+            "name": "Ice Harbor Dam",
+            "type": "multipolygon",
+            "power": "plant",
+            "operator": "USACE Northwestern Division",
+            "waterway": "dam",
+            "wikidata": "Q5985283",
+            "wikipedia": "en:Ice Harbor Dam",
+            "ref:US:EIA": "3925",
+            "ref:US:NID": "WA00347",
+            "start_date": "1962-01",
+            "plant:source": "hydro",
+            "gnis:feature_id": "1534587",
+            "plant:output:electricity": "603 MW"
+        },
+        "osm_id": -1144261,
+        "output": "603 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

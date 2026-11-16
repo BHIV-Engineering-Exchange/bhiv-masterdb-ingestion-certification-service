@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "35964F",
+    "source": "adsb.lol",
+    "latitude": 39.626724,
+    "longitude": -4.015921,
+    "observation_time_utc": "2026-11-16T11:08:43.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "YLO01",
+    "altitude_baro_ft": 25000,
+    "ground_speed_kts": 308.2,
+    "track_degrees": 208.06,
+    "metadata": {
+        "r": "HE.26-03",
+        "t": "EC35",
+        "type": "adsb_icao",
+        "alt_geom": 26125,
+        "seen": 0.2,
+        "seen_pos": 0.863
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:08:44.764393+00:00",
+    "record_id": "35964F__2026-11-16T11_08_43.500000plus00_00"
+}

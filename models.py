@@ -130,13 +130,13 @@ class PackageRegisterRequest(BaseModel):
 class PackagePromoteRequest(BaseModel):
     package_id: str
     to_status: PackageStatus
-    actor: str
+    actor: str = "system"
     reason: str
 
 
 class PackageDeprecateRequest(BaseModel):
     package_id: str
-    actor: str
+    actor: str = "system"
     reason: str
 
 

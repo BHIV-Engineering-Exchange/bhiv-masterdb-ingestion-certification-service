@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE2FAC",
+    "source": "adsb.lol",
+    "latitude": 38.02182,
+    "longitude": 142.082121,
+    "observation_time_utc": "2026-11-16T06:50:28.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RCH4541",
+    "altitude_baro_ft": 30000,
+    "ground_speed_kts": 388.9,
+    "track_degrees": 225.63,
+    "metadata": {
+        "r": "08-8200",
+        "t": "C17",
+        "type": "adsb_icao",
+        "alt_geom": 30475,
+        "seen": 0.7,
+        "seen_pos": 1.493
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:50:29.671515+00:00",
+    "record_id": "AE2FAC__2026-11-16T06_50_28.500000plus00_00"
+}

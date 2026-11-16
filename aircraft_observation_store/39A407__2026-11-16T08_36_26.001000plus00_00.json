@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "39A407",
+    "source": "adsb.lol",
+    "latitude": 49.39801,
+    "longitude": 6.622573,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "FNY5560",
+    "altitude_baro_ft": 7000,
+    "ground_speed_kts": 290.7,
+    "track_degrees": 110.12,
+    "metadata": {
+        "r": "F-HJAH",
+        "t": "PC24",
+        "type": "adsb_icao",
+        "alt_geom": 6925,
+        "seen": 0.1,
+        "seen_pos": 0.272
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.361460+00:00",
+    "record_id": "39A407__2026-11-16T08_36_26.001000plus00_00"
+}

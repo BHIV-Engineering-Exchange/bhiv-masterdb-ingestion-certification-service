@@ -1,0 +1,27 @@
+{
+    "record_id": "379870615__osm_pipeline",
+    "dataset_id": "gods_eye_view_dam_geometries",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 379870615,
+    "osm_id": 379870615,
+    "source_layer": "osm_pipeline",
+    "geometry": {
+        "type": "LineString",
+        "coordinates": [
+            [
+                68.835025339,
+                41.066041222
+            ],
+            [
+                68.83503808,
+                41.066204166
+            ],
+            [
+                68.835054257,
+                41.066335175
+            ]
+        ]
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

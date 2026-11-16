@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3B7B86",
+    "source": "adsb.lol",
+    "latitude": 43.662321,
+    "longitude": 4.560111,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MILAN73",
+    "altitude_baro_ft": 1375,
+    "ground_speed_kts": 204.2,
+    "track_degrees": 276.19,
+    "metadata": {
+        "r": "F-ZBMC",
+        "t": "DH8D",
+        "type": "adsb_icao",
+        "alt_geom": 1675,
+        "seen": 0.4,
+        "seen_pos": 4.133
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.379161+00:00",
+    "record_id": "3B7B86__2026-11-16T11_00_39.002000plus00_00"
+}

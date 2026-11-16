@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrouoh",
+    "source": "USGS",
+    "place": "60 km ENE of Pedro Bay, Alaska",
+    "magnitude": 0.7,
+    "longitude": -153.09,
+    "latitude": 59.968,
+    "depth_km": 5,
+    "event_time_utc": "2026-11-16T04:54:23.514000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrouoh",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.046696+00:00"
+}

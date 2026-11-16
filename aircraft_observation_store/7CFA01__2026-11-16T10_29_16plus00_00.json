@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "7CFA01",
+    "source": "adsb.lol",
+    "latitude": -38.085938,
+    "longitude": 147.164729,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "ROLR30",
+    "altitude_baro_ft": 800,
+    "ground_speed_kts": 137.5,
+    "track_degrees": 278.37,
+    "metadata": {
+        "r": "A54-042",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 1050,
+        "seen": 0.2,
+        "seen_pos": 0.204
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.208311+00:00",
+    "record_id": "7CFA01__2026-11-16T10_29_16plus00_00"
+}

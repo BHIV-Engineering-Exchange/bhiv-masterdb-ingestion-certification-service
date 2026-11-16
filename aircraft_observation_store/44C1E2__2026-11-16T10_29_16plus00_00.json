@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "44C1E2",
+    "source": "adsb.lol",
+    "latitude": 51.086146,
+    "longitude": 2.752457,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "NM53",
+    "altitude_baro_ft": 2250,
+    "ground_speed_kts": 100.0,
+    "track_degrees": 278.05,
+    "metadata": {
+        "r": "G-04",
+        "t": "C182",
+        "type": "adsb_icao",
+        "alt_geom": 2125,
+        "seen": 0.0,
+        "seen_pos": 0.094
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.059886+00:00",
+    "record_id": "44C1E2__2026-11-16T10_29_16plus00_00"
+}

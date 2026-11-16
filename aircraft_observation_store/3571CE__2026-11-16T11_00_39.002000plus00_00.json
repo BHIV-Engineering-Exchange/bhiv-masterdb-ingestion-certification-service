@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3571CE",
+    "source": "adsb.lol",
+    "latitude": 37.789398,
+    "longitude": -0.793353,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MRL38",
+    "altitude_baro_ft": 0,
+    "ground_speed_kts": 115.3,
+    "track_degrees": 224.65,
+    "metadata": {
+        "r": "E.27-14",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 450,
+        "seen": 6.5,
+        "seen_pos": 6.518
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.312021+00:00",
+    "record_id": "3571CE__2026-11-16T11_00_39.002000plus00_00"
+}

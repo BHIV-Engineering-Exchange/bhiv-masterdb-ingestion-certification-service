@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "0A402D",
+    "source": "adsb.lol",
+    "latitude": 54.126008,
+    "longitude": 10.199109,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "7TVPP",
+    "altitude_baro_ft": 5525,
+    "ground_speed_kts": 220.2,
+    "track_degrees": 258.74,
+    "metadata": {
+        "r": "7T-VPP",
+        "t": "A345",
+        "type": "adsb_icao",
+        "alt_geom": 5050,
+        "seen": 0.0,
+        "seen_pos": 0.012
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.380011+00:00",
+    "record_id": "0A402D__2026-11-16T08_36_26.001000plus00_00"
+}

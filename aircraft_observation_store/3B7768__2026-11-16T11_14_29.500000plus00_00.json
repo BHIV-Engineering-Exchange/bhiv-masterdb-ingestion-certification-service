@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "3B7768",
+    "source": "adsb.lol",
+    "latitude": 23.833054,
+    "longitude": 54.142253,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "altitude_baro_ft": 2975,
+    "ground_speed_kts": 267.9,
+    "track_degrees": 210.01,
+    "metadata": {
+        "r": "F-RBAK",
+        "t": "A400",
+        "type": "adsb_icao",
+        "alt_geom": 3025,
+        "seen": 8.3,
+        "seen_pos": 8.3
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.572795+00:00",
+    "record_id": "3B7768__2026-11-16T11_14_29.500000plus00_00"
+}

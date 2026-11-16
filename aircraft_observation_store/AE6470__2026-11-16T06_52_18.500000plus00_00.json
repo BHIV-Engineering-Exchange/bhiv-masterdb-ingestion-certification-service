@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE6470",
+    "source": "adsb.lol",
+    "latitude": 26.339023,
+    "longitude": 127.623631,
+    "observation_time_utc": "2026-11-16T06:52:18.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MAGIC66",
+    "altitude_baro_ft": 2950,
+    "ground_speed_kts": 194.6,
+    "track_degrees": 223.13,
+    "metadata": {
+        "r": "169539",
+        "t": "BE20",
+        "type": "adsb_icao",
+        "alt_geom": 3175,
+        "seen": 0.2,
+        "seen_pos": 0.194
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:52:19.301546+00:00",
+    "record_id": "AE6470__2026-11-16T06_52_18.500000plus00_00"
+}

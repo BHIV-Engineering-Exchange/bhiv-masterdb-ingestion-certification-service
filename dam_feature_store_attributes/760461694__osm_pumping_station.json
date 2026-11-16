@@ -1,0 +1,25 @@
+{
+    "record_id": "760461694__osm_pumping_station",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 760461694,
+    "osm_id": 760461694,
+    "source_layer": "osm_pumping_station",
+    "properties": {
+        "id": 11359,
+        "name": "\u6d3e\u6cb3\u6cf5\u7ad9\u67a2\u7ebd",
+        "tags": {
+            "name": "\u6d3e\u6cb3\u6cf5\u7ad9\u67a2\u7ebd",
+            "man_made": "pumping_station",
+            "waterway": "dam"
+        },
+        "osm_id": 760461694,
+        "substance": "",
+        "pumping_station": "",
+        "source_layer": "osm_pumping_station"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

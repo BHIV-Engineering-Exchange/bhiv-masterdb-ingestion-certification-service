@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "154C32",
+    "source": "adsb.lol",
+    "latitude": 55.77182,
+    "longitude": 38.034002,
+    "observation_time_utc": "2026-11-16T08:49:24.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "85042",
+    "altitude_baro_ft": 6725,
+    "ground_speed_kts": 261.7,
+    "track_degrees": 16.43,
+    "metadata": {
+        "r": "RA-85042",
+        "t": "T154",
+        "type": "adsb_icao",
+        "seen": 0.2,
+        "seen_pos": 0.543
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:49:25.612682+00:00",
+    "record_id": "154C32__2026-11-16T08_49_24.501000plus00_00"
+}

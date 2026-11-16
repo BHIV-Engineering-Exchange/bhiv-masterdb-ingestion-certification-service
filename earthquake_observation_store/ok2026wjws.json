@@ -1,0 +1,13 @@
+{
+    "event_id": "ok2026wjws",
+    "source": "USGS",
+    "place": "6 km E of Calumet, Oklahoma",
+    "magnitude": 3.06,
+    "longitude": -98.04283333,
+    "latitude": 35.61283333,
+    "depth_km": 6.34,
+    "event_time_utc": "2026-11-15T11:29:08.070000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ok2026wjws",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:14:23.746536+00:00"
+}

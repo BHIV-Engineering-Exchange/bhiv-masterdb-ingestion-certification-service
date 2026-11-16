@@ -1,0 +1,34 @@
+{
+    "record_id": "39373286__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 39373286,
+    "osm_id": 39373286,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Barrage de Chardes",
+        "tags": {
+            "name": "Barrage de Chardes",
+            "layer": "1",
+            "power": "plant",
+            "building": "yes",
+            "operator": "EDF",
+            "waterway": "dam",
+            "wikidata": "Q11963438",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "operator:wikidata": "Q274591",
+            "ref:EU:ENTSOE_EIC": "17W000000012749N",
+            "plant:output:electricity": "4.83 MW"
+        },
+        "osm_id": 39373286,
+        "output": "4.83 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

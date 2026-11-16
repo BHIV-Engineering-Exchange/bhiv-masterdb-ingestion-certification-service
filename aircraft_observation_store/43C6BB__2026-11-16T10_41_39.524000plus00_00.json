@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "43C6BB",
+    "source": "adsb.lol",
+    "latitude": 50.900536,
+    "longitude": -2.923649,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RECON21",
+    "altitude_baro_ft": 1275,
+    "ground_speed_kts": 111.0,
+    "track_degrees": 243.0,
+    "metadata": {
+        "r": "ZZ398",
+        "t": "LYNX",
+        "type": "mlat",
+        "seen": 1.3,
+        "seen_pos": 2.314
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.837918+00:00",
+    "record_id": "43C6BB__2026-11-16T10_41_39.524000plus00_00"
+}

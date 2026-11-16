@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "43C4C2",
+    "source": "adsb.lol",
+    "latitude": 51.443535,
+    "longitude": -0.919373,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MTBLL22",
+    "altitude_baro_ft": 1725,
+    "ground_speed_kts": 127.0,
+    "track_degrees": 2.0,
+    "metadata": {
+        "r": "ZA675",
+        "t": "H47",
+        "type": "mlat",
+        "seen": 1.6,
+        "seen_pos": 1.982
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.074118+00:00",
+    "record_id": "43C4C2__2026-11-16T11_39_27plus00_00"
+}

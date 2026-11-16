@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE5371",
+    "source": "adsb.lol",
+    "latitude": 52.411489,
+    "longitude": 17.686026,
+    "observation_time_utc": "2026-11-16T11:08:43.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "HAZE24",
+    "altitude_baro_ft": 2500,
+    "ground_speed_kts": 133.2,
+    "track_degrees": 107.48,
+    "metadata": {
+        "r": "11-20429",
+        "t": "H60",
+        "type": "adsb_icao",
+        "alt_geom": 2250,
+        "seen": 12.7,
+        "seen_pos": 32.248
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:08:44.951634+00:00",
+    "record_id": "AE5371__2026-11-16T11_08_43.500000plus00_00"
+}

@@ -1,0 +1,32 @@
+{
+    "record_id": "542530291__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 542530291,
+    "osm_id": 542530291,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Delta Creek Hydroelectric Plant",
+        "tags": {
+            "area": "yes",
+            "name": "Delta Creek Hydroelectric Plant",
+            "power": "plant",
+            "website": "http://www.akenergyauthority.org/WaterfallCreek",
+            "operator": "City of King Cove",
+            "waterway": "dam",
+            "description": "\"The plant will be a 375 kW, run-of-river system and is estimated to produce 1,000 MWh/yr. The project consists of a small diversion dam and intake, a 4,500-ft penstock, a Pelton impulse turbine, and 5,000 feet of access roads. \" www.akenergyauthority.org",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "plant:output:electricity": "375 kW"
+        },
+        "osm_id": 542530291,
+        "output": "375 kW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

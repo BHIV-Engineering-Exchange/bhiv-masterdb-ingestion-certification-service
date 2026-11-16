@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE5A2D",
+    "source": "adsb.lol",
+    "latitude": 36.602628,
+    "longitude": 127.042217,
+    "observation_time_utc": "2026-11-16T07:32:44.503000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "KEEP10",
+    "altitude_baro_ft": 1850,
+    "ground_speed_kts": 78.1,
+    "track_degrees": 193.32,
+    "metadata": {
+        "r": "17-08242",
+        "t": "H47",
+        "type": "adsb_icao",
+        "alt_geom": 2125,
+        "seen": 0.1,
+        "seen_pos": 2.609
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T07:32:45.409487+00:00",
+    "record_id": "AE5A2D__2026-11-16T07_32_44.503000plus00_00"
+}

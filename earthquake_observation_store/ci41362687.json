@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362687",
+    "source": "USGS",
+    "place": "7 km WNW of Palomar Observatory, CA",
+    "magnitude": 1.46,
+    "longitude": -116.93117,
+    "latitude": 33.39033,
+    "depth_km": 15.77,
+    "event_time_utc": "2026-11-16T08:57:34.850000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362687",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.953689+00:00"
+}

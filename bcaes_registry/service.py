@@ -59,7 +59,8 @@ def _has_authority(actor: Optional[str], actor_roles: Optional[List[str]], bound
             policy_reference="bcaes_registry._has_authority",
             actor_reference="None",
         )
-        return False  # Actor must be present and verified. None = DENY.
+        return False
+    # Determine roles list for subsequent checks
     roles = actor_roles or []
     if ADMIN_ROLE in roles or actor in boundaries or bool(set(roles) & set(boundaries)):
         log_security_decision(
@@ -101,7 +102,8 @@ class BCAESRegistryService:
         actor: Optional[str] = None,
         actor_roles: Optional[List[str]] = None,
     ) -> RegistryObject:
-        if not _has_authority(actor, actor_roles, request.authority_boundaries):
+        auth_actor = actor if actor is not None else getattr(request, "owner", None)
+        if not _has_authority(auth_actor, actor_roles, request.authority_boundaries):
             raise PermissionDeniedError(
                 f"'{actor}' is not in the requested authority_boundaries "
                 f"{request.authority_boundaries} and holds no matching role."
@@ -118,7 +120,8 @@ class BCAESRegistryService:
         actor_roles: Optional[List[str]] = None,
     ) -> RegistryObject:
         existing = self._store.get(registry_type, object_id)
-        if not _has_authority(actor, actor_roles, existing.authority_boundaries):
+        auth_actor = actor if actor is not None else getattr(existing, "owner", None)
+        if not _has_authority(auth_actor, actor_roles, existing.authority_boundaries):
             raise PermissionDeniedError(
                 f"'{actor}' is not in '{object_id}'s authority_boundaries "
                 f"{existing.authority_boundaries} and holds no matching role."
@@ -134,7 +137,8 @@ class BCAESRegistryService:
         actor_roles: Optional[List[str]] = None,
     ) -> None:
         existing = self._store.get(registry_type, object_id)
-        if not _has_authority(actor, actor_roles, existing.authority_boundaries):
+        auth_actor = actor if actor is not None else getattr(existing, "owner", None)
+        if not _has_authority(auth_actor, actor_roles, existing.authority_boundaries):
             raise PermissionDeniedError(
                 f"'{actor}' is not in '{object_id}'s authority_boundaries "
                 f"{existing.authority_boundaries} and holds no matching role."

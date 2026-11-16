@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "4682EB",
+    "source": "adsb.lol",
+    "latitude": 44.81442,
+    "longitude": 9.384874,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "HAF356F",
+    "altitude_baro_ft": 24000,
+    "ground_speed_kts": 237.0,
+    "track_degrees": 288.0,
+    "metadata": {
+        "r": "747",
+        "t": "C130",
+        "type": "mlat",
+        "seen": 0.8,
+        "seen_pos": 8.031
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.232502+00:00",
+    "record_id": "4682EB__2026-11-16T11_39_27plus00_00"
+}

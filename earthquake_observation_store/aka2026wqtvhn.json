@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wqtvhn",
+    "source": "USGS",
+    "place": "155 km SE of Chignik, Alaska",
+    "magnitude": 2.6,
+    "longitude": -156.382,
+    "latitude": 55.483,
+    "depth_km": 5,
+    "event_time_utc": "2026-11-15T18:25:32.230000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wqtvhn",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.236099+00:00"
+}

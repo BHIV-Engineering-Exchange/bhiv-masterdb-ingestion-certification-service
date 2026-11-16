@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3AAC3E",
+    "source": "adsb.lol",
+    "latitude": 48.940181,
+    "longitude": 2.107279,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "FGN9370",
+    "altitude_baro_ft": 800,
+    "ground_speed_kts": 69.9,
+    "track_degrees": 23.63,
+    "metadata": {
+        "r": "F-MJHA",
+        "t": "H160",
+        "type": "adsb_icao",
+        "alt_geom": 825,
+        "seen": 0.4,
+        "seen_pos": 11.018
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.056624+00:00",
+    "record_id": "3AAC3E__2026-11-16T10_29_16plus00_00"
+}

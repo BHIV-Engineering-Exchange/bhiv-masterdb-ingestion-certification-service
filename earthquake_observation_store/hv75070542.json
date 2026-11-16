@@ -1,0 +1,13 @@
+{
+    "event_id": "hv75070542",
+    "source": "USGS",
+    "place": "19 km NNE of P\u0101hala, Hawaii",
+    "magnitude": 1.81,
+    "longitude": -155.422500610352,
+    "latitude": 19.3673324584961,
+    "depth_km": 5.8600001335144,
+    "event_time_utc": "2026-11-15T06:50:34.670000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/hv75070542",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T06:50:24.073141+00:00"
+}

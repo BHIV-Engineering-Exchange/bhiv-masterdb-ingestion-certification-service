@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wqlbok",
+    "source": "USGS",
+    "place": "50 km SW of Tatitlek, Alaska",
+    "magnitude": 2,
+    "longitude": -147.233,
+    "latitude": 60.497,
+    "depth_km": 12.7,
+    "event_time_utc": "2026-11-15T14:02:53.628000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wqlbok",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.337549+00:00"
+}

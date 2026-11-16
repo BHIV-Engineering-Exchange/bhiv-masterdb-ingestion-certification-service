@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362663",
+    "source": "USGS",
+    "place": "16 km NNE of Ridgecrest, CA",
+    "magnitude": 0.79,
+    "longitude": -117.60867,
+    "latitude": 35.75833,
+    "depth_km": 7.65,
+    "event_time_utc": "2026-11-16T07:51:12.450000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362663",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.969689+00:00"
+}

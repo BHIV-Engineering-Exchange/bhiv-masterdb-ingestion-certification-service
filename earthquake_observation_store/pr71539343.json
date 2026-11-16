@@ -1,0 +1,13 @@
+{
+    "event_id": "pr71539343",
+    "source": "USGS",
+    "place": "2 km SW of La Parguera, Puerto Rico",
+    "magnitude": 1.81,
+    "longitude": -67.0631666666667,
+    "latitude": 17.9615,
+    "depth_km": 7.76,
+    "event_time_utc": "2026-11-15T17:13:20.900000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/pr71539343",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.248530+00:00"
+}

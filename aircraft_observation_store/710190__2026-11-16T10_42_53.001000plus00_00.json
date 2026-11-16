@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "710190",
+    "source": "adsb.lol",
+    "latitude": 41.392621,
+    "longitude": -1.389387,
+    "observation_time_utc": "2026-11-16T10:42:53.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SRA533",
+    "altitude_baro_ft": 32150,
+    "ground_speed_kts": 445.5,
+    "track_degrees": 232.2,
+    "metadata": {
+        "r": "HZ-HM5",
+        "t": "B77W",
+        "type": "adsb_icao",
+        "alt_geom": 33275,
+        "seen": 0.1,
+        "seen_pos": 0.065
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:42:53.961989+00:00",
+    "record_id": "710190__2026-11-16T10_42_53.001000plus00_00"
+}

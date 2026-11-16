@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wqbbun",
+    "source": "USGS",
+    "place": "20 km SE of Chickaloon, Alaska",
+    "magnitude": 1.1,
+    "longitude": -148.15,
+    "latitude": 61.693,
+    "depth_km": 18.6,
+    "event_time_utc": "2026-11-15T09:03:17.563000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wqbbun",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T08:49:19.514576+00:00"
+}

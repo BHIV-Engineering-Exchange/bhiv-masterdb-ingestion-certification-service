@@ -1,0 +1,31 @@
+{
+    "record_id": "137168521__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 137168521,
+    "osm_id": 137168521,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u062a\u0627\u062c \u0633\u062f \u0632\u0627\u06cc\u0646\u062f\u0647 \u0631\u0648\u062f",
+        "tags": {
+            "name": "\u062a\u0627\u062c \u0633\u062f \u0632\u0627\u06cc\u0646\u062f\u0647 \u0631\u0648\u062f",
+            "power": "plant",
+            "name:en": "Zayanderud Dam",
+            "waterway": "dam",
+            "wikidata": "Q8067540",
+            "start_date": "1971",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "plant:output:electricity": "55.5 MW"
+        },
+        "osm_id": 137168521,
+        "output": "55.5 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "44F66A",
+    "source": "adsb.lol",
+    "latitude": 50.917676,
+    "longitude": 5.34973,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "HS15",
+    "altitude_baro_ft": 1400,
+    "ground_speed_kts": 217.0,
+    "track_degrees": 111.0,
+    "metadata": {
+        "r": "ST-20",
+        "t": "F260",
+        "type": "mlat",
+        "seen": 0.5,
+        "seen_pos": 33.289
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.964401+00:00",
+    "record_id": "44F66A__2026-11-16T10_41_39.524000plus00_00"
+}

@@ -24,6 +24,7 @@ if _previous_pytest_marker is None:
     os.environ.pop("PYTEST_CURRENT_TEST", None)
 else:
     os.environ["PYTEST_CURRENT_TEST"] = _previous_pytest_marker
+os.environ.pop("JWT_ALGORITHM", None)
 
 
 TEST_AUTH_PASSWORD = "test-auth-password"

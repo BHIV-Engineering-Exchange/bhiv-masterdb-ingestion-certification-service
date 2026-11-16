@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3B75F7",
+    "source": "adsb.lol",
+    "latitude": 47.184836,
+    "longitude": -1.021799,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MAF31",
+    "altitude_baro_ft": 2025,
+    "ground_speed_kts": 289.0,
+    "track_degrees": 65.03,
+    "metadata": {
+        "r": "709FJ",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 2150,
+        "seen": 30.1,
+        "seen_pos": 32.517
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.395826+00:00",
+    "record_id": "3B75F7__2026-11-16T11_14_29.500000plus00_00"
+}

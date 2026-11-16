@@ -1,0 +1,13 @@
+{
+    "event_id": "hv75070922",
+    "source": "USGS",
+    "place": "2 km S of P\u0101hala, Hawaii",
+    "magnitude": 2.14,
+    "longitude": -155.479995727539,
+    "latitude": 19.1825008392334,
+    "depth_km": 28.1299991607666,
+    "event_time_utc": "2026-11-16T02:23:16.100000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/hv75070922",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.099128+00:00"
+}

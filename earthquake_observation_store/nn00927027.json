@@ -1,0 +1,13 @@
+{
+    "event_id": "nn00927027",
+    "source": "USGS",
+    "place": "16 km NE of Yerington, Nevada",
+    "magnitude": 1.5,
+    "longitude": -119.0228,
+    "latitude": 39.0884,
+    "depth_km": 3.8392,
+    "event_time_utc": "2026-11-15T20:52:34.503000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nn00927027",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.189325+00:00"
+}

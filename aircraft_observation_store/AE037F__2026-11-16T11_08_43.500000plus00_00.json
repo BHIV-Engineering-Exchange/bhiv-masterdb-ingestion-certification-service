@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE037F",
+    "source": "adsb.lol",
+    "latitude": 55.696168,
+    "longitude": -130.750866,
+    "observation_time_utc": "2026-11-16T11:08:43.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "COBRA29",
+    "altitude_baro_ft": 31000,
+    "ground_speed_kts": 478.5,
+    "track_degrees": 116.3,
+    "metadata": {
+        "r": "64-14829",
+        "t": "W135",
+        "type": "adsb_icao",
+        "alt_geom": 29775,
+        "seen": 0.0,
+        "seen_pos": 0.85
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:08:44.717930+00:00",
+    "record_id": "AE037F__2026-11-16T11_08_43.500000plus00_00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "7CFA93",
+    "source": "adsb.lol",
+    "latitude": -36.364792,
+    "longitude": 146.803036,
+    "observation_time_utc": "2026-11-16T06:50:28.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "EVY91",
+    "altitude_baro_ft": 35000,
+    "ground_speed_kts": 428.0,
+    "track_degrees": 50.02,
+    "metadata": {
+        "r": "A62-001",
+        "t": "B38M",
+        "type": "adsb_icao",
+        "alt_geom": 35575,
+        "seen": 0.1,
+        "seen_pos": 0.244
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:50:29.674206+00:00",
+    "record_id": "7CFA93__2026-11-16T06_50_28.500000plus00_00"
+}

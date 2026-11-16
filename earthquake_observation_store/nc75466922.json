@@ -1,0 +1,13 @@
+{
+    "event_id": "nc75466922",
+    "source": "USGS",
+    "place": "3 km SW of Anderson Springs, CA",
+    "magnitude": 0.62,
+    "longitude": -122.718002319336,
+    "latitude": 38.7591667175293,
+    "depth_km": 0.589999973773956,
+    "event_time_utc": "2026-11-16T03:26:16.920000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nc75466922",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.069106+00:00"
+}

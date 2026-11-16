@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "87C842",
+    "source": "adsb.lol",
+    "latitude": 35.918201,
+    "longitude": 140.003596,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "0N5519",
+    "altitude_baro_ft": 1875,
+    "ground_speed_kts": 158.0,
+    "track_degrees": 177.0,
+    "metadata": {
+        "r": "5519",
+        "t": "P1",
+        "type": "mlat",
+        "seen": 0.1,
+        "seen_pos": 0.912
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.759749+00:00",
+    "record_id": "87C842__2026-11-16T08_16_56.501000plus00_00"
+}

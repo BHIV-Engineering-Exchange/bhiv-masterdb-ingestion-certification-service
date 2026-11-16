@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "881B67",
+    "source": "adsb.lol",
+    "latitude": 13.988482,
+    "longitude": 99.9221,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "LKY650",
+    "altitude_baro_ft": 10300,
+    "ground_speed_kts": 155.0,
+    "track_degrees": 0.37,
+    "metadata": {
+        "r": "60107",
+        "t": "C130",
+        "type": "adsb_icao",
+        "alt_geom": 10725,
+        "seen": 0.0,
+        "seen_pos": 0.152
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.464697+00:00",
+    "record_id": "881B67__2026-11-16T08_36_26.001000plus00_00"
+}

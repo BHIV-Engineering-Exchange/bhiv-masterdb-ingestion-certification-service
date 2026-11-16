@@ -1,0 +1,29 @@
+{
+    "record_id": "157755082__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 157755082,
+    "osm_id": 157755082,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Jebel Aulia Dam",
+        "tags": {
+            "name": "Jebel Aulia Dam",
+            "power": "plant",
+            "name:ar": "\u062e\u0632\u0627\u0646 \u062c\u0628\u0644 \u0623\u0648\u0644\u064a\u0627\u0621",
+            "waterway": "dam",
+            "wikidata": "Q2885151",
+            "plant:source": "hydro",
+            "plant:output:electricity": "30.4 MW"
+        },
+        "osm_id": 157755082,
+        "output": "30.4 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

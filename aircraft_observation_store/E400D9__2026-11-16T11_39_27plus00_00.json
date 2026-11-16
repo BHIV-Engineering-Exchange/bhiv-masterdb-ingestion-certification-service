@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "E400D9",
+    "source": "adsb.lol",
+    "latitude": 40.489151,
+    "longitude": -3.445999,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "BRS01",
+    "ground_speed_kts": 0.0,
+    "metadata": {
+        "r": "2101",
+        "t": "A319",
+        "type": "adsb_icao",
+        "seen": 1.0,
+        "seen_pos": 3.108
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.001592+00:00",
+    "record_id": "E400D9__2026-11-16T11_39_27plus00_00"
+}

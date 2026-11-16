@@ -1,0 +1,34 @@
+{
+    "record_id": "1000921432__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 1000921432,
+    "osm_id": 1000921432,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Gib\u00e1rti v\u00edzer\u0151m\u0171",
+        "tags": {
+            "name": "Gib\u00e1rti v\u00edzer\u0151m\u0171",
+            "power": "plant",
+            "operator": "Alteo Zrt.",
+            "waterway": "dam",
+            "wikidata": "Q56391938",
+            "wikipedia": "hu:Gib\u00e1rti v\u00edzer\u0151m\u0171",
+            "start_date": "1903",
+            "description": "2020. december\u00e9ben fejezt\u00e9k be a moderniz\u00e1l\u00e1st, amely sor\u00e1n a kapacit\u00e1sa a kor\u00e1bbi k\u00f6zel k\u00e9tszeres\u00e9re n\u0151tt",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "contact:website": "https://alteo.hu/eromuvek/vizeromuvek/gibart-vizeromu/",
+            "plant:output:electricity": "1 MW"
+        },
+        "osm_id": 1000921432,
+        "output": "1 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

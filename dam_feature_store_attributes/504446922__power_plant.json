@@ -1,0 +1,30 @@
+{
+    "record_id": "504446922__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 504446922,
+    "osm_id": 504446922,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Lechstaustufe 2 - Premer Lechsee",
+        "tags": {
+            "name": "Lechstaustufe 2 - Premer Lechsee",
+            "power": "plant",
+            "operator": "Uniper Kraftwerke",
+            "waterway": "dam",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "operator:wikidata": "Q1273399",
+            "plant:output:electricity": "19.2 MW"
+        },
+        "osm_id": 504446922,
+        "output": "19.2 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

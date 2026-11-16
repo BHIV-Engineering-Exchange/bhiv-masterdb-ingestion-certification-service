@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3B77EF",
+    "source": "adsb.lol",
+    "latitude": 44.798708,
+    "longitude": 0.423778,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CTM3810",
+    "altitude_baro_ft": 13350,
+    "ground_speed_kts": 244.2,
+    "track_degrees": 286.65,
+    "metadata": {
+        "r": "125",
+        "t": "TBM7",
+        "type": "adsb_icao",
+        "alt_geom": 13650,
+        "seen": 0.1,
+        "seen_pos": 0.41
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.418200+00:00",
+    "record_id": "3B77EF__2026-11-16T11_14_29.500000plus00_00"
+}

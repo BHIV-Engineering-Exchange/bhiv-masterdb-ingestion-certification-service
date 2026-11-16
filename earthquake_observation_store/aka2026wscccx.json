@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wscccx",
+    "source": "USGS",
+    "place": "64 km E of Lime Village, Alaska",
+    "magnitude": 2,
+    "longitude": -154.237,
+    "latitude": 61.328,
+    "depth_km": 5,
+    "event_time_utc": "2026-11-16T11:32:56.195000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wscccx",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.915903+00:00"
+}

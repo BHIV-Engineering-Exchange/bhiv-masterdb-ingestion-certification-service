@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "87CC37",
+    "source": "adsb.lol",
+    "latitude": 35.807274,
+    "longitude": 139.553811,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "DENEB08",
+    "altitude_baro_ft": 2875,
+    "ground_speed_kts": 211.0,
+    "track_degrees": 162.0,
+    "metadata": {
+        "r": "78-1206",
+        "t": "KC2",
+        "type": "mlat",
+        "seen": 1.1,
+        "seen_pos": 1.052
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.756423+00:00",
+    "record_id": "87CC37__2026-11-16T08_16_56.501000plus00_00"
+}

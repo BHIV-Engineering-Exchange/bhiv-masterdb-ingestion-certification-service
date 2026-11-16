@@ -1,0 +1,34 @@
+{
+    "record_id": "133117561__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 133117561,
+    "osm_id": 133117561,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Kelsey Generating Station",
+        "tags": {
+            "name": "Kelsey Generating Station",
+            "fixme": "offset",
+            "power": "plant",
+            "building": "yes",
+            "operator": "Manitoba Hydro",
+            "waterway": "dam",
+            "wikidata": "Q1323872",
+            "start_date": "1968",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "operator:wikidata": "Q3285979",
+            "plant:output:electricity": "250 MW"
+        },
+        "osm_id": 133117561,
+        "output": "250 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

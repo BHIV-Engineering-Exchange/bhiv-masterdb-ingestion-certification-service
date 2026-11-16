@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrhfwc",
+    "source": "USGS",
+    "place": "8 km NNE of Point MacKenzie, Alaska",
+    "magnitude": 1.9,
+    "longitude": -149.911,
+    "latitude": 61.433,
+    "depth_km": 36.6,
+    "event_time_utc": "2026-11-16T01:07:28.818000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrhfwc",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.121457+00:00"
+}

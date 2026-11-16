@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "AE080C",
+    "source": "adsb.lol",
+    "latitude": 48.73664,
+    "longitude": 17.202577,
+    "observation_time_utc": "2026-11-16T07:32:44.503000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RCH223",
+    "altitude_baro_ft": 33000,
+    "ground_speed_kts": 461.0,
+    "track_degrees": 122.0,
+    "metadata": {
+        "r": "99-0166",
+        "t": "C17",
+        "type": "mlat",
+        "seen": 0.8,
+        "seen_pos": 4.405
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T07:32:45.330836+00:00",
+    "record_id": "AE080C__2026-11-16T07_32_44.503000plus00_00"
+}

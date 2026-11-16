@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "33FE7B",
+    "source": "adsb.lol",
+    "latitude": 42.231115,
+    "longitude": 12.764998,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "FLTCK67",
+    "altitude_baro_ft": 29625,
+    "ground_speed_kts": 265.0,
+    "track_degrees": 335.0,
+    "metadata": {
+        "r": "MM62164",
+        "t": "P180",
+        "type": "mlat",
+        "seen": 0.6,
+        "seen_pos": 4.814
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.633509+00:00",
+    "record_id": "33FE7B__2026-11-16T08_16_56.501000plus00_00"
+}

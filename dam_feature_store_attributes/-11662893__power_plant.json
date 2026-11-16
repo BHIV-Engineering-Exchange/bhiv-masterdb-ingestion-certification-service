@@ -1,0 +1,32 @@
+{
+    "record_id": "-11662893__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -11662893,
+    "osm_id": -11662893,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u0421\u0432\u0435\u0442\u043b\u0438\u043d\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+        "tags": {
+            "name": "\u0421\u0432\u0435\u0442\u043b\u0438\u043d\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+            "type": "multipolygon",
+            "power": "plant",
+            "building": "yes",
+            "operator": "\u0410\u043b\u0440\u043e\u0441\u0430",
+            "waterway": "dam",
+            "wikidata": "Q4111426",
+            "start_date": "2004",
+            "plant:source": "hydro",
+            "plant:output:electricity": "277.5 MW"
+        },
+        "osm_id": -11662893,
+        "output": "277.5 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

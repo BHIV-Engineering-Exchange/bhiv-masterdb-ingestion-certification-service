@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "516001",
+    "source": "adsb.lol",
+    "latitude": 48.923538,
+    "longitude": 15.080214,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "4OMNE",
+    "altitude_baro_ft": 29525,
+    "ground_speed_kts": 425.1,
+    "track_degrees": 316.24,
+    "metadata": {
+        "r": "4O-MNE",
+        "t": "LJ45",
+        "type": "adsb_icao",
+        "alt_geom": 29175,
+        "seen": 0.0,
+        "seen_pos": 0.149
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.509970+00:00",
+    "record_id": "516001__2026-11-16T11_14_29.500000plus00_00"
+}

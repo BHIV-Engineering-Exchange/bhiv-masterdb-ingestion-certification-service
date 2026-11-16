@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "3F4B1B",
+    "source": "adsb.lol",
+    "latitude": 52.39243,
+    "longitude": 12.786851,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "IRON",
+    "altitude_baro_ft": 20300,
+    "ground_speed_kts": 320.0,
+    "track_degrees": 164.0,
+    "metadata": {
+        "type": "mlat",
+        "seen": 0.8,
+        "seen_pos": 3.697
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.634929+00:00",
+    "record_id": "3F4B1B__2026-11-16T08_16_56.501000plus00_00"
+}

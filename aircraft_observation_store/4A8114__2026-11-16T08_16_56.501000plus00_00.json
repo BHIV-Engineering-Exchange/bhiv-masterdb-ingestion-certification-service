@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "4A8114",
+    "source": "adsb.lol",
+    "latitude": 57.220688,
+    "longitude": 13.352766,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SVF660",
+    "altitude_baro_ft": 24200,
+    "ground_speed_kts": 185.9,
+    "track_degrees": 156.88,
+    "metadata": {
+        "r": "100001",
+        "t": "SF34",
+        "type": "adsb_icao",
+        "alt_geom": 23350,
+        "seen": 0.6,
+        "seen_pos": 1.083
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.636614+00:00",
+    "record_id": "4A8114__2026-11-16T08_16_56.501000plus00_00"
+}

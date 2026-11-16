@@ -1,0 +1,36 @@
+{
+    "record_id": "-6192767__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -6192767,
+    "osm_id": -6192767,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Hells Canyon Dam",
+        "tags": {
+            "name": "Hells Canyon Dam",
+            "type": "multipolygon",
+            "power": "plant",
+            "operator": "Idaho Power",
+            "waterway": "dam",
+            "wikidata": "Q5709011",
+            "wikipedia": "en:Hells Canyon Dam",
+            "ref:US:EIA": "3013",
+            "ref:US:NID": "OR00250;ID00055",
+            "start_date": "1967-10",
+            "plant:source": "hydro",
+            "gnis:feature_id": "1153298",
+            "operator:wikidata": "Q3147780",
+            "plant:output:electricity": "391.5 MW"
+        },
+        "osm_id": -6192767,
+        "output": "391.5 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

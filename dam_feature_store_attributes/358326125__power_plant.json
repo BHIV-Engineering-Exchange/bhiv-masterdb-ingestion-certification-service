@@ -1,0 +1,32 @@
+{
+    "record_id": "358326125__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 358326125,
+    "osm_id": 358326125,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u062a\u0627\u062c \u0633\u062f \u0633\u0641\u06cc\u062f\u0631\u0648\u062f",
+        "tags": {
+            "name": "\u062a\u0627\u062c \u0633\u062f \u0633\u0641\u06cc\u062f\u0631\u0648\u062f",
+            "power": "plant",
+            "name:en": "Sefidrud Dam",
+            "operator": "Gilan Regional Water Authority",
+            "waterway": "dam",
+            "wikidata": "Q1163313",
+            "start_date": "1962",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "plant:output:electricity": "87.5 MW"
+        },
+        "osm_id": 358326125,
+        "output": "87.5 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

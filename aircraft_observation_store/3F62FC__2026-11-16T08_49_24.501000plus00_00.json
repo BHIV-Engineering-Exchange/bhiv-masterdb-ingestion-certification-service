@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "3F62FC",
+    "source": "adsb.lol",
+    "latitude": 49.749783,
+    "longitude": 6.81785,
+    "observation_time_utc": "2026-11-16T08:49:24.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "PRIMR51",
+    "altitude_baro_ft": 29000,
+    "ground_speed_kts": 313.0,
+    "track_degrees": 237.0,
+    "metadata": {
+        "r": "54+44",
+        "t": "A400",
+        "type": "mlat",
+        "seen": 0.5,
+        "seen_pos": 5.912
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:49:25.532409+00:00",
+    "record_id": "3F62FC__2026-11-16T08_49_24.501000plus00_00"
+}

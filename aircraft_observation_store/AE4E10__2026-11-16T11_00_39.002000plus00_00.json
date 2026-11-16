@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "AE4E10",
+    "source": "adsb.lol",
+    "latitude": 45.210651,
+    "longitude": 4.838263,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "JUMP31",
+    "altitude_baro_ft": 18975,
+    "ground_speed_kts": 333.0,
+    "track_degrees": 193.0,
+    "metadata": {
+        "r": "11-5736",
+        "t": "C30J",
+        "type": "mlat",
+        "seen": 0.4,
+        "seen_pos": 2.455
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.383861+00:00",
+    "record_id": "AE4E10__2026-11-16T11_00_39.002000plus00_00"
+}

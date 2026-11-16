@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "507C4F",
+    "source": "adsb.lol",
+    "latitude": 24.548298,
+    "longitude": 61.491722,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "UZB1",
+    "altitude_baro_ft": 30000,
+    "ground_speed_kts": 446.2,
+    "track_degrees": 224.36,
+    "metadata": {
+        "r": "UK-001",
+        "t": "B788",
+        "type": "adsb_icao",
+        "alt_geom": 31400,
+        "seen": 11.6,
+        "seen_pos": 11.571
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.524726+00:00",
+    "record_id": "507C4F__2026-11-16T11_00_39.002000plus00_00"
+}

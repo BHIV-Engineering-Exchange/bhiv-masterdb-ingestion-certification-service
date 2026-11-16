@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrcdjo",
+    "source": "USGS",
+    "place": "17 km W of Ivanof Bay, Alaska",
+    "magnitude": 1.8,
+    "longitude": -159.762,
+    "latitude": 55.888,
+    "depth_km": 26.9,
+    "event_time_utc": "2026-11-15T22:34:44.548000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrcdjo",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.153469+00:00"
+}

@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wqbmiy",
+    "source": "USGS",
+    "place": "12 km S of Skwentna, Alaska",
+    "magnitude": 1.6,
+    "longitude": -151.391,
+    "latitude": 61.874,
+    "depth_km": 13.9,
+    "event_time_utc": "2026-11-15T09:15:28.507000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wqbmiy",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T08:49:19.508910+00:00"
+}

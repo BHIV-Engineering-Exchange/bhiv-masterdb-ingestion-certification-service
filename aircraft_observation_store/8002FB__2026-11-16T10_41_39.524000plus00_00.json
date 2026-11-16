@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "8002FB",
+    "source": "adsb.lol",
+    "latitude": 25.268741,
+    "longitude": 82.082122,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "INDIA2",
+    "altitude_baro_ft": 32000,
+    "ground_speed_kts": 422.3,
+    "track_degrees": 324.54,
+    "metadata": {
+        "r": "K5014",
+        "t": "B737",
+        "type": "adsb_icao",
+        "alt_geom": 33575,
+        "seen": 0.3,
+        "seen_pos": 0.28
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:41.131761+00:00",
+    "record_id": "8002FB__2026-11-16T10_41_39.524000plus00_00"
+}

@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362679",
+    "source": "USGS",
+    "place": "42 km WSW of Olancha, CA",
+    "magnitude": 1.56,
+    "longitude": -118.4425,
+    "latitude": 36.1405,
+    "depth_km": 7.09,
+    "event_time_utc": "2026-11-16T08:53:49.740000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362679",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.955305+00:00"
+}

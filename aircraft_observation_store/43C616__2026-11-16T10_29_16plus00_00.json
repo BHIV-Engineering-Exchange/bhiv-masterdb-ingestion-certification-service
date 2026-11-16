@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "43C616",
+    "source": "adsb.lol",
+    "latitude": 51.125033,
+    "longitude": -2.784678,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CMNDO26",
+    "altitude_baro_ft": 2600,
+    "ground_speed_kts": 112.0,
+    "track_degrees": 321.0,
+    "metadata": {
+        "r": "ZJ998",
+        "t": "EH10",
+        "type": "mlat",
+        "seen": 0.1,
+        "seen_pos": 2.108
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:16.981124+00:00",
+    "record_id": "43C616__2026-11-16T10_29_16plus00_00"
+}

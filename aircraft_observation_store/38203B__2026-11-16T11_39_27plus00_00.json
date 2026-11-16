@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "38203B",
+    "source": "adsb.lol",
+    "latitude": 37.605908,
+    "longitude": 14.340484,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "I2251",
+    "altitude_baro_ft": 20850,
+    "ground_speed_kts": 257.0,
+    "track_degrees": 130.0,
+    "metadata": {
+        "r": "MM62251",
+        "t": "AT45",
+        "type": "mlat",
+        "seen": 0.6,
+        "seen_pos": 7.052
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.314744+00:00",
+    "record_id": "38203B__2026-11-16T11_39_27plus00_00"
+}

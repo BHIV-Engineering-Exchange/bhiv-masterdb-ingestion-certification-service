@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tygl",
+    "source": "USGS",
+    "place": "72 km WNW of Abra Pampa, Argentina",
+    "magnitude": 4.4,
+    "longitude": -66.374,
+    "latitude": -22.5485,
+    "depth_km": 239.456,
+    "event_time_utc": "2026-11-15T23:04:21.749000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tygl",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.140084+00:00"
+}

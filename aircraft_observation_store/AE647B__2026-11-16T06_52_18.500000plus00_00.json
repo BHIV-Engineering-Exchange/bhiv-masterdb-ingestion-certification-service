@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE647B",
+    "source": "adsb.lol",
+    "latitude": 21.213455,
+    "longitude": -158.020253,
+    "observation_time_utc": "2026-11-16T06:52:18.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "COLT27",
+    "altitude_baro_ft": 100,
+    "ground_speed_kts": 126.8,
+    "track_degrees": 279.54,
+    "metadata": {
+        "r": "19-21041",
+        "t": "H60",
+        "type": "adsb_icao",
+        "alt_geom": 375,
+        "seen": 0.0,
+        "seen_pos": 0.549
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:52:19.152797+00:00",
+    "record_id": "AE647B__2026-11-16T06_52_18.500000plus00_00"
+}

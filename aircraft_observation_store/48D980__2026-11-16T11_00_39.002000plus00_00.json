@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "48D980",
+    "source": "adsb.lol",
+    "latitude": 50.848777,
+    "longitude": 17.936325,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "PLF110",
+    "altitude_baro_ft": 25000,
+    "ground_speed_kts": 364.0,
+    "track_degrees": 119.45,
+    "metadata": {
+        "r": "0110",
+        "t": "B738",
+        "type": "adsb_icao",
+        "alt_geom": 24700,
+        "seen": 0.2,
+        "seen_pos": 0.347
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.467131+00:00",
+    "record_id": "48D980__2026-11-16T11_00_39.002000plus00_00"
+}

@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "480441",
+    "source": "adsb.lol",
+    "latitude": 51.442018,
+    "longitude": 4.253342,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "GRZLY92",
+    "altitude_baro_ft": 2000,
+    "ground_speed_kts": 83.0,
+    "track_degrees": 75.0,
+    "metadata": {
+        "r": "D-480",
+        "t": "H47",
+        "type": "mlat",
+        "seen": 1.4,
+        "seen_pos": 1.403
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.444529+00:00",
+    "record_id": "480441__2026-11-16T11_14_29.500000plus00_00"
+}

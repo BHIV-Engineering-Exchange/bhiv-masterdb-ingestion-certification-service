@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "46815C",
+    "source": "adsb.lol",
+    "latitude": 38.090065,
+    "longitude": 23.607708,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SI348",
+    "altitude_baro_ft": 1100,
+    "ground_speed_kts": 88.3,
+    "track_degrees": 289.87,
+    "metadata": {
+        "r": "348",
+        "t": "SIRA",
+        "type": "adsb_icao",
+        "alt_geom": 1625,
+        "seen": 0.2,
+        "seen_pos": 0.236
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.143415+00:00",
+    "record_id": "46815C__2026-11-16T10_29_16plus00_00"
+}

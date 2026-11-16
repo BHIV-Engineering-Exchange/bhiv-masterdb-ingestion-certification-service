@@ -1,0 +1,13 @@
+{
+    "event_id": "nc75466717",
+    "source": "USGS",
+    "place": "30 km WSW of Rancho Tehama Reserve, CA",
+    "magnitude": 2.06,
+    "longitude": -122.726829528809,
+    "latitude": 39.9196662902832,
+    "depth_km": 7.19999980926514,
+    "event_time_utc": "2026-11-15T13:50:09.840000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nc75466717",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.342979+00:00"
+}

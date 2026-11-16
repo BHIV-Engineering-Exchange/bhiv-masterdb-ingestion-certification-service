@@ -1,0 +1,13 @@
+{
+    "event_id": "nc75466907",
+    "source": "USGS",
+    "place": "6 km W of Cobb, CA",
+    "magnitude": 0.65,
+    "longitude": -122.787170410156,
+    "latitude": 38.8266677856445,
+    "depth_km": 0.699999988079071,
+    "event_time_utc": "2026-11-16T03:13:34.700000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nc75466907",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.081732+00:00"
+}

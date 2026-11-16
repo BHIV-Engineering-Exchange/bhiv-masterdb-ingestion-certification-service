@@ -1,0 +1,36 @@
+{
+    "record_id": "64684464__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 64684464,
+    "osm_id": 64684464,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u04ae\u0447-\u041a\u043e\u0440\u0433\u043e\u043d \u0413\u042d\u0421\u0438",
+        "tags": {
+            "name": "\u04ae\u0447-\u041a\u043e\u0440\u0433\u043e\u043d \u0413\u042d\u0421\u0438",
+            "power": "plant",
+            "name:en": "\u00dc\u00e7-Korgon Hydroelectric Power Station",
+            "name:fa": "\u0646\u06cc\u0631\u0648\u06af\u0627\u0647 \u0628\u0631\u0642 \u0622\u0628\u06cc \u0627\u0648\u0686-\u06a9\u0648\u0631\u06af\u0627\u0646\u0633\u06a9",
+            "name:ky": "\u04ae\u0447-\u041a\u043e\u0440\u0433\u043e\u043d \u0413\u042d\u0421\u0438",
+            "name:ru": "\u0423\u0447-\u041a\u0443\u0440\u0433\u0430\u043d\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+            "name:uk": "\u0423\u0447-\u041a\u0443\u0440\u0433\u0430\u043d\u0441\u044c\u043a\u0430 \u0413\u0415\u0421",
+            "name:uz": "Uchqo\u02bbrg\u02bbon gidrouzeli",
+            "int_name": "\u00dc\u00e7-Korgon GESi",
+            "waterway": "dam",
+            "wikidata": "Q4479261",
+            "wikipedia": "ky:\u04ae\u0447-\u041a\u043e\u0440\u0433\u043e\u043d \u0413\u042d\u0421\u0438",
+            "plant:source": "hydro",
+            "plant:output:electricity": "180 MW"
+        },
+        "osm_id": 64684464,
+        "output": "180 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

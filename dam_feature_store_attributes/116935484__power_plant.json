@@ -1,0 +1,36 @@
+{
+    "record_id": "116935484__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 116935484,
+    "osm_id": 116935484,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Barrage de Villebois",
+        "tags": {
+            "name": "Barrage de Villebois",
+            "layer": "1",
+            "power": "plant",
+            "alt_name": "Barrage de Sault-Br\u00e9naz",
+            "building": "yes",
+            "operator": "CNR",
+            "waterway": "dam",
+            "wikidata": "Q2885280",
+            "wikipedia": "fr:Barrage de Sault-Br\u00e9naz",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "operator:wikidata": "Q1121170",
+            "operator:wikipedia": "fr:Compagnie nationale du Rh\u00f4ne",
+            "plant:output:electricity": "1.3 MW"
+        },
+        "osm_id": 116935484,
+        "output": "1.3 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "400EE1",
+    "source": "adsb.lol",
+    "latitude": 50.943008,
+    "longitude": -1.923647,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "UAU43",
+    "altitude_baro_ft": 6775,
+    "ground_speed_kts": 123.7,
+    "track_degrees": 135.33,
+    "metadata": {
+        "r": "G-BYVD",
+        "t": "G115",
+        "type": "adsb_icao",
+        "alt_geom": 6600,
+        "seen": 0.1,
+        "seen_pos": 0.17
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.851522+00:00",
+    "record_id": "400EE1__2026-11-16T10_41_39.524000plus00_00"
+}

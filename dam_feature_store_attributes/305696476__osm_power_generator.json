@@ -1,0 +1,36 @@
+{
+    "record_id": "305696476__osm_power_generator",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 305696476,
+    "osm_id": 305696476,
+    "source_layer": "osm_power_generator",
+    "properties": {
+        "id": 39137,
+        "tags": {
+            "name": "Caban-Coch Dam",
+            "power": "generator",
+            "waterway": "dam",
+            "wikidata": "Q17741532",
+            "dam_height": "122 feet",
+            "weir_length": "566 feet",
+            "construction": "masonary",
+            "base_thickness": "122.5 feet",
+            "foundation_depth": "25 feet",
+            "generator:method": "water-storage",
+            "generator:source": "hydro",
+            "generator:output:electricity": "yes"
+        },
+        "type": "",
+        "method": "water-storage",
+        "osm_id": 305696476,
+        "output": "yes",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "osm_power_generator"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

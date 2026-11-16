@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "4B82DB",
+    "source": "adsb.lol",
+    "latitude": 39.937211,
+    "longitude": 32.739039,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "HANDE10",
+    "ground_speed_kts": 10.2,
+    "metadata": {
+        "r": "5002",
+        "t": "BE20",
+        "type": "adsb_icao",
+        "seen": 6.1,
+        "seen_pos": 6.133
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.389087+00:00",
+    "record_id": "4B82DB__2026-11-16T11_39_27plus00_00"
+}

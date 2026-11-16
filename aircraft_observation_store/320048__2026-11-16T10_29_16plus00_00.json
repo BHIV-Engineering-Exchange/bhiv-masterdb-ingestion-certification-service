@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "320048",
+    "source": "adsb.lol",
+    "latitude": 38.171811,
+    "longitude": 15.638202,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "VOLP416",
+    "altitude_baro_ft": 775,
+    "ground_speed_kts": 101.4,
+    "track_degrees": 323.02,
+    "metadata": {
+        "r": "MM81997",
+        "t": "A139",
+        "type": "adsb_icao",
+        "alt_geom": 1125,
+        "seen": 0.3,
+        "seen_pos": 0.454
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.122854+00:00",
+    "record_id": "320048__2026-11-16T10_29_16plus00_00"
+}

@@ -1,0 +1,38 @@
+{
+    "record_id": "80667335__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 80667335,
+    "osm_id": 80667335,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Barrage de G\u00e9nissiat",
+        "tags": {
+            "name": "Barrage de G\u00e9nissiat",
+            "layer": "2",
+            "power": "plant",
+            "height": "5 m",
+            "building": "yes",
+            "operator": "CNR",
+            "waterway": "dam",
+            "wikidata": "Q681294",
+            "wikipedia": "fr:Barrage de G\u00e9nissiat",
+            "start_date": "1947",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "ref:FR:RTE_nom": "GENISSIAT",
+            "operator:wikidata": "Q1121170",
+            "ref:EU:ENTSOE_EIC": "17W100P100P0319C",
+            "plant:output:electricity": "420 MW"
+        },
+        "osm_id": 80667335,
+        "output": "420 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

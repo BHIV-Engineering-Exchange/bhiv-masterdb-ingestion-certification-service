@@ -1,0 +1,13 @@
+{
+    "event_id": "pr2026319000",
+    "source": "USGS",
+    "place": "96 km N of Charlotte Amalie, U.S. Virgin Islands",
+    "magnitude": 3.65,
+    "longitude": -64.9756,
+    "latitude": 19.2088,
+    "depth_km": 29,
+    "event_time_utc": "2026-11-15T07:01:17.140000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/pr2026319000",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T06:52:13.244536+00:00"
+}

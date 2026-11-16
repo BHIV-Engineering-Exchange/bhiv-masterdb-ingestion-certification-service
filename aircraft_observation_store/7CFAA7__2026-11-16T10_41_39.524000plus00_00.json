@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "7CFAA7",
+    "source": "adsb.lol",
+    "latitude": -33.980434,
+    "longitude": 150.977783,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "JUST71",
+    "altitude_baro_ft": 425,
+    "ground_speed_kts": 88.1,
+    "track_degrees": 279.14,
+    "metadata": {
+        "r": "A60-009",
+        "t": "H60",
+        "type": "adsb_icao",
+        "alt_geom": 675,
+        "seen": 0.0,
+        "seen_pos": 0.02
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:41.177357+00:00",
+    "record_id": "7CFAA7__2026-11-16T10_41_39.524000plus00_00"
+}

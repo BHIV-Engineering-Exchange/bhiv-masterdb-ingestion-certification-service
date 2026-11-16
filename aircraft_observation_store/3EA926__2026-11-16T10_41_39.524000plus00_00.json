@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "3EA926",
+    "source": "adsb.lol",
+    "latitude": 52.846186,
+    "longitude": 10.139804,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MRPHY45",
+    "altitude_baro_ft": 4050,
+    "ground_speed_kts": 65.0,
+    "track_degrees": 189.0,
+    "metadata": {
+        "type": "mlat",
+        "seen": 1.9,
+        "seen_pos": 1.201
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:41.034462+00:00",
+    "record_id": "3EA926__2026-11-16T10_41_39.524000plus00_00"
+}

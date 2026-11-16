@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362607",
+    "source": "USGS",
+    "place": "42 km N of Kernville, CA",
+    "magnitude": 1.51,
+    "longitude": -118.44467,
+    "latitude": 36.13533,
+    "depth_km": 6.52,
+    "event_time_utc": "2026-11-16T05:04:00.640000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362607",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.040348+00:00"
+}

@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "48D906",
+    "source": "adsb.lol",
+    "latitude": 51.134375,
+    "longitude": 21.349182,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "GRYF02",
+    "altitude_baro_ft": 6200,
+    "ground_speed_kts": 125.8,
+    "track_degrees": 170.39,
+    "metadata": {
+        "r": "040",
+        "t": "PZ3T",
+        "type": "adsb_icao",
+        "seen": 0.3,
+        "seen_pos": 0.256
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.475381+00:00",
+    "record_id": "48D906__2026-11-16T11_00_39.002000plus00_00"
+}

@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrvnyz",
+    "source": "USGS",
+    "place": "62 km ENE of Pedro Bay, Alaska",
+    "magnitude": 0.7,
+    "longitude": -153.091,
+    "latitude": 60.019,
+    "depth_km": 5,
+    "event_time_utc": "2026-11-16T08:16:42.177000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrvnyz",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.962027+00:00"
+}

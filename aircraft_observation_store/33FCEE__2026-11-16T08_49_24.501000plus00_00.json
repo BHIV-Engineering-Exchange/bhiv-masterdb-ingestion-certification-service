@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "33FCEE",
+    "source": "adsb.lol",
+    "latitude": 37.312912,
+    "longitude": 15.54244,
+    "observation_time_utc": "2026-11-16T08:49:24.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SHARK02",
+    "altitude_baro_ft": 250,
+    "ground_speed_kts": 117.3,
+    "track_degrees": 85.6,
+    "metadata": {
+        "r": "MM81481",
+        "t": "NH90",
+        "type": "adsb_icao",
+        "alt_geom": 275,
+        "seen": 0.0,
+        "seen_pos": 1.289
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:49:25.583790+00:00",
+    "record_id": "33FCEE__2026-11-16T08_49_24.501000plus00_00"
+}

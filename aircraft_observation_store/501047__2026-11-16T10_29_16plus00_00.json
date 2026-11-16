@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "501047",
+    "source": "adsb.lol",
+    "latitude": 41.324375,
+    "longitude": 19.604666,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "GA402",
+    "altitude_baro_ft": 1700,
+    "ground_speed_kts": 120.1,
+    "track_degrees": 34.48,
+    "metadata": {
+        "r": "FA-402",
+        "t": "B505",
+        "type": "adsb_icao",
+        "alt_geom": 1875,
+        "seen": 0.2,
+        "seen_pos": 0.2
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.136577+00:00",
+    "record_id": "501047__2026-11-16T10_29_16plus00_00"
+}

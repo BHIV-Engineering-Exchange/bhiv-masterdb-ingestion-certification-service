@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "7CF9D9",
+    "source": "adsb.lol",
+    "latitude": -31.466812,
+    "longitude": 115.844637,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "VIPR21",
+    "altitude_baro_ft": 1375,
+    "ground_speed_kts": 138.1,
+    "track_degrees": 74.45,
+    "metadata": {
+        "r": "A54-002",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 1175,
+        "seen": 0.2,
+        "seen_pos": 0.205
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.727768+00:00",
+    "record_id": "7CF9D9__2026-11-16T08_16_56.501000plus00_00"
+}

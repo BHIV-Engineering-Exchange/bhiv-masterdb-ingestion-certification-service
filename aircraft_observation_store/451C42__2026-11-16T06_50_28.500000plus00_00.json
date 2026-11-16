@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "451C42",
+    "source": "adsb.lol",
+    "latitude": 45.744965,
+    "longitude": 8.081851,
+    "observation_time_utc": "2026-11-16T06:50:28.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "BGF105",
+    "altitude_baro_ft": 25450,
+    "ground_speed_kts": 370.2,
+    "track_degrees": 276.2,
+    "metadata": {
+        "r": "LZ-OOI",
+        "t": "F2TH",
+        "type": "adsb_icao",
+        "alt_geom": 25550,
+        "seen": 0.4,
+        "seen_pos": 0.483
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:50:29.571268+00:00",
+    "record_id": "451C42__2026-11-16T06_50_28.500000plus00_00"
+}

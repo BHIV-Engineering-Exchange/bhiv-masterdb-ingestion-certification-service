@@ -1,0 +1,13 @@
+{
+    "event_id": "uw714139421",
+    "source": "USGS",
+    "place": "15 km NNE of Ashford, Washington",
+    "magnitude": 0.59,
+    "longitude": -121.9365,
+    "latitude": 46.8778333333333,
+    "depth_km": 9.24,
+    "event_time_utc": "2026-11-15T15:58:06.070000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/uw714139421",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.266756+00:00"
+}

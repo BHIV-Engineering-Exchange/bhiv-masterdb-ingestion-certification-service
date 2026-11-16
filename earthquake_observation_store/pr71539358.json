@@ -1,0 +1,13 @@
+{
+    "event_id": "pr71539358",
+    "source": "USGS",
+    "place": "7 km SE of Maria Antonia, Puerto Rico",
+    "magnitude": 1.84,
+    "longitude": -66.8438333333333,
+    "latitude": 17.922,
+    "depth_km": 14.87,
+    "event_time_utc": "2026-11-16T04:47:54.200000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/pr71539358",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.049991+00:00"
+}

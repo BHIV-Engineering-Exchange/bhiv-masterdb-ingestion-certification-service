@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362439",
+    "source": "USGS",
+    "place": "12 km SSE of Anza, CA",
+    "magnitude": 1.16,
+    "longitude": -116.63167,
+    "latitude": 33.45,
+    "depth_km": 8.24,
+    "event_time_utc": "2026-11-15T11:54:45+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362439",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.405025+00:00"
+}

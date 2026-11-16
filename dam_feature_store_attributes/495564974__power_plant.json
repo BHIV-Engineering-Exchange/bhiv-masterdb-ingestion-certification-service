@@ -1,0 +1,36 @@
+{
+    "record_id": "495564974__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 495564974,
+    "osm_id": 495564974,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Comerford Station Dam",
+        "tags": {
+            "area": "yes",
+            "name": "Comerford Station Dam",
+            "power": "plant",
+            "alt_name": "Comerford Dam",
+            "operator": "Great River Hydro, LLC",
+            "waterway": "dam",
+            "wikidata": "Q5486118",
+            "ref:US:EIA": "2349",
+            "ref:US:NID": "NH00165",
+            "start_date": "1930-09",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "gnis:feature_id": "1775054",
+            "plant:output:electricity": "167.8 MW"
+        },
+        "osm_id": 495564974,
+        "output": "167.8 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

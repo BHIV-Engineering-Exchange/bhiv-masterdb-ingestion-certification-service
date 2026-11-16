@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "14F121",
+    "source": "adsb.lol",
+    "latitude": 54.167905,
+    "longitude": 38.315708,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "30543",
+    "altitude_baro_ft": 33000,
+    "ground_speed_kts": 404.0,
+    "track_degrees": 167.34,
+    "metadata": {
+        "r": "RA-61729",
+        "t": "A148",
+        "type": "adsb_icao",
+        "seen": 15.1,
+        "seen_pos": 15.733
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.442023+00:00",
+    "record_id": "14F121__2026-11-16T08_36_26.001000plus00_00"
+}

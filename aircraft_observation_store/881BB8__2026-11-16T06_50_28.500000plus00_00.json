@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "881BB8",
+    "source": "adsb.lol",
+    "latitude": 14.132492,
+    "longitude": 100.563591,
+    "observation_time_utc": "2026-11-16T06:50:28.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SNY03",
+    "altitude_baro_ft": 1625,
+    "ground_speed_kts": 119.8,
+    "track_degrees": 202.07,
+    "metadata": {
+        "r": "B.F21-3/63",
+        "t": "DA40",
+        "type": "adsb_icao",
+        "alt_geom": 1500,
+        "seen": 0.3,
+        "seen_pos": 0.282
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:50:29.613819+00:00",
+    "record_id": "881BB8__2026-11-16T06_50_28.500000plus00_00"
+}

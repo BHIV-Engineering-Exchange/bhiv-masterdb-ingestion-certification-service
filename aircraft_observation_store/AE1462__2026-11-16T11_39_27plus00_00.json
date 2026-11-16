@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE1462",
+    "source": "adsb.lol",
+    "latitude": 55.436188,
+    "longitude": -5.161232,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RCH294",
+    "altitude_baro_ft": 31000,
+    "ground_speed_kts": 359.2,
+    "track_degrees": 283.69,
+    "metadata": {
+        "r": "06-6164",
+        "t": "C17",
+        "type": "adsb_icao",
+        "alt_geom": 30475,
+        "seen": 0.0,
+        "seen_pos": 0.0
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:27.983476+00:00",
+    "record_id": "AE1462__2026-11-16T11_39_27plus00_00"
+}

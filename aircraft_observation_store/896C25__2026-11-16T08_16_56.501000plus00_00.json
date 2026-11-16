@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "896C25",
+    "source": "adsb.lol",
+    "latitude": 24.288345,
+    "longitude": 55.596212,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "FR137",
+    "altitude_baro_ft": 2425,
+    "ground_speed_kts": 189.3,
+    "track_degrees": 190.66,
+    "metadata": {
+        "r": "955",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 2475,
+        "seen": 5.8,
+        "seen_pos": 22.28
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.713761+00:00",
+    "record_id": "896C25__2026-11-16T08_16_56.501000plus00_00"
+}

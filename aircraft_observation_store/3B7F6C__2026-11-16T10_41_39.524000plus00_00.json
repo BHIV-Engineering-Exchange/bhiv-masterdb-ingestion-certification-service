@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3B7F6C",
+    "source": "adsb.lol",
+    "latitude": 42.879639,
+    "longitude": 5.819369,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "FZWSR",
+    "altitude_baro_ft": 3975,
+    "ground_speed_kts": 16.6,
+    "track_degrees": 334.98,
+    "metadata": {
+        "r": "F-ZWSR",
+        "t": "G2CA",
+        "type": "adsb_icao",
+        "alt_geom": 4225,
+        "seen": 0.3,
+        "seen_pos": 2.344
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.997665+00:00",
+    "record_id": "3B7F6C__2026-11-16T10_41_39.524000plus00_00"
+}

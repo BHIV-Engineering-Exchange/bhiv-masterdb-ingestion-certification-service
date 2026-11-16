@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "4B7F4C",
+    "source": "adsb.lol",
+    "latitude": 52.379929,
+    "longitude": -0.274963,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SUI564",
+    "altitude_baro_ft": 38000,
+    "ground_speed_kts": 372.7,
+    "track_degrees": 330.06,
+    "metadata": {
+        "r": "T-785",
+        "t": "F900",
+        "type": "adsb_icao",
+        "alt_geom": 37400,
+        "seen": 0.2,
+        "seen_pos": 0.537
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.040940+00:00",
+    "record_id": "4B7F4C__2026-11-16T10_29_16plus00_00"
+}

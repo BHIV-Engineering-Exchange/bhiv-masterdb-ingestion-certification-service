@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wraoug",
+    "source": "USGS",
+    "place": "7 km S of Knik, Alaska",
+    "magnitude": 2.7,
+    "longitude": -149.717,
+    "latitude": 61.39,
+    "depth_km": 8,
+    "event_time_utc": "2026-11-15T21:48:48.120000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wraoug",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.170630+00:00"
+}

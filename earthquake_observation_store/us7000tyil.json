@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tyil",
+    "source": "USGS",
+    "place": "68 km S of Sarangani, Philippines",
+    "magnitude": 5,
+    "longitude": 125.4267,
+    "latitude": 4.7842,
+    "depth_km": 10,
+    "event_time_utc": "2026-11-16T07:14:14.483000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tyil",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.983421+00:00"
+}

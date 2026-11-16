@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "320044",
+    "source": "adsb.lol",
+    "latitude": 45.675333,
+    "longitude": 8.624268,
+    "observation_time_utc": "2026-11-16T11:08:43.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "POLI118",
+    "altitude_baro_ft": 1900,
+    "ground_speed_kts": 133.0,
+    "track_degrees": 143.56,
+    "metadata": {
+        "r": "MM81979",
+        "t": "A139",
+        "type": "adsb_icao",
+        "alt_geom": 2025,
+        "seen": 0.6,
+        "seen_pos": 0.898
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:08:44.902716+00:00",
+    "record_id": "320044__2026-11-16T11_08_43.500000plus00_00"
+}

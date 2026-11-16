@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "3F8B9D",
+    "source": "adsb.lol",
+    "latitude": 54.495633,
+    "longitude": 9.237009,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MONSTR2",
+    "altitude_baro_ft": 7500,
+    "ground_speed_kts": 339.0,
+    "track_degrees": 332.0,
+    "metadata": {
+        "type": "mlat",
+        "seen": 15.8,
+        "seen_pos": 16.391
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.375139+00:00",
+    "record_id": "3F8B9D__2026-11-16T08_36_26.001000plus00_00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "501D13",
+    "source": "adsb.lol",
+    "latitude": 48.893536,
+    "longitude": 3.106384,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "9ACRO",
+    "altitude_baro_ft": 6475,
+    "ground_speed_kts": 232.3,
+    "track_degrees": 311.86,
+    "metadata": {
+        "r": "9A-CRO",
+        "t": "CL60",
+        "type": "adsb_icao",
+        "alt_geom": 6450,
+        "seen": 0.1,
+        "seen_pos": 0.379
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.061409+00:00",
+    "record_id": "501D13__2026-11-16T10_29_16plus00_00"
+}

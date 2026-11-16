@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tyde",
+    "source": "USGS",
+    "place": "south of the Fiji Islands",
+    "magnitude": 4.4,
+    "longitude": 179.8113,
+    "latitude": -23.9733,
+    "depth_km": 545.344,
+    "event_time_utc": "2026-11-15T08:50:06.639000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tyde",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T08:49:19.516046+00:00"
+}

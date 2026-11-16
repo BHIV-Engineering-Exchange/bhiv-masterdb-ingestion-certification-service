@@ -1,0 +1,53 @@
+{
+    "record_id": "676431737__osm_pumping_station",
+    "dataset_id": "gods_eye_view_dam_geometries",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 676431737,
+    "osm_id": 676431737,
+    "source_layer": "osm_pumping_station",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    65.445178591,
+                    38.2425906
+                ],
+                [
+                    65.445333991,
+                    38.242806434
+                ],
+                [
+                    65.445524093,
+                    38.242722196
+                ],
+                [
+                    65.446075874,
+                    38.243488972
+                ],
+                [
+                    65.446522797,
+                    38.243290656
+                ],
+                [
+                    65.445980487,
+                    38.242536956
+                ],
+                [
+                    65.446093978,
+                    38.24248658
+                ],
+                [
+                    65.445929023,
+                    38.242257419
+                ],
+                [
+                    65.445178591,
+                    38.2425906
+                ]
+            ]
+        ]
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

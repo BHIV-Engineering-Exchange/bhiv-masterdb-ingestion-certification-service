@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "43C6FB",
+    "source": "adsb.lol",
+    "latitude": 52.851883,
+    "longitude": -1.366501,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "TARTN19",
+    "altitude_baro_ft": 14000,
+    "ground_speed_kts": 425.7,
+    "track_degrees": 69.22,
+    "metadata": {
+        "r": "ZZ338",
+        "t": "A332",
+        "type": "adsb_icao",
+        "alt_geom": 13600,
+        "seen": 0.1,
+        "seen_pos": 0.24
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.860059+00:00",
+    "record_id": "43C6FB__2026-11-16T10_41_39.524000plus00_00"
+}

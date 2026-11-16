@@ -1,0 +1,36 @@
+{
+    "record_id": "357058429__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 357058429,
+    "osm_id": 357058429,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Merwin Dam",
+        "tags": {
+            "name": "Merwin Dam",
+            "power": "plant",
+            "operator": "PacifiCorp",
+            "waterway": "dam",
+            "wikidata": "Q6820955",
+            "wikipedia": "en:Merwin Dam",
+            "ref:US:EIA": "3847",
+            "ref:US:NID": "WA00149",
+            "start_date": "1931-07",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "gnis:feature_id": "1511644",
+            "operator:wikidata": "Q2045479",
+            "plant:output:electricity": "136 MW"
+        },
+        "osm_id": 357058429,
+        "output": "136 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

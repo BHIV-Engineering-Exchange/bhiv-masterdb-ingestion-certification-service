@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "43C792",
+    "source": "adsb.lol",
+    "latitude": 53.466357,
+    "longitude": 1.091169,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CHAOS011",
+    "altitude_baro_ft": 17000,
+    "ground_speed_kts": 382.0,
+    "track_degrees": 280.0,
+    "metadata": {
+        "r": "ZK364",
+        "t": "EUFI",
+        "type": "mlat",
+        "seen": 0.7,
+        "seen_pos": 4.898
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.124670+00:00",
+    "record_id": "43C792__2026-11-16T11_39_27plus00_00"
+}

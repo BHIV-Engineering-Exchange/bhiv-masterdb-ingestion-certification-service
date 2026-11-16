@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tydd",
+    "source": "USGS",
+    "place": "36 km NE of Mountain Home, Idaho",
+    "magnitude": 2.5,
+    "longitude": -115.4228,
+    "latitude": 43.4018,
+    "depth_km": 9.393,
+    "event_time_utc": "2026-11-15T08:49:08.463000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tydd",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T08:49:19.517489+00:00"
+}

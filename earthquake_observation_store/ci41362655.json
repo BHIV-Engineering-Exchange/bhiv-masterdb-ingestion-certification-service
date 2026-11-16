@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362655",
+    "source": "USGS",
+    "place": "5 km WNW of Borrego Springs, CA",
+    "magnitude": 0.73,
+    "longitude": -116.42633,
+    "latitude": 33.26733,
+    "depth_km": 5.17,
+    "event_time_utc": "2026-11-16T07:35:07.660000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362655",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.973596+00:00"
+}

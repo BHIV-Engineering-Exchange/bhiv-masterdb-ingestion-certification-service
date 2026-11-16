@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "E200AE",
+    "source": "adsb.lol",
+    "latitude": -11.103561,
+    "longitude": -77.937911,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "FAG063",
+    "altitude_baro_ft": 25625,
+    "ground_speed_kts": 469.0,
+    "track_degrees": 326.48,
+    "metadata": {
+        "r": "T-99",
+        "t": "B737",
+        "type": "adsb_icao",
+        "alt_geom": 27375,
+        "seen": 1.4,
+        "seen_pos": 1.799
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.551514+00:00",
+    "record_id": "E200AE__2026-11-16T08_16_56.501000plus00_00"
+}

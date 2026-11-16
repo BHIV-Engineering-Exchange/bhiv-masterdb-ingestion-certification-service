@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "8002CD",
+    "source": "adsb.lol",
+    "latitude": 18.610793,
+    "longitude": 73.614541,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "VUAVU",
+    "altitude_baro_ft": 5850,
+    "ground_speed_kts": 203.7,
+    "track_degrees": 119.08,
+    "metadata": {
+        "r": "K3603",
+        "t": "E35L",
+        "type": "adsb_icao",
+        "alt_geom": 5900,
+        "seen": 0.7,
+        "seen_pos": 0.826
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.719913+00:00",
+    "record_id": "8002CD__2026-11-16T08_16_56.501000plus00_00"
+}

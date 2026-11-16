@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "43C8F0",
+    "source": "adsb.lol",
+    "latitude": 51.466003,
+    "longitude": -2.705829,
+    "observation_time_utc": "2026-11-16T11:08:43.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SYS46",
+    "altitude_baro_ft": 1500,
+    "ground_speed_kts": 114.8,
+    "track_degrees": 213.27,
+    "metadata": {
+        "r": "ZM522",
+        "t": "EC35",
+        "type": "adsb_icao",
+        "alt_geom": 1450,
+        "seen": 0.0,
+        "seen_pos": 0.065
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:08:44.777457+00:00",
+    "record_id": "43C8F0__2026-11-16T11_08_43.500000plus00_00"
+}

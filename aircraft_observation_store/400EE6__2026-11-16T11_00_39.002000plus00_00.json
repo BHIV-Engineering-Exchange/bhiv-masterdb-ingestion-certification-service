@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "400EE6",
+    "source": "adsb.lol",
+    "latitude": 52.664966,
+    "longitude": -0.634774,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "WIT114",
+    "altitude_baro_ft": 5550,
+    "ground_speed_kts": 89.3,
+    "track_degrees": 260.33,
+    "metadata": {
+        "r": "G-BYVI",
+        "t": "G115",
+        "type": "adsb_icao",
+        "alt_geom": 5275,
+        "seen": 0.5,
+        "seen_pos": 0.469
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.315709+00:00",
+    "record_id": "400EE6__2026-11-16T11_00_39.002000plus00_00"
+}

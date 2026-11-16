@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrzrqn",
+    "source": "USGS",
+    "place": "15 km ESE of Ninilchik, Alaska",
+    "magnitude": 2.6,
+    "longitude": -151.427,
+    "latitude": 59.976,
+    "depth_km": 71,
+    "event_time_utc": "2026-11-16T10:21:15.655000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrzrqn",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.927768+00:00"
+}

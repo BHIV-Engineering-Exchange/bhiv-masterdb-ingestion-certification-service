@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "AE0237",
+    "source": "adsb.lol",
+    "latitude": 53.269214,
+    "longitude": 1.333812,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "",
+    "altitude_baro_ft": 12000,
+    "ground_speed_kts": 352.0,
+    "track_degrees": 97.73,
+    "metadata": {
+        "r": "61-0315",
+        "t": "K35R",
+        "type": "mlat",
+        "seen": 0.0,
+        "seen_pos": 4.092
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.357464+00:00",
+    "record_id": "AE0237__2026-11-16T11_00_39.002000plus00_00"
+}

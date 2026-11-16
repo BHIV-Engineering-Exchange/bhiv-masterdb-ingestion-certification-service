@@ -1,0 +1,36 @@
+{
+    "record_id": "495564979__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 495564979,
+    "osm_id": 495564979,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Moore Dam",
+        "tags": {
+            "area": "yes",
+            "name": "Moore Dam",
+            "power": "plant",
+            "operator": "Great River Hydro, LLC",
+            "waterway": "dam",
+            "wikidata": "Q26831326",
+            "wikipedia": "en:Moore Dam",
+            "ref:US:EIA": "2351",
+            "ref:US:NID": "NH00414",
+            "start_date": "1957-01",
+            "ref:US:FERC": "2077",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "plant:output:electricity": "190.8 MW"
+        },
+        "osm_id": 495564979,
+        "output": "190.8 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

@@ -1,0 +1,33 @@
+{
+    "record_id": "320994578__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 320994578,
+    "osm_id": 320994578,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u82cf\u53ea\u6c34\u5e93",
+        "tags": {
+            "name": "\u82cf\u53ea\u6c34\u5e93",
+            "power": "plant",
+            "name:en": "Suzhi Dam",
+            "name:zh": "\u82cf\u53ea\u575d",
+            "waterway": "dam",
+            "wikidata": "Q19391189",
+            "wikipedia": "no:Suzhi-demningen",
+            "name:zh-Hant": "\u8607\u53ea\u58e9",
+            "plant:source": "hydro",
+            "name:zh-Latn-pinyin": "s\u016bzh\u01d0 shu\u01d0k\u00f9",
+            "plant:output:electricity": "225 MW"
+        },
+        "osm_id": 320994578,
+        "output": "225 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

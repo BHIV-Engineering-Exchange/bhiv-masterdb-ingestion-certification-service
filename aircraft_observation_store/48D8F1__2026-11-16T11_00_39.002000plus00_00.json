@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "48D8F1",
+    "source": "adsb.lol",
+    "latitude": 52.429092,
+    "longitude": 17.609787,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "PLF250",
+    "altitude_baro_ft": 2600,
+    "ground_speed_kts": 156.7,
+    "track_degrees": 130.6,
+    "metadata": {
+        "r": "1512",
+        "t": "C130",
+        "type": "adsb_icao",
+        "alt_geom": 2375,
+        "seen": 6.6,
+        "seen_pos": 6.622
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.459442+00:00",
+    "record_id": "48D8F1__2026-11-16T11_00_39.002000plus00_00"
+}

@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tyii",
+    "source": "USGS",
+    "place": "297 km SSE of Amahai, Indonesia",
+    "magnitude": 4.3,
+    "longitude": 129.9952,
+    "latitude": -5.807,
+    "depth_km": 138.691,
+    "event_time_utc": "2026-11-16T07:08:09.864000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tyii",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.985905+00:00"
+}

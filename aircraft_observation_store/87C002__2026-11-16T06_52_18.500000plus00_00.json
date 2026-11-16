@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "87C002",
+    "source": "adsb.lol",
+    "latitude": 15.08345,
+    "longitude": 121.057771,
+    "observation_time_utc": "2026-11-16T06:52:18.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "JF002",
+    "altitude_baro_ft": 10825,
+    "ground_speed_kts": 354.7,
+    "track_degrees": 278.27,
+    "metadata": {
+        "r": "80-1111",
+        "t": "B77W",
+        "type": "adsb_icao",
+        "alt_geom": 11625,
+        "seen": 5.6,
+        "seen_pos": 15.646
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:52:19.295284+00:00",
+    "record_id": "87C002__2026-11-16T06_52_18.500000plus00_00"
+}

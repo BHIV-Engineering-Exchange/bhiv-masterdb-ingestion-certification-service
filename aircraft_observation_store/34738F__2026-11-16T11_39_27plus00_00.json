@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "34738F",
+    "source": "adsb.lol",
+    "latitude": 40.490295,
+    "longitude": -3.382263,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CUCO321",
+    "altitude_baro_ft": 2250,
+    "ground_speed_kts": 107.3,
+    "track_degrees": 296.57,
+    "metadata": {
+        "r": "HU.26-30A",
+        "t": "EC35",
+        "type": "adsb_icao",
+        "alt_geom": 2675,
+        "seen": 0.2,
+        "seen_pos": 0.208
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.006940+00:00",
+    "record_id": "34738F__2026-11-16T11_39_27plus00_00"
+}

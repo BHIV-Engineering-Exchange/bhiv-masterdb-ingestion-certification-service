@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362527",
+    "source": "USGS",
+    "place": "6 km N of Lake Henshaw, CA",
+    "magnitude": 1.02,
+    "longitude": -116.76317,
+    "latitude": 33.29933,
+    "depth_km": 11.38,
+    "event_time_utc": "2026-11-15T17:29:12.260000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362527",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.241221+00:00"
+}

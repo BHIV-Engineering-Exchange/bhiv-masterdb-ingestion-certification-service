@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "7CF865",
+    "source": "adsb.lol",
+    "latitude": -27.600915,
+    "longitude": 151.234043,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "DRGN13",
+    "altitude_baro_ft": 22000,
+    "ground_speed_kts": 355.9,
+    "track_degrees": 335.96,
+    "metadata": {
+        "r": "A39-002",
+        "t": "A332",
+        "type": "adsb_icao",
+        "alt_geom": 23075,
+        "seen": 0.0,
+        "seen_pos": 0.171
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.450726+00:00",
+    "record_id": "7CF865__2026-11-16T11_39_27plus00_00"
+}

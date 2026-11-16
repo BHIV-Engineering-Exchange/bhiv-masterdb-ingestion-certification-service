@@ -1,0 +1,39 @@
+{
+    "record_id": "74727575__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 74727575,
+    "osm_id": 74727575,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u6c34\u4e30\u6c34\u5e93 / \uc218\ud48d\uc5b8\uc81c",
+        "tags": {
+            "name": "\u6c34\u4e30\u6c34\u5e93 / \uc218\ud48d\uc5b8\uc81c",
+            "power": "plant",
+            "name:cs": "vodn\u00ed n\u00e1dr\u017e Supchun",
+            "name:de": "Supung-Talsperre",
+            "name:en": "Shuifeng Dam",
+            "name:ko": "\uc218\ud48d\uc5b8\uc81c",
+            "name:ru": "\u0421\u0443\u043f\u0445\u0443\u043d\u0441\u043a\u0430\u044f \u043f\u043b\u043e\u0442\u0438\u043d\u0430",
+            "name:zh": "\u6c34\u4e30\u6c34\u5e93",
+            "waterway": "dam",
+            "wikidata": "Q708579",
+            "wikipedia": "de:Supung-Talsperre",
+            "alt_name:ko": "\uc218\ud48d\ub310",
+            "name:ko-Hani": "\u6c34\u8c4a\u5830\u5824",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "sorting_name:cs": "Supchun",
+            "plant:output:electricity": "yes"
+        },
+        "osm_id": 74727575,
+        "output": "yes",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

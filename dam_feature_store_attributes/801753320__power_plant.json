@@ -1,0 +1,30 @@
+{
+    "record_id": "801753320__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 801753320,
+    "osm_id": 801753320,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Middle Vaitarna Dam",
+        "tags": {
+            "name": "Middle Vaitarna Dam",
+            "power": "plant",
+            "height": "84",
+            "name:mr": "\u092e\u0927\u094d\u092f \u0935\u0948\u0924\u0930\u0923\u093e \u0927\u0930\u0923",
+            "material": "reinforced_concrete",
+            "operator": "MCGM",
+            "waterway": "dam",
+            "plant:source": "hydro"
+        },
+        "osm_id": 801753320,
+        "output": "",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

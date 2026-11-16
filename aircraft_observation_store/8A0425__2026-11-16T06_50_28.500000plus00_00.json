@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "8A0425",
+    "source": "adsb.lol",
+    "latitude": -7.278256,
+    "longitude": 110.904378,
+    "observation_time_utc": "2026-11-16T06:50:28.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "J054G",
+    "altitude_baro_ft": 7000,
+    "ground_speed_kts": 69.1,
+    "track_degrees": 34.38,
+    "metadata": {
+        "r": "LD-1210",
+        "t": "G120",
+        "type": "adsb_icao",
+        "alt_geom": 7575,
+        "seen": 6.8,
+        "seen_pos": 18.055
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:50:29.618119+00:00",
+    "record_id": "8A0425__2026-11-16T06_50_28.500000plus00_00"
+}

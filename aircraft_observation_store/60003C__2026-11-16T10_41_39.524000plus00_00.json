@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "60003C",
+    "source": "adsb.lol",
+    "latitude": 17.162109,
+    "longitude": 96.946732,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "FIE4001",
+    "altitude_baro_ft": 36025,
+    "ground_speed_kts": 445.7,
+    "track_degrees": 303.65,
+    "metadata": {
+        "r": "701",
+        "t": "A319",
+        "type": "adsb_icao",
+        "alt_geom": 38300,
+        "seen": 0.0,
+        "seen_pos": 0.175
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:41.132961+00:00",
+    "record_id": "60003C__2026-11-16T10_41_39.524000plus00_00"
+}

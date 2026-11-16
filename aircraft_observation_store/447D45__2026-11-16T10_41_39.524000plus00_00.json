@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "447D45",
+    "source": "adsb.lol",
+    "latitude": 47.025115,
+    "longitude": 14.999577,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RAMIT88",
+    "altitude_baro_ft": 6100,
+    "ground_speed_kts": 136.5,
+    "track_degrees": 204.69,
+    "metadata": {
+        "r": "3H-DD",
+        "t": "DA40",
+        "type": "adsb_icao",
+        "alt_geom": 6150,
+        "seen": 1.2,
+        "seen_pos": 1.239
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:41.078342+00:00",
+    "record_id": "447D45__2026-11-16T10_41_39.524000plus00_00"
+}

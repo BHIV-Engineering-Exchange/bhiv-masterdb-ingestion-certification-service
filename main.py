@@ -224,8 +224,10 @@ from services.sql_artifact_store import SqlArtifactStore
 from services import backup_service
 from services import startup_config
 from auth.constants import ADMIN_ROLE
-from auth.dependencies import build_identity_dependency
+
 from auth.models import AuthIdentity, TokenRequest, TokenResponse, ADMIN_ROLES, OPERATOR_ROLES
+from auth.dependencies import get_identity, require_admin_operator
+    
 from auth.service import AuthService, AuthTokenError, log_security_decision
 
 from canonical_repository.models import DocumentCategory as CanonicalDocumentCategory
@@ -884,7 +886,7 @@ canonical_repository_service = CanonicalRepositoryService(
 # auth_service instance/secret.
 auth_service = AuthService()
 app.state.auth_service = auth_service
-get_identity = build_identity_dependency(auth_service)
+
 
 # --- Operational sync (PARIKSHAK review references, NIYANTRAN task state) ---
 # See operational_sync/models.py for the direction assumption (MASTERDB
@@ -2852,6 +2854,7 @@ def get_source(
 def geospatial_connector_ingest(
     payload: Dict[str, Any],
     identity: AuthIdentity = Depends(get_identity),
+    _: None = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """
     Source-Independent Geospatial Connector Pipeline:

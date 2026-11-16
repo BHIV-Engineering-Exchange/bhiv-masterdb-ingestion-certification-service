@@ -1,0 +1,38 @@
+{
+    "record_id": "119073566__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 119073566,
+    "osm_id": 119073566,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "P\u013cavi\u0146u HES",
+        "tags": {
+            "name": "P\u013cavi\u0146u HES",
+            "power": "plant",
+            "name:de": "Kraftwerk Plavinu",
+            "name:en": "P\u013cavi\u0146as Hydro Power Plant",
+            "name:lt": "Pliavini\u0173 hidroelektrin\u0117",
+            "name:lv": "P\u013cavi\u0146u HES",
+            "name:ru": "\u041f\u043b\u044f\u0432\u0438\u043d\u044c\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+            "operator": "AS \u201eLatvenergo\u201c",
+            "waterway": "dam",
+            "wikidata": "Q2984983",
+            "wikipedia": "lv:P\u013cavi\u0146u HES",
+            "start_date": "1965",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "ref:EU:ENTSOE_EIC": "43W-PLAV-HPP---J",
+            "plant:output:electricity": "908 MW"
+        },
+        "osm_id": 119073566,
+        "output": "908 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

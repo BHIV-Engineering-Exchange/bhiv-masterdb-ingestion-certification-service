@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "4AECBD",
+    "source": "adsb.lol",
+    "latitude": 58.841796,
+    "longitude": 15.315125,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "TR05",
+    "altitude_baro_ft": 8500,
+    "ground_speed_kts": 45.2,
+    "track_degrees": 264.92,
+    "metadata": {
+        "r": "40205",
+        "t": "G12T",
+        "type": "adsb_icao",
+        "alt_geom": 7800,
+        "seen": 1.7,
+        "seen_pos": 3.006
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.643617+00:00",
+    "record_id": "4AECBD__2026-11-16T08_16_56.501000plus00_00"
+}

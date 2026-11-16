@@ -1,0 +1,13 @@
+{
+    "event_id": "nn00927043",
+    "source": "USGS",
+    "place": "26 km SSW of Round Valley, California",
+    "magnitude": 2.01,
+    "longitude": -118.6699,
+    "latitude": 37.1866,
+    "depth_km": 8.8786,
+    "event_time_utc": "2026-11-16T11:23:03.040000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nn00927043",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.918095+00:00"
+}

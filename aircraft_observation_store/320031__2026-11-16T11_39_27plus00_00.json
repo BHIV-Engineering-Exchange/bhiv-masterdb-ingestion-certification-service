@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "320031",
+    "source": "adsb.lol",
+    "latitude": 45.665697,
+    "longitude": 8.286095,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "VOLPE501",
+    "altitude_baro_ft": 2525,
+    "ground_speed_kts": 133.2,
+    "track_degrees": 10.38,
+    "metadata": {
+        "r": "MM81962",
+        "t": "A169",
+        "type": "adsb_icao",
+        "alt_geom": 2650,
+        "seen": 0.8,
+        "seen_pos": 0.812
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.227348+00:00",
+    "record_id": "320031__2026-11-16T11_39_27plus00_00"
+}

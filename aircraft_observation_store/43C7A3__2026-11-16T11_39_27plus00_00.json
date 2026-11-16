@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "43C7A3",
+    "source": "adsb.lol",
+    "latitude": 53.38825,
+    "longitude": 1.260849,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RAMPAG21",
+    "altitude_baro_ft": 15000,
+    "ground_speed_kts": 436.0,
+    "track_degrees": 43.0,
+    "metadata": {
+        "r": "ZK426",
+        "t": "EUFI",
+        "type": "mlat",
+        "seen": 39.1,
+        "seen_pos": 39.14
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.132483+00:00",
+    "record_id": "43C7A3__2026-11-16T11_39_27plus00_00"
+}

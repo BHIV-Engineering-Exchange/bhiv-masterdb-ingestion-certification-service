@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE6C24",
+    "source": "adsb.lol",
+    "latitude": 27.127167,
+    "longitude": 127.429073,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "HRCLS90",
+    "altitude_baro_ft": 25000,
+    "ground_speed_kts": 334.9,
+    "track_degrees": 7.55,
+    "metadata": {
+        "r": "170288",
+        "t": "C30J",
+        "type": "adsb_icao",
+        "alt_geom": 26200,
+        "seen": 0.1,
+        "seen_pos": 0.362
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:41.135493+00:00",
+    "record_id": "AE6C24__2026-11-16T10_41_39.524000plus00_00"
+}

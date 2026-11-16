@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "7CFAA0",
+    "source": "adsb.lol",
+    "latitude": -27.247258,
+    "longitude": 151.647034,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "TRPR52",
+    "altitude_baro_ft": 3725,
+    "ground_speed_kts": 94.1,
+    "track_degrees": 177.56,
+    "metadata": {
+        "r": "A60-002",
+        "t": "H60",
+        "type": "adsb_icao",
+        "alt_geom": 4000,
+        "seen": 0.3,
+        "seen_pos": 0.275
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.227567+00:00",
+    "record_id": "7CFAA0__2026-11-16T10_29_16plus00_00"
+}

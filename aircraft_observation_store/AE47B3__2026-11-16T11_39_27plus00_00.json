@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE47B3",
+    "source": "adsb.lol",
+    "latitude": 49.495422,
+    "longitude": 10.51088,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CROSS88",
+    "altitude_baro_ft": 2425,
+    "ground_speed_kts": 111.6,
+    "track_degrees": 210.7,
+    "metadata": {
+        "r": "08-20171",
+        "t": "H60",
+        "type": "adsb_icao",
+        "alt_geom": 2375,
+        "seen": 0.2,
+        "seen_pos": 0.2
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.252576+00:00",
+    "record_id": "AE47B3__2026-11-16T11_39_27plus00_00"
+}

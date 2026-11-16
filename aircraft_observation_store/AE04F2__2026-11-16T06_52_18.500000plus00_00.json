@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE04F2",
+    "source": "adsb.lol",
+    "latitude": 48.90596,
+    "longitude": 10.251793,
+    "observation_time_utc": "2026-11-16T06:52:18.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "DUKE75",
+    "altitude_baro_ft": 27000,
+    "ground_speed_kts": 300.0,
+    "track_degrees": 129.05,
+    "metadata": {
+        "r": "84-00162",
+        "t": "BE20",
+        "type": "adsb_icao",
+        "alt_geom": 26650,
+        "seen": 0.3,
+        "seen_pos": 0.375
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:52:19.178829+00:00",
+    "record_id": "AE04F2__2026-11-16T06_52_18.500000plus00_00"
+}

@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tyd3",
+    "source": "USGS",
+    "place": "92 km NW of Houma, Tonga",
+    "magnitude": 4.7,
+    "longitude": -175.9354,
+    "latitude": -20.589,
+    "depth_km": 177.524,
+    "event_time_utc": "2026-11-15T07:36:37.211000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tyd3",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T07:32:40.426659+00:00"
+}

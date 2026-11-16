@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wqbozu",
+    "source": "USGS",
+    "place": "56 km E of Pedro Bay, Alaska",
+    "magnitude": 2.7,
+    "longitude": -153.105,
+    "latitude": 59.797,
+    "depth_km": 104.4,
+    "event_time_utc": "2026-11-15T09:18:47.165000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wqbozu",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T08:49:19.505956+00:00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "ABCAC9",
+    "source": "adsb.lol",
+    "latitude": 36.206282,
+    "longitude": -115.392385,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "JANET11",
+    "altitude_baro_ft": 11300,
+    "ground_speed_kts": 332.6,
+    "track_degrees": 292.63,
+    "metadata": {
+        "r": "N859WP",
+        "t": "B736",
+        "type": "adsb_icao",
+        "alt_geom": 11575,
+        "seen": 1.0,
+        "seen_pos": 0.174
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.213996+00:00",
+    "record_id": "ABCAC9__2026-11-16T11_14_29.500000plus00_00"
+}

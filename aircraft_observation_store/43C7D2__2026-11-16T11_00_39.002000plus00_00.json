@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "43C7D2",
+    "source": "adsb.lol",
+    "latitude": 51.292525,
+    "longitude": -1.244867,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SHF505",
+    "altitude_baro_ft": 775,
+    "ground_speed_kts": 287.0,
+    "track_degrees": 353.0,
+    "metadata": {
+        "r": "ZK555",
+        "t": "H47",
+        "type": "mlat",
+        "seen": 1.0,
+        "seen_pos": 2.864
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.305317+00:00",
+    "record_id": "43C7D2__2026-11-16T11_00_39.002000plus00_00"
+}

@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "AE5C97",
+    "source": "adsb.lol",
+    "latitude": 40.37592,
+    "longitude": -2.5458,
+    "observation_time_utc": "2026-11-16T10:42:53.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "LION404",
+    "altitude_baro_ft": 22975,
+    "ground_speed_kts": 286.0,
+    "track_degrees": 230.0,
+    "metadata": {
+        "r": "15-5822",
+        "t": "C30J",
+        "type": "mlat",
+        "seen": 0.2,
+        "seen_pos": 1.299
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:42:53.940977+00:00",
+    "record_id": "AE5C97__2026-11-16T10_42_53.001000plus00_00"
+}

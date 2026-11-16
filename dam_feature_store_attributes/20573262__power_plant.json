@@ -1,0 +1,41 @@
+{
+    "record_id": "20573262__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 20573262,
+    "osm_id": 20573262,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u10d6\u10d0\u10f0\u10d4\u10e1\u10d8",
+        "tags": {
+            "name": "\u10d6\u10d0\u10f0\u10d4\u10e1\u10d8",
+            "power": "plant",
+            "name:en": "Zahesi HPP",
+            "name:ml": "\u0d38\u0d3e\u0d39\u0d46\u0d38\u0d3f \u0d1c\u0d32\u0d35\u0d48\u0d26\u0d4d\u0d2f\u0d41\u0d24\u0d28\u0d3f\u0d32\u0d2f\u0d02",
+            "name:ru": "\u0417\u0410\u0413\u042d\u0421",
+            "building": "industrial",
+            "operator": "\u10d4\u10dc\u10d4\u10e0\u10d2\u10dd-\u10de\u10e0\u10dd \u10ef\u10dd\u10e0\u10ef\u10d8\u10d0",
+            "waterway": "dam",
+            "wikidata": "Q56665",
+            "start_date": "1927-04-09",
+            "operator:en": "Energo-Pro Georgia",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "official_name": "\u10d6\u10d4\u10db\u10dd \u10d0\u10d5\u10ed\u10d0\u10da\u10d8\u10e1 \u10f0\u10d8\u10d3\u10e0\u10dd\u10d4\u10da\u10d4\u10e5\u10e2\u10e0\u10dd\u10e1\u10d0\u10d3\u10d2\u10e3\u10e0\u10d8",
+            "official_name:en": "Zemo Avchala Dam",
+            "official_name:ru": "\u0417\u0435\u043c\u043e-\u0410\u0432\u0447\u0430\u043b\u044c\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+            "operator:wikidata": "Q11878927",
+            "wikimedia_commons": "Category:Zemo Avchala Dam",
+            "plant:output:electricity": "36.8 MW"
+        },
+        "osm_id": 20573262,
+        "output": "36.8 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

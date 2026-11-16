@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import secrets
+import time
 from typing import Any, Dict, List, Optional
 import uuid
 
@@ -71,11 +72,11 @@ def validate_rsa_public_key(pem_str: str) -> None:
         from cryptography.hazmat.primitives.asymmetric import rsa
         key = load_pem_public_key(pem_str.encode("utf-8"))
     except Exception as exc:
-        raise RuntimeError(f"Invalid RSA public key: {exc}") from exc
+        raise RuntimeError(f"Authoritative RS256 public key is malformed or invalid: {exc}") from exc
     if not isinstance(key, rsa.RSAPublicKey):
-        raise RuntimeError("Key must be RSA.")
+        raise RuntimeError("Authoritative RS256 public key is malformed or invalid: Key must be RSA.")
     if key.key_size < 2048:
-        raise RuntimeError("RSA key must be at least 2048 bits.")
+        raise RuntimeError("Authoritative RS256 public key has insufficient key size (< 2048 bits).")
 
 
 class AuthService:
@@ -92,16 +93,6 @@ class AuthService:
                 self._public_key_pem = env_pubkey
             else:
                 key_path = os.environ.get("AUTH_JWT_PUBLIC_KEY_PATH")
-                if not key_path or not os.path.exists(key_path):
-                    sibling_key_path = os.path.abspath(
-                        os.path.join(
-                            os.path.dirname(__file__),
-                            "..", "..", "..", "Tantra", "TANTRA-Gated-Bridge-Infrastructure", "services", "sarathi", "keys", "public.pem"
-                        )
-                    )
-                    if os.path.exists(sibling_key_path):
-                        key_path = sibling_key_path
-
                 if key_path and os.path.exists(key_path):
                     try:
                         with open(key_path, "r", encoding="utf-8") as fh:
@@ -117,10 +108,32 @@ class AuthService:
             or ""
         ).strip().lower()
         is_production = env_mode in ("production", "prod")
-        # Enforce production uses RS256 only
-        if is_production and _JWT_ALGORITHM != "RS256":
+
+        # 1. Enforce production has a configured secret before algorithm check
+        if is_production and not (secret_key or env_secret):
+            raise RuntimeError(
+                "AUTH_JWT_SECRET must be configured in production mode. "
+                "Refusing to start with an ephemeral random secret."
+            )
+
+        # 2. Enforce production rejects HS256 configuration
+        configured_alg = os.environ.get("JWT_ALGORITHM")
+        if is_production and configured_alg and configured_alg.strip().upper() == "HS256":
             raise RuntimeError("Production environment must use RS256 algorithm for JWTs")
 
+        # 3. Enforce production has an authoritative RS256 public key
+        if is_production:
+            if not self._public_key_pem:
+                raise RuntimeError("AUTH_JWT_PUBLIC_KEY or AUTH_JWT_PUBLIC_KEY_PATH must be configured in production mode.")
+            try:
+                validate_rsa_public_key(self._public_key_pem)
+            except RuntimeError as exc:
+                msg = str(exc).lower()
+                if "insufficient" in msg or "2048" in msg:
+                    raise RuntimeError(f"Authoritative RS256 public key has insufficient key size: {exc}") from exc
+                raise RuntimeError(f"Authoritative RS256 public key is malformed or invalid: {exc}") from exc
+            except Exception as exc:
+                raise RuntimeError(f"Authoritative RS256 public key is malformed or invalid: {exc}") from exc
 
         if secret_key is not None:
             if not str(secret_key).strip():
@@ -150,6 +163,16 @@ class AuthService:
                 self._expiry_minutes = int(env_expiry) if env_expiry else _DEFAULT_EXPIRY_MINUTES
             except ValueError:
                 self._expiry_minutes = _DEFAULT_EXPIRY_MINUTES
+
+    @property
+    def is_production(self) -> bool:
+        env_mode = (
+            os.environ.get("ENVIRONMENT")
+            or os.environ.get("APP_ENV")
+            or os.environ.get("MASTERDB_ENV")
+            or ""
+        ).strip().lower()
+        return env_mode in ("production", "prod")
 
     @property
     def public_key_pem(self) -> Optional[str]:
@@ -197,10 +220,24 @@ class AuthService:
         Fails closed if authentication password environment variables are not configured.
         Caller-supplied roles are ignored; roles are assigned only via verified server-side mechanisms.
         """
+        if self.is_production:
+            raise AuthTokenError("Local token issuance is prohibited in production mode.")
+
+        if not (os.environ.get("AUTH_JWT_SECRET") or os.environ.get("JWT_SECRET")):
+            raise AuthTokenError("AUTH_JWT_SECRET is not explicitly configured; refusing fallback.")
+
         if not actor or not str(actor).strip():
             raise AuthTokenError("Actor/username cannot be empty.")
 
         actor_clean = actor.strip().lower()
+
+        allowed_actors_env = os.environ.get("AUTH_ALLOWED_ACTORS")
+        if allowed_actors_env is None:
+            raise AuthTokenError("AUTH_ALLOWED_ACTORS must be configured for local token issuance.")
+        allowed_actors = [a.strip().lower() for a in allowed_actors_env.split(",") if a.strip()]
+        if actor_clean not in allowed_actors:
+            raise AuthTokenError(f"Actor '{actor}' is not authorized for local token issuance.")
+
         auth_pw = os.environ.get("AUTH_PASSWORD") or os.environ.get("MASTERDB_AUTH_PASSWORD")
         admin_pw = os.environ.get("ADMIN_PASSWORD")
 
@@ -269,10 +306,12 @@ class AuthService:
         payload = {
             "sub": str(actor).strip(),
             "roles": roles or [],
+            "iss": "masterdb-local",
+            "aud": "masterdb",
             "exp": expires_at,
             "iat": datetime.now(timezone.utc),
         }
-        token = jwt.encode(payload, self._secret_key, algorithm=_ALGORITHM)
+        token = jwt.encode(payload, self._secret_key, algorithm="HS256")
         return token, expires_at.isoformat()
 
     def decode_token(self, token: str) -> AuthIdentity:
@@ -295,51 +334,95 @@ class AuthService:
                     token,
                     rsa_public_key,
                     algorithms=["RS256"],
-                    options={"verify_aud": False},
+                    options={"verify_aud": False, "verify_nbf": True},
                 )
             except jwt.ExpiredSignatureError as exc:
                 raise AuthTokenError("Token has expired.") from exc
+            except jwt.ImmatureSignatureError as exc:
+                raise AuthTokenError(f"Token is not yet valid (nbf/iat): {exc}") from exc
             except jwt.InvalidTokenError as exc:
                 raise AuthTokenError(f"Token is invalid or badly signed: {exc}") from exc
             except (TypeError, ValueError) as exc:
                 raise AuthTokenError(f"RS256 public key is invalid: {exc}") from exc
 
+            # iat skew validation (>300s in future)
+            iat = payload.get("iat")
+            if iat is not None:
+                iat_ts = iat.timestamp() if isinstance(iat, datetime) else float(iat)
+                if iat_ts > time.time() + 300:
+                    raise AuthTokenError("Token issued in the future (iat skew exceeds limit).")
+
+            # sub validation: strictly required, non-empty string, no actor/trace_id fallbacks
+            sub = payload.get("sub")
+            if not sub or not isinstance(sub, str) or not sub.strip():
+                raise AuthTokenError("Token is missing a subject (actor).")
+
+            # iss validation
             iss = payload.get("iss")
-            if not iss or iss not in ("tantra-sarathi", "masterdb", "masterdb-production"):
+            if not iss:
+                raise AuthTokenError("Untrusted or missing token issuer: missing")
+            if self.is_production and iss == "masterdb-test-fixture":
+                raise AuthTokenError("Test token issuer 'masterdb-test-fixture' is prohibited in production mode.")
+
+            allowed_issuers = {"tantra-sarathi", "masterdb", "masterdb-production"}
+            if not self.is_production:
+                allowed_issuers.add("masterdb-test-fixture")
+                allowed_issuers.add("masterdb-local")
+            env_issuers = [x.strip() for x in (os.environ.get("AUTH_ISSUER") or "").split(",") if x.strip()]
+            for ei in env_issuers:
+                if not (self.is_production and ei == "masterdb-test-fixture"):
+                    allowed_issuers.add(ei)
+
+            if iss not in allowed_issuers:
                 raise AuthTokenError(f"Untrusted or missing token issuer: {iss}")
 
+            # aud validation
             aud = payload.get("aud")
             if not aud:
                 raise AuthTokenError("Token is missing required audience claim.")
-            aud_list = [aud] if isinstance(aud, str) else [aud]
-            if not any(a in ("masterdb", "tantra-bridge") for a in aud_list):
+            aud_list = [aud] if isinstance(aud, str) else list(aud)
+            allowed_audiences = {"masterdb", "tantra-bridge", "masterdb-production"}
+            env_aud = [x.strip() for x in (os.environ.get("AUTH_JWT_AUDIENCE") or "").split(",") if x.strip()]
+            allowed_audiences.update(env_aud)
+            if not any(a in allowed_audiences for a in aud_list):
                 raise AuthTokenError(f"Untrusted or invalid token audience: {aud}")
 
-            actor = payload.get("sub") or payload.get("actor") or payload.get("trace_id")
-            if not actor or not str(actor).strip():
-                raise AuthTokenError("Token is missing a subject (actor).")
-
+            # roles validation
             roles = payload.get("roles")
-            if not roles or not isinstance(roles, list):
+            if roles is None or not isinstance(roles, list):
                 raise AuthTokenError("Token is missing required roles claim.")
-
-            safe_roles = [r for r in roles if r in ("ecosystem-reader", "viewer", "operator", "APPROVED_CONSUMER")]
-            if not safe_roles:
+            valid_roles = [r for r in roles if isinstance(r, str) and r.strip()]
+            if not valid_roles:
                 raise AuthTokenError("Token contains no valid roles.")
 
-            return AuthIdentity(actor=str(actor).strip(), roles=safe_roles)
+            is_tantra = iss in ("tantra-sarathi", "masterdb-test-fixture", "masterdb", "masterdb-production")
+            return AuthIdentity(
+                actor=sub.strip(),
+                roles=valid_roles,
+                auth_method="RS256",
+                issuer=iss,
+                is_tantra_verified=is_tantra,
+            )
 
-        elif alg == _ALGORITHM:
+        elif alg == "HS256":
+            if self.is_production:
+                raise AuthTokenError("HS256 symmetric tokens are rejected in production mode.")
             try:
-                payload = jwt.decode(token, self._secret_key, algorithms=[_ALGORITHM])
+                payload = jwt.decode(token, self._secret_key, algorithms=["HS256"], options={"verify_aud": False})
             except jwt.ExpiredSignatureError as exc:
                 raise AuthTokenError("Token has expired.") from exc
             except jwt.InvalidTokenError as exc:
                 raise AuthTokenError("Token is invalid or badly signed.") from exc
 
-            actor = payload.get("sub")
-            if not actor or not str(actor).strip():
+            sub = payload.get("sub")
+            if not sub or not isinstance(sub, str) or not sub.strip():
                 raise AuthTokenError("Token is missing a subject (actor).")
-            return AuthIdentity(actor=actor, roles=payload.get("roles", []))
+            return AuthIdentity(
+                actor=sub.strip(),
+                roles=payload.get("roles", []),
+                auth_method="HS256",
+                issuer=payload.get("iss", "masterdb-local"),
+                is_tantra_verified=False,
+            )
         else:
             raise AuthTokenError(f"Unsupported algorithm: {alg}")

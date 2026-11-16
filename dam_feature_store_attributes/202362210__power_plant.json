@@ -1,0 +1,36 @@
+{
+    "record_id": "202362210__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 202362210,
+    "osm_id": 202362210,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Chippewa Falls WP304 Dam",
+        "tags": {
+            "name": "Chippewa Falls WP304 Dam",
+            "power": "plant",
+            "loc_name": "NSP Dam",
+            "operator": "Xcel Energy",
+            "waterway": "dam",
+            "ref:US:EIA": "4000",
+            "ref:US:NID": "WI00731",
+            "start_date": "1928",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "generator:type": "kaplan_turbine",
+            "gnis:feature_id": "1792941",
+            "operator:wikidata": "Q1486956",
+            "plant:output:electricity": "21.6 MW"
+        },
+        "osm_id": 202362210,
+        "output": "21.6 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

@@ -1,0 +1,13 @@
+{
+    "event_id": "uu80164671",
+    "source": "USGS",
+    "place": "14 km NE of Milford, Utah",
+    "magnitude": 0.74,
+    "longitude": -112.8945,
+    "latitude": 38.4963333333333,
+    "depth_km": 4.33,
+    "event_time_utc": "2026-11-15T09:27:56.270000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/uu80164671",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T08:49:19.498390+00:00"
+}

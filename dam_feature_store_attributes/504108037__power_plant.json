@@ -1,0 +1,32 @@
+{
+    "record_id": "504108037__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 504108037,
+    "osm_id": 504108037,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Barrage Moulay Youssef",
+        "tags": {
+            "name": "Barrage Moulay Youssef",
+            "power": "plant",
+            "height": "100.0",
+            "capacity": "197.0",
+            "waterway": "dam",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "year_completed": "1969",
+            "associated_river": "Tessaout",
+            "plant:output:electricity": "24 MW"
+        },
+        "osm_id": 504108037,
+        "output": "24 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

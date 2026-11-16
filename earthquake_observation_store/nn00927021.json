@@ -1,0 +1,13 @@
+{
+    "event_id": "nn00927021",
+    "source": "USGS",
+    "place": "35 km SE of Mina, Nevada",
+    "magnitude": 2.43,
+    "longitude": -117.8154,
+    "latitude": 38.1749,
+    "depth_km": 9.1113,
+    "event_time_utc": "2026-11-15T18:44:59.638000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nn00927021",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.231174+00:00"
+}

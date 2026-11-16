@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "AE6CF2",
+    "source": "adsb.lol",
+    "latitude": 41.162019,
+    "longitude": -70.531214,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SAM733",
+    "altitude_baro_ft": 41000,
+    "ground_speed_kts": 500.0,
+    "track_degrees": 72.0,
+    "metadata": {
+        "r": "20-1949",
+        "t": "GLF5",
+        "type": "mlat",
+        "seen": 0.5,
+        "seen_pos": 2.108
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:27.969576+00:00",
+    "record_id": "AE6CF2__2026-11-16T11_39_27plus00_00"
+}

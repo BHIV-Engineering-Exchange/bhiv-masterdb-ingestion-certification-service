@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "33FFF3",
+    "source": "adsb.lol",
+    "latitude": 40.647858,
+    "longitude": 9.721985,
+    "observation_time_utc": "2026-11-16T10:42:53.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "IAM4676",
+    "altitude_baro_ft": 25000,
+    "ground_speed_kts": 266.3,
+    "track_degrees": 260.93,
+    "metadata": {
+        "r": "MM62177",
+        "t": "C130",
+        "type": "adsb_icao",
+        "alt_geom": 25600,
+        "seen": 0.2,
+        "seen_pos": 0.242
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:42:54.084277+00:00",
+    "record_id": "33FFF3__2026-11-16T10_42_53.001000plus00_00"
+}

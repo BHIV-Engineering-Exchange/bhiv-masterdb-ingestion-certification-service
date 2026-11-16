@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "76E725",
+    "source": "adsb.lol",
+    "latitude": -30.746263,
+    "longitude": 116.226068,
+    "observation_time_utc": "2026-11-16T07:32:44.503000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "TANG820",
+    "altitude_baro_ft": 9625,
+    "ground_speed_kts": 303.0,
+    "track_degrees": 184.73,
+    "metadata": {
+        "r": "9105",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 9775,
+        "seen": 0.4,
+        "seen_pos": 0.431
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T07:32:45.403362+00:00",
+    "record_id": "76E725__2026-11-16T07_32_44.503000plus00_00"
+}

@@ -1,0 +1,67 @@
+{
+    "record_id": "bhote-koshi-2026__media__dhunche",
+    "evidence_id": "dhunche",
+    "sequence": 7,
+    "title": "Dhunche",
+    "media": {
+        "sourceUrl": "https://www.youtube.com/watch?v=r5OYhYnBX6E",
+        "platform": "YouTube",
+        "publisher": "YouTube source",
+        "width": 240,
+        "height": 426,
+        "orientation": "portrait",
+        "fit": "contain",
+        "clipInSec": 0,
+        "clipOutSec": 14.43,
+        "rightsStatus": "Linked original source; media is not redistributed."
+    },
+    "provenance": {
+        "via": "GeoGeorgeShadrach public geolocation map",
+        "viaUrl": "https://x.com/geogeorgeology/status/2093632283442053371",
+        "rights": "third-party link only; media not redistributed"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view",
+    "media_mode": "EXTERNAL_LINK_METADATA_ONLY",
+    "dataset_id": "gods_eye_view_bhote_koshi_media_references",
+    "source_dataset_id": "gods_eye_view_bhote_koshi_flood",
+    "event_id": "bhote-koshi-2026",
+    "source_provenance": {
+        "provider": "God's Eye View / GeoPera / Vantor Open Data",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "files": [
+            {
+                "role": "flood_path_module",
+                "path": "src/data/bhoteKoshiFloodPath.js",
+                "sha256": "48edc5443233bcbe766d4791b988cd8a9f2b7d850a13911151ee12bb80bbdc02"
+            },
+            {
+                "role": "event_module",
+                "path": "src/data/bhoteKoshiEvent.js",
+                "sha256": "3247e4eed2bb872efebe940ec4d936388ef29b4ab6dab52b54793c196d974eac"
+            },
+            {
+                "role": "embedded_media_module",
+                "path": "src/data/bhoteKoshiEmbeddedMedia.js",
+                "sha256": "f275c458b7dfed26442019e9ee229a271f5ea47a98e927585e5c4c09aeec4f92"
+            },
+            {
+                "role": "event_pack",
+                "path": "public/events/bhote-koshi-2026/event.json",
+                "sha256": "79d93b45365a43bea63b732878fa549c4423fbcaf2bb738973ef4d62eea4d635"
+            }
+        ],
+        "attribution": "Imagery: Vantor Open Data; reconstruction: GeoPera (CC BY-NC 4.0). Linked witness posts and the GeoGeorgeShadrach geolocation map retain their owners' terms.",
+        "path_source_url": "https://github.com/geo-pera/bhotekoshi-2026-reconstruction/blob/main/vectors/river_centerline.geojson",
+        "path_license": "CC BY-NC 4.0",
+        "media_mode": "EXTERNAL_LINK_METADATA_ONLY",
+        "data_mode": "STATIC_HISTORICAL_RECONSTRUCTION",
+        "presentation_metadata": {
+            "playback_seconds": 90,
+            "prologue_end_ratio": 0.22,
+            "corridor_end_ratio": 0.84,
+            "camera_hold_ratio": 0.62,
+            "scene_presentation": "scene-beat"
+        }
+    },
+    "ingested_at_utc": "2026-11-16T11:40:13.288045+00:00"
+}

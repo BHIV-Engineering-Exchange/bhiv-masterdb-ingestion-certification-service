@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "480C42",
+    "source": "adsb.lol",
+    "latitude": 52.469446,
+    "longitude": 13.983241,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MMF18",
+    "altitude_baro_ft": 29000,
+    "ground_speed_kts": 505.4,
+    "track_degrees": 72.14,
+    "metadata": {
+        "r": "T-056",
+        "t": "A332",
+        "type": "adsb_icao",
+        "alt_geom": 28250,
+        "seen": 0.0,
+        "seen_pos": 0.021
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:41.060743+00:00",
+    "record_id": "480C42__2026-11-16T10_41_39.524000plus00_00"
+}

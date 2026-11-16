@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3E8819",
+    "source": "adsb.lol",
+    "latitude": 40.309397,
+    "longitude": -4.300835,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "GAF310",
+    "altitude_baro_ft": 24975,
+    "ground_speed_kts": 320.2,
+    "track_degrees": 185.02,
+    "metadata": {
+        "r": "55+06",
+        "t": "C30J",
+        "type": "adsb_icao",
+        "alt_geom": 25925,
+        "seen": 0.0,
+        "seen_pos": 0.395
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.249967+00:00",
+    "record_id": "3E8819__2026-11-16T11_14_29.500000plus00_00"
+}

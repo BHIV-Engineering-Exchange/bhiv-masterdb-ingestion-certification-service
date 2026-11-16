@@ -1,0 +1,45 @@
+{
+    "record_id": "408793870__power_plant",
+    "dataset_id": "gods_eye_view_dam_geometries",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 408793870,
+    "osm_id": 408793870,
+    "source_layer": "power_plant",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    102.714725827,
+                    30.466473385
+                ],
+                [
+                    102.715122794,
+                    30.466865742
+                ],
+                [
+                    102.715624619,
+                    30.467097166
+                ],
+                [
+                    102.715805584,
+                    30.46717252
+                ],
+                [
+                    102.715851349,
+                    30.466869681
+                ],
+                [
+                    102.715411467,
+                    30.466617638
+                ],
+                [
+                    102.714725827,
+                    30.466473385
+                ]
+            ]
+        ]
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

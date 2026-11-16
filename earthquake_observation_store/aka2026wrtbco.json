@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrtbco",
+    "source": "USGS",
+    "place": "22 km SW of Susitna, Alaska",
+    "magnitude": 2.3,
+    "longitude": -150.759,
+    "latitude": 61.384,
+    "depth_km": 61.9,
+    "event_time_utc": "2026-11-16T07:01:57.433000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrtbco",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.990806+00:00"
+}

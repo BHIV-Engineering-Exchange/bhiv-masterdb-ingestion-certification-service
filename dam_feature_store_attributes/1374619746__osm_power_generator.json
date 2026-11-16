@@ -1,0 +1,31 @@
+{
+    "record_id": "1374619746__osm_power_generator",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 1374619746,
+    "osm_id": 1374619746,
+    "source_layer": "osm_power_generator",
+    "properties": {
+        "id": 3386923,
+        "tags": {
+            "name": "Allunkal Dam",
+            "power": "generator",
+            "name:ml": "\u0d05\u0d33\u0d4d\u0d33\u0d41\u0d19\u0d4d\u0d15\u0d7d \u0d05\u0d23\u0d15\u0d4d\u0d15\u0d46\u0d1f\u0d4d\u0d1f\u0d4d",
+            "waterway": "dam",
+            "generator:method": "run-of-the-river",
+            "generator:source": "hydro",
+            "generator:output:electricity": "yes"
+        },
+        "type": "",
+        "method": "run-of-the-river",
+        "osm_id": 1374619746,
+        "output": "yes",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "osm_power_generator"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

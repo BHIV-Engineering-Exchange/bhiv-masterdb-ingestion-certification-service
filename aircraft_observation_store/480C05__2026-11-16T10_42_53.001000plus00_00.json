@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "480C05",
+    "source": "adsb.lol",
+    "latitude": 52.886586,
+    "longitude": 5.128305,
+    "observation_time_utc": "2026-11-16T10:42:53.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "ROGUE03",
+    "altitude_baro_ft": 1425,
+    "ground_speed_kts": 190.0,
+    "track_degrees": 312.54,
+    "metadata": {
+        "r": "G-781",
+        "t": "C130",
+        "type": "mlat",
+        "seen": 0.2,
+        "seen_pos": 8.49
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:42:54.049583+00:00",
+    "record_id": "480C05__2026-11-16T10_42_53.001000plus00_00"
+}

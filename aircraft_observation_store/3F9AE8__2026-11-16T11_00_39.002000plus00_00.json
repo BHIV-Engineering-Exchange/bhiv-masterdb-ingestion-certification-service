@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3F9AE8",
+    "source": "adsb.lol",
+    "latitude": 53.749959,
+    "longitude": 8.696971,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "PCT646",
+    "altitude_baro_ft": 1425,
+    "ground_speed_kts": 160.3,
+    "track_degrees": 93.22,
+    "metadata": {
+        "r": "57+05",
+        "t": "D228",
+        "type": "adsb_icao",
+        "alt_geom": 1050,
+        "seen": 0.1,
+        "seen_pos": 0.24
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.403067+00:00",
+    "record_id": "3F9AE8__2026-11-16T11_00_39.002000plus00_00"
+}

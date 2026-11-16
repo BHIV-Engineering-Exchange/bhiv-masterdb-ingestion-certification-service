@@ -1,0 +1,30 @@
+{
+    "record_id": "844679320__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 844679320,
+    "osm_id": 844679320,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u52a0\u67e5\u6c34\u7535\u7ad9",
+        "tags": {
+            "area": "yes",
+            "name": "\u52a0\u67e5\u6c34\u7535\u7ad9",
+            "power": "plant",
+            "name:en": "Jiacha Hydropower Station",
+            "waterway": "dam",
+            "wikidata": "Q104848230",
+            "plant:source": "hydro",
+            "plant:output:electricity": "360 MW"
+        },
+        "osm_id": 844679320,
+        "output": "360 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

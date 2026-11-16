@@ -1,0 +1,33 @@
+{
+    "record_id": "89754799__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 89754799,
+    "osm_id": 89754799,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Presa de Salime",
+        "tags": {
+            "name": "Presa de Salime",
+            "power": "plant",
+            "name:gl": "Encoro de Salime",
+            "alt_name": "Central hidroel\u00e8ctrica de Salime",
+            "man_made": "dam",
+            "operator": "Enel Green Power Espa\u00f1a",
+            "waterway": "dam",
+            "wikidata": "Q46481097",
+            "plant:source": "hydro",
+            "operator:wikidata": "Q3725218",
+            "plant:output:electricity": "78.6 MW"
+        },
+        "osm_id": 89754799,
+        "output": "78.6 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

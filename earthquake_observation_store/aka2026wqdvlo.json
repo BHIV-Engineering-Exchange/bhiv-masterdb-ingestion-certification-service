@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wqdvlo",
+    "source": "USGS",
+    "place": "9 km WSW of Manley Hot Springs, Alaska",
+    "magnitude": 1.7,
+    "longitude": -150.816,
+    "latitude": 64.959,
+    "depth_km": 9.5,
+    "event_time_utc": "2026-11-15T10:25:56.024000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wqdvlo",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T08:49:19.491009+00:00"
+}

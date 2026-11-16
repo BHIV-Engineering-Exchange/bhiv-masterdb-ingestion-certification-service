@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "33FCB6",
+    "source": "adsb.lol",
+    "latitude": 41.933212,
+    "longitude": 11.349688,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "IAM2864",
+    "altitude_baro_ft": 12050,
+    "ground_speed_kts": 332.5,
+    "track_degrees": 125.7,
+    "metadata": {
+        "r": "MM62335",
+        "t": "P180",
+        "type": "adsb_icao",
+        "alt_geom": 12325,
+        "seen": 0.1,
+        "seen_pos": 0.317
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.496913+00:00",
+    "record_id": "33FCB6__2026-11-16T11_14_29.500000plus00_00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3B7564",
+    "source": "adsb.lol",
+    "latitude": 46.788345,
+    "longitude": 1.579687,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MTTE35",
+    "altitude_baro_ft": 23000,
+    "ground_speed_kts": 407.3,
+    "track_degrees": 10.9,
+    "metadata": {
+        "r": "F-UJCQ",
+        "t": "A332",
+        "type": "adsb_icao",
+        "alt_geom": 23225,
+        "seen": 0.1,
+        "seen_pos": 2.429
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.590993+00:00",
+    "record_id": "3B7564__2026-11-16T08_16_56.501000plus00_00"
+}

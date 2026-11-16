@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "800795",
+    "source": "adsb.lol",
+    "latitude": 30.66814,
+    "longitude": 76.802579,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "VUAUH",
+    "ground_speed_kts": 11.8,
+    "metadata": {
+        "r": "CB-8008",
+        "t": "C17",
+        "type": "adsb_icao",
+        "seen": 2.5,
+        "seen_pos": 2.658
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.178966+00:00",
+    "record_id": "800795__2026-11-16T10_29_16plus00_00"
+}

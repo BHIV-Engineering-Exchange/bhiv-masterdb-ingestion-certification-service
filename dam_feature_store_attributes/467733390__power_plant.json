@@ -1,0 +1,32 @@
+{
+    "record_id": "467733390__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 467733390,
+    "osm_id": 467733390,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u0633\u062f \u062a\u0627\u0631\u06cc\u06a9",
+        "tags": {
+            "area": "yes",
+            "name": "\u0633\u062f \u062a\u0627\u0631\u06cc\u06a9",
+            "power": "plant",
+            "name:en": "Tarik Dam",
+            "waterway": "dam",
+            "wikidata": "Q7686059",
+            "start_date": "2016",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "plant:output:electricity": "2.8 MW"
+        },
+        "osm_id": 467733390,
+        "output": "2.8 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

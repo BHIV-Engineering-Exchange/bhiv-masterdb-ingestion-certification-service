@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrnycj",
+    "source": "USGS",
+    "place": "57 km WNW of Happy Valley, Alaska",
+    "magnitude": 1.7,
+    "longitude": -152.728,
+    "latitude": 60.068,
+    "depth_km": 105.1,
+    "event_time_utc": "2026-11-16T04:28:29.407000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrnycj",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.055528+00:00"
+}

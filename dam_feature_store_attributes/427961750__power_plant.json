@@ -1,0 +1,36 @@
+{
+    "record_id": "427961750__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 427961750,
+    "osm_id": 427961750,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "HE Solkan",
+        "tags": {
+            "name": "HE Solkan",
+            "power": "plant",
+            "website": "https://www.seng.si/hidroelektrarne/velike-hidroelektrarne/2017060910015833",
+            "operator": "So\u0161ke elektrarne Nova Gorica d.o.o.",
+            "waterway": "dam",
+            "wikidata": "Q12790969",
+            "start_date": "1984",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "operator:abbr": "SENG",
+            "ref:gurs:hs_mid": "13765707",
+            "ref:gurs:sta_sid": "31444240",
+            "wikimedia_commons": "Category:Solkan_Hydroelectric_Power_Plant",
+            "plant:output:electricity": "32 MW"
+        },
+        "osm_id": 427961750,
+        "output": "32 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

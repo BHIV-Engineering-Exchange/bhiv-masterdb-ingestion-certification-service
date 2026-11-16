@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "7806FD",
+    "source": "adsb.lol",
+    "latitude": 23.294274,
+    "longitude": 113.080597,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "KOC01",
+    "altitude_baro_ft": 17700,
+    "ground_speed_kts": 340.0,
+    "track_degrees": 179.66,
+    "metadata": {
+        "r": "B-6738",
+        "t": "A320",
+        "type": "adsb_icao",
+        "alt_geom": 18675,
+        "seen": 0.9,
+        "seen_pos": 0.927
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.722975+00:00",
+    "record_id": "7806FD__2026-11-16T08_16_56.501000plus00_00"
+}

@@ -1,0 +1,13 @@
+{
+    "event_id": "nn00927038",
+    "source": "USGS",
+    "place": "40 km S of Goldfield, Nevada",
+    "magnitude": 1.87,
+    "longitude": -117.2538,
+    "latitude": 37.3466,
+    "depth_km": 1.7388,
+    "event_time_utc": "2026-11-16T07:03:30.083000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nn00927038",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.988350+00:00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "4BD24B",
+    "source": "adsb.lol",
+    "latitude": 40.099632,
+    "longitude": 32.631891,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "TRK21",
+    "altitude_baro_ft": 7825,
+    "ground_speed_kts": 254.9,
+    "track_degrees": 122.51,
+    "metadata": {
+        "r": "TC-TRK",
+        "t": "B748",
+        "type": "adsb_icao",
+        "alt_geom": 8200,
+        "seen": 0.1,
+        "seen_pos": 0.381
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.387315+00:00",
+    "record_id": "4BD24B__2026-11-16T11_39_27plus00_00"
+}

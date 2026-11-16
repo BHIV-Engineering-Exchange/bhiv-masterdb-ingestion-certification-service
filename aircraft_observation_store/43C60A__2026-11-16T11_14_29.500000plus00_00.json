@@ -1,0 +1,21 @@
+{
+    "aircraft_hex_id": "43C60A",
+    "source": "adsb.lol",
+    "latitude": 53.583338,
+    "longitude": 0.800961,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "altitude_baro_ft": 17025,
+    "ground_speed_kts": 419.0,
+    "track_degrees": 356.0,
+    "metadata": {
+        "r": "ZK301",
+        "t": "EUFI",
+        "type": "mlat",
+        "seen": 0.5,
+        "seen_pos": 1.94
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.426437+00:00",
+    "record_id": "43C60A__2026-11-16T11_14_29.500000plus00_00"
+}

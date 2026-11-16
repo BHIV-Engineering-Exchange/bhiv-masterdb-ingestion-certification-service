@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "34738E",
+    "source": "adsb.lol",
+    "latitude": 40.714913,
+    "longitude": -3.41525,
+    "observation_time_utc": "2026-11-16T11:08:43.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "LANZA17",
+    "altitude_baro_ft": 2800,
+    "ground_speed_kts": 112.8,
+    "track_degrees": 6.62,
+    "metadata": {
+        "r": "HE.26-42A",
+        "t": "EC35",
+        "type": "adsb_icao",
+        "alt_geom": 3250,
+        "seen": 0.0,
+        "seen_pos": 0.013
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:08:44.773970+00:00",
+    "record_id": "34738E__2026-11-16T11_08_43.500000plus00_00"
+}

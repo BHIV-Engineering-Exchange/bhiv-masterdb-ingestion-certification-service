@@ -1,0 +1,1509 @@
+{
+    "record_id": "bhote-koshi-2026__reconstruction-corridor",
+    "feature_kind": "schematic_reconstruction_corridor",
+    "source_file_role": "event_pack.reconstruction.corridor",
+    "geometry": {
+        "type": "LineString",
+        "coordinates": [
+            [
+                85.37877,
+                28.27962
+            ],
+            [
+                85.37756,
+                28.27879
+            ],
+            [
+                85.37665,
+                28.2777
+            ],
+            [
+                85.37667,
+                28.27661
+            ],
+            [
+                85.37669,
+                28.27553
+            ],
+            [
+                85.37701,
+                28.27445
+            ],
+            [
+                85.37641,
+                28.27336
+            ],
+            [
+                85.37643,
+                28.27228
+            ],
+            [
+                85.37614,
+                28.27119
+            ],
+            [
+                85.37616,
+                28.27011
+            ],
+            [
+                85.37617,
+                28.26903
+            ],
+            [
+                85.37589,
+                28.26794
+            ],
+            [
+                85.37529,
+                28.26685
+            ],
+            [
+                85.37408,
+                28.26575
+            ],
+            [
+                85.37318,
+                28.26466
+            ],
+            [
+                85.37198,
+                28.26356
+            ],
+            [
+                85.37199,
+                28.26248
+            ],
+            [
+                85.37079,
+                28.26138
+            ],
+            [
+                85.36958,
+                28.26029
+            ],
+            [
+                85.36836,
+                28.26
+            ],
+            [
+                85.36715,
+                28.2589
+            ],
+            [
+                85.36656,
+                28.25781
+            ],
+            [
+                85.36596,
+                28.25672
+            ],
+            [
+                85.36506,
+                28.25563
+            ],
+            [
+                85.36477,
+                28.25454
+            ],
+            [
+                85.36449,
+                28.25346
+            ],
+            [
+                85.36511,
+                28.25238
+            ],
+            [
+                85.36452,
+                28.25129
+            ],
+            [
+                85.36423,
+                28.2502
+            ],
+            [
+                85.36455,
+                28.24912
+            ],
+            [
+                85.36365,
+                28.24803
+            ],
+            [
+                85.36275,
+                28.24694
+            ],
+            [
+                85.36154,
+                28.24584
+            ],
+            [
+                85.36034,
+                28.24474
+            ],
+            [
+                85.35912,
+                28.24419
+            ],
+            [
+                85.35822,
+                28.24309
+            ],
+            [
+                85.35763,
+                28.242
+            ],
+            [
+                85.35734,
+                28.24092
+            ],
+            [
+                85.35797,
+                28.23984
+            ],
+            [
+                85.35768,
+                28.23875
+            ],
+            [
+                85.35769,
+                28.23767
+            ],
+            [
+                85.35771,
+                28.23659
+            ],
+            [
+                85.35834,
+                28.23551
+            ],
+            [
+                85.35897,
+                28.23444
+            ],
+            [
+                85.3596,
+                28.23336
+            ],
+            [
+                85.36022,
+                28.23229
+            ],
+            [
+                85.36024,
+                28.2312
+            ],
+            [
+                85.36056,
+                28.23012
+            ],
+            [
+                85.36088,
+                28.22905
+            ],
+            [
+                85.36059,
+                28.22796
+            ],
+            [
+                85.36092,
+                28.22688
+            ],
+            [
+                85.36093,
+                28.2258
+            ],
+            [
+                85.36126,
+                28.22472
+            ],
+            [
+                85.36097,
+                28.22363
+            ],
+            [
+                85.36037,
+                28.22254
+            ],
+            [
+                85.35917,
+                28.22144
+            ],
+            [
+                85.35796,
+                28.22035
+            ],
+            [
+                85.35706,
+                28.21925
+            ],
+            [
+                85.35647,
+                28.21816
+            ],
+            [
+                85.35557,
+                28.21707
+            ],
+            [
+                85.35497,
+                28.21598
+            ],
+            [
+                85.35468,
+                28.21489
+            ],
+            [
+                85.355,
+                28.21381
+            ],
+            [
+                85.35471,
+                28.21273
+            ],
+            [
+                85.35443,
+                28.21164
+            ],
+            [
+                85.35414,
+                28.21055
+            ],
+            [
+                85.35415,
+                28.20947
+            ],
+            [
+                85.35448,
+                28.20839
+            ],
+            [
+                85.3548,
+                28.20731
+            ],
+            [
+                85.35481,
+                28.20623
+            ],
+            [
+                85.35422,
+                28.20514
+            ],
+            [
+                85.35363,
+                28.20405
+            ],
+            [
+                85.35303,
+                28.20296
+            ],
+            [
+                85.35274,
+                28.20187
+            ],
+            [
+                85.35276,
+                28.20079
+            ],
+            [
+                85.35247,
+                28.1997
+            ],
+            [
+                85.35218,
+                28.19862
+            ],
+            [
+                85.35128,
+                28.19752
+            ],
+            [
+                85.35038,
+                28.19643
+            ],
+            [
+                85.35009,
+                28.19534
+            ],
+            [
+                85.3498,
+                28.19426
+            ],
+            [
+                85.34921,
+                28.19317
+            ],
+            [
+                85.34892,
+                28.19208
+            ],
+            [
+                85.34832,
+                28.19099
+            ],
+            [
+                85.34773,
+                28.1899
+            ],
+            [
+                85.34652,
+                28.1888
+            ],
+            [
+                85.34593,
+                28.18771
+            ],
+            [
+                85.34595,
+                28.18663
+            ],
+            [
+                85.34505,
+                28.18553
+            ],
+            [
+                85.34415,
+                28.18444
+            ],
+            [
+                85.34355,
+                28.18335
+            ],
+            [
+                85.34296,
+                28.18226
+            ],
+            [
+                85.34236,
+                28.18117
+            ],
+            [
+                85.34238,
+                28.18009
+            ],
+            [
+                85.3427,
+                28.17901
+            ],
+            [
+                85.34272,
+                28.17793
+            ],
+            [
+                85.34274,
+                28.17684
+            ],
+            [
+                85.34245,
+                28.17576
+            ],
+            [
+                85.34216,
+                28.17467
+            ],
+            [
+                85.34248,
+                28.17359
+            ],
+            [
+                85.34189,
+                28.1725
+            ],
+            [
+                85.3419,
+                28.17142
+            ],
+            [
+                85.34192,
+                28.17033
+            ],
+            [
+                85.34255,
+                28.16926
+            ],
+            [
+                85.34256,
+                28.16818
+            ],
+            [
+                85.34289,
+                28.1671
+            ],
+            [
+                85.3426,
+                28.16601
+            ],
+            [
+                85.342,
+                28.16492
+            ],
+            [
+                85.34079,
+                28.16436
+            ],
+            [
+                85.33958,
+                28.16381
+            ],
+            [
+                85.33837,
+                28.16298
+            ],
+            [
+                85.33747,
+                28.16189
+            ],
+            [
+                85.33748,
+                28.1608
+            ],
+            [
+                85.33658,
+                28.15998
+            ],
+            [
+                85.33537,
+                28.15915
+            ],
+            [
+                85.33416,
+                28.1586
+            ],
+            [
+                85.33295,
+                28.15804
+            ],
+            [
+                85.33204,
+                28.15722
+            ],
+            [
+                85.33083,
+                28.15639
+            ],
+            [
+                85.32962,
+                28.15556
+            ],
+            [
+                85.32872,
+                28.15447
+            ],
+            [
+                85.32751,
+                28.15364
+            ],
+            [
+                85.32662,
+                28.15255
+            ],
+            [
+                85.32541,
+                28.15172
+            ],
+            [
+                85.32419,
+                28.15117
+            ],
+            [
+                85.32298,
+                28.15061
+            ],
+            [
+                85.32177,
+                28.15005
+            ],
+            [
+                85.32056,
+                28.14923
+            ],
+            [
+                85.31935,
+                28.1484
+            ],
+            [
+                85.31813,
+                28.14811
+            ],
+            [
+                85.31693,
+                28.14702
+            ],
+            [
+                85.31571,
+                28.14646
+            ],
+            [
+                85.3145,
+                28.14563
+            ],
+            [
+                85.3133,
+                28.14453
+            ],
+            [
+                85.3124,
+                28.14344
+            ],
+            [
+                85.31211,
+                28.14235
+            ],
+            [
+                85.31089,
+                28.14234
+            ],
+            [
+                85.30966,
+                28.14259
+            ],
+            [
+                85.30846,
+                28.1415
+            ],
+            [
+                85.30726,
+                28.1404
+            ],
+            [
+                85.30605,
+                28.1393
+            ],
+            [
+                85.30485,
+                28.1382
+            ],
+            [
+                85.30456,
+                28.13712
+            ],
+            [
+                85.30396,
+                28.13603
+            ],
+            [
+                85.30337,
+                28.13521
+            ]
+        ]
+    },
+    "properties": {
+        "vertex_metadata": [
+            {
+                "chainageM": 23705,
+                "lon": 85.37877,
+                "lat": 28.27962,
+                "elevationM": 1818.4
+            },
+            {
+                "chainageM": 23863,
+                "lon": 85.37756,
+                "lat": 28.27879,
+                "elevationM": 1811.7
+            },
+            {
+                "chainageM": 24020,
+                "lon": 85.37665,
+                "lat": 28.2777,
+                "elevationM": 1796.5
+            },
+            {
+                "chainageM": 24140,
+                "lon": 85.37667,
+                "lat": 28.27661,
+                "elevationM": 1783.5
+            },
+            {
+                "chainageM": 24260,
+                "lon": 85.37669,
+                "lat": 28.27553,
+                "elevationM": 1777.4
+            },
+            {
+                "chainageM": 24392,
+                "lon": 85.37701,
+                "lat": 28.27445,
+                "elevationM": 1777.6
+            },
+            {
+                "chainageM": 24537,
+                "lon": 85.37641,
+                "lat": 28.27336,
+                "elevationM": 1779.8
+            },
+            {
+                "chainageM": 24682,
+                "lon": 85.37643,
+                "lat": 28.27228,
+                "elevationM": 1781.3
+            },
+            {
+                "chainageM": 24814,
+                "lon": 85.37614,
+                "lat": 28.27119,
+                "elevationM": 1780.2
+            },
+            {
+                "chainageM": 24934,
+                "lon": 85.37616,
+                "lat": 28.27011,
+                "elevationM": 1780.1
+            },
+            {
+                "chainageM": 25054,
+                "lon": 85.37617,
+                "lat": 28.26903,
+                "elevationM": 1779.5
+            },
+            {
+                "chainageM": 25212,
+                "lon": 85.37589,
+                "lat": 28.26794,
+                "elevationM": 1775.7
+            },
+            {
+                "chainageM": 25357,
+                "lon": 85.37529,
+                "lat": 28.26685,
+                "elevationM": 1759.9
+            },
+            {
+                "chainageM": 25526,
+                "lon": 85.37408,
+                "lat": 28.26575,
+                "elevationM": 1739.7
+            },
+            {
+                "chainageM": 25684,
+                "lon": 85.37318,
+                "lat": 28.26466,
+                "elevationM": 1745.1
+            },
+            {
+                "chainageM": 25853,
+                "lon": 85.37198,
+                "lat": 28.26356,
+                "elevationM": 1734
+            },
+            {
+                "chainageM": 25973,
+                "lon": 85.37199,
+                "lat": 28.26248,
+                "elevationM": 1725.5
+            },
+            {
+                "chainageM": 26143,
+                "lon": 85.37079,
+                "lat": 28.26138,
+                "elevationM": 1729.2
+            },
+            {
+                "chainageM": 26313,
+                "lon": 85.36958,
+                "lat": 28.26029,
+                "elevationM": 1726.2
+            },
+            {
+                "chainageM": 26470,
+                "lon": 85.36836,
+                "lat": 28.26,
+                "elevationM": 1700.8
+            },
+            {
+                "chainageM": 26640,
+                "lon": 85.36715,
+                "lat": 28.2589,
+                "elevationM": 1714
+            },
+            {
+                "chainageM": 26809,
+                "lon": 85.36656,
+                "lat": 28.25781,
+                "elevationM": 1714
+            },
+            {
+                "chainageM": 26954,
+                "lon": 85.36596,
+                "lat": 28.25672,
+                "elevationM": 1706.8
+            },
+            {
+                "chainageM": 27111,
+                "lon": 85.36506,
+                "lat": 28.25563,
+                "elevationM": 1692.9
+            },
+            {
+                "chainageM": 27244,
+                "lon": 85.36477,
+                "lat": 28.25454,
+                "elevationM": 1691.4
+            },
+            {
+                "chainageM": 27376,
+                "lon": 85.36449,
+                "lat": 28.25346,
+                "elevationM": 1691.9
+            },
+            {
+                "chainageM": 27521,
+                "lon": 85.36511,
+                "lat": 28.25238,
+                "elevationM": 1689.4
+            },
+            {
+                "chainageM": 27666,
+                "lon": 85.36452,
+                "lat": 28.25129,
+                "elevationM": 1674.4
+            },
+            {
+                "chainageM": 27798,
+                "lon": 85.36423,
+                "lat": 28.2502,
+                "elevationM": 1669.5
+            },
+            {
+                "chainageM": 27931,
+                "lon": 85.36455,
+                "lat": 28.24912,
+                "elevationM": 1676.8
+            },
+            {
+                "chainageM": 28088,
+                "lon": 85.36365,
+                "lat": 28.24803,
+                "elevationM": 1673.2
+            },
+            {
+                "chainageM": 28245,
+                "lon": 85.36275,
+                "lat": 28.24694,
+                "elevationM": 1672.1
+            },
+            {
+                "chainageM": 28415,
+                "lon": 85.36154,
+                "lat": 28.24584,
+                "elevationM": 1672.1
+            },
+            {
+                "chainageM": 28585,
+                "lon": 85.36034,
+                "lat": 28.24474,
+                "elevationM": 1673.6
+            },
+            {
+                "chainageM": 28755,
+                "lon": 85.35912,
+                "lat": 28.24419,
+                "elevationM": 1680.3
+            },
+            {
+                "chainageM": 28912,
+                "lon": 85.35822,
+                "lat": 28.24309,
+                "elevationM": 1662.8
+            },
+            {
+                "chainageM": 29057,
+                "lon": 85.35763,
+                "lat": 28.242,
+                "elevationM": 1645.5
+            },
+            {
+                "chainageM": 29189,
+                "lon": 85.35734,
+                "lat": 28.24092,
+                "elevationM": 1636.4
+            },
+            {
+                "chainageM": 29334,
+                "lon": 85.35797,
+                "lat": 28.23984,
+                "elevationM": 1645.3
+            },
+            {
+                "chainageM": 29466,
+                "lon": 85.35768,
+                "lat": 28.23875,
+                "elevationM": 1645.1
+            },
+            {
+                "chainageM": 29611,
+                "lon": 85.35769,
+                "lat": 28.23767,
+                "elevationM": 1640.9
+            },
+            {
+                "chainageM": 29731,
+                "lon": 85.35771,
+                "lat": 28.23659,
+                "elevationM": 1643.8
+            },
+            {
+                "chainageM": 29876,
+                "lon": 85.35834,
+                "lat": 28.23551,
+                "elevationM": 1642.5
+            },
+            {
+                "chainageM": 30021,
+                "lon": 85.35897,
+                "lat": 28.23444,
+                "elevationM": 1645.7
+            },
+            {
+                "chainageM": 30166,
+                "lon": 85.3596,
+                "lat": 28.23336,
+                "elevationM": 1644.8
+            },
+            {
+                "chainageM": 30311,
+                "lon": 85.36022,
+                "lat": 28.23229,
+                "elevationM": 1640.9
+            },
+            {
+                "chainageM": 30455,
+                "lon": 85.36024,
+                "lat": 28.2312,
+                "elevationM": 1640.7
+            },
+            {
+                "chainageM": 30588,
+                "lon": 85.36056,
+                "lat": 28.23012,
+                "elevationM": 1617.5
+            },
+            {
+                "chainageM": 30720,
+                "lon": 85.36088,
+                "lat": 28.22905,
+                "elevationM": 1619.7
+            },
+            {
+                "chainageM": 30853,
+                "lon": 85.36059,
+                "lat": 28.22796,
+                "elevationM": 1606.7
+            },
+            {
+                "chainageM": 30985,
+                "lon": 85.36092,
+                "lat": 28.22688,
+                "elevationM": 1605
+            },
+            {
+                "chainageM": 31105,
+                "lon": 85.36093,
+                "lat": 28.2258,
+                "elevationM": 1591.3
+            },
+            {
+                "chainageM": 31238,
+                "lon": 85.36126,
+                "lat": 28.22472,
+                "elevationM": 1587.9
+            },
+            {
+                "chainageM": 31370,
+                "lon": 85.36097,
+                "lat": 28.22363,
+                "elevationM": 1588.5
+            },
+            {
+                "chainageM": 31515,
+                "lon": 85.36037,
+                "lat": 28.22254,
+                "elevationM": 1585.7
+            },
+            {
+                "chainageM": 31685,
+                "lon": 85.35917,
+                "lat": 28.22144,
+                "elevationM": 1573.5
+            },
+            {
+                "chainageM": 31854,
+                "lon": 85.35796,
+                "lat": 28.22035,
+                "elevationM": 1590.1
+            },
+            {
+                "chainageM": 32012,
+                "lon": 85.35706,
+                "lat": 28.21925,
+                "elevationM": 1580.1
+            },
+            {
+                "chainageM": 32156,
+                "lon": 85.35647,
+                "lat": 28.21816,
+                "elevationM": 1574.3
+            },
+            {
+                "chainageM": 32314,
+                "lon": 85.35557,
+                "lat": 28.21707,
+                "elevationM": 1561.1
+            },
+            {
+                "chainageM": 32459,
+                "lon": 85.35497,
+                "lat": 28.21598,
+                "elevationM": 1558.2
+            },
+            {
+                "chainageM": 32591,
+                "lon": 85.35468,
+                "lat": 28.21489,
+                "elevationM": 1554.7
+            },
+            {
+                "chainageM": 32723,
+                "lon": 85.355,
+                "lat": 28.21381,
+                "elevationM": 1552.4
+            },
+            {
+                "chainageM": 32856,
+                "lon": 85.35471,
+                "lat": 28.21273,
+                "elevationM": 1548.3
+            },
+            {
+                "chainageM": 32988,
+                "lon": 85.35443,
+                "lat": 28.21164,
+                "elevationM": 1546.4
+            },
+            {
+                "chainageM": 33121,
+                "lon": 85.35414,
+                "lat": 28.21055,
+                "elevationM": 1542.7
+            },
+            {
+                "chainageM": 33241,
+                "lon": 85.35415,
+                "lat": 28.20947,
+                "elevationM": 1541.1
+            },
+            {
+                "chainageM": 33373,
+                "lon": 85.35448,
+                "lat": 28.20839,
+                "elevationM": 1539.9
+            },
+            {
+                "chainageM": 33506,
+                "lon": 85.3548,
+                "lat": 28.20731,
+                "elevationM": 1536.1
+            },
+            {
+                "chainageM": 33626,
+                "lon": 85.35481,
+                "lat": 28.20623,
+                "elevationM": 1534.7
+            },
+            {
+                "chainageM": 33770,
+                "lon": 85.35422,
+                "lat": 28.20514,
+                "elevationM": 1530.3
+            },
+            {
+                "chainageM": 33915,
+                "lon": 85.35363,
+                "lat": 28.20405,
+                "elevationM": 1526.4
+            },
+            {
+                "chainageM": 34060,
+                "lon": 85.35303,
+                "lat": 28.20296,
+                "elevationM": 1526.2
+            },
+            {
+                "chainageM": 34193,
+                "lon": 85.35274,
+                "lat": 28.20187,
+                "elevationM": 1522.2
+            },
+            {
+                "chainageM": 34313,
+                "lon": 85.35276,
+                "lat": 28.20079,
+                "elevationM": 1523.5
+            },
+            {
+                "chainageM": 34445,
+                "lon": 85.35247,
+                "lat": 28.1997,
+                "elevationM": 1514.7
+            },
+            {
+                "chainageM": 34577,
+                "lon": 85.35218,
+                "lat": 28.19862,
+                "elevationM": 1508
+            },
+            {
+                "chainageM": 34735,
+                "lon": 85.35128,
+                "lat": 28.19752,
+                "elevationM": 1504.4
+            },
+            {
+                "chainageM": 34892,
+                "lon": 85.35038,
+                "lat": 28.19643,
+                "elevationM": 1496.7
+            },
+            {
+                "chainageM": 35024,
+                "lon": 85.35009,
+                "lat": 28.19534,
+                "elevationM": 1495.1
+            },
+            {
+                "chainageM": 35157,
+                "lon": 85.3498,
+                "lat": 28.19426,
+                "elevationM": 1493.6
+            },
+            {
+                "chainageM": 35302,
+                "lon": 85.34921,
+                "lat": 28.19317,
+                "elevationM": 1488.9
+            },
+            {
+                "chainageM": 35434,
+                "lon": 85.34892,
+                "lat": 28.19208,
+                "elevationM": 1484
+            },
+            {
+                "chainageM": 35579,
+                "lon": 85.34832,
+                "lat": 28.19099,
+                "elevationM": 1482.6
+            },
+            {
+                "chainageM": 35724,
+                "lon": 85.34773,
+                "lat": 28.1899,
+                "elevationM": 1481
+            },
+            {
+                "chainageM": 35893,
+                "lon": 85.34652,
+                "lat": 28.1888,
+                "elevationM": 1477.6
+            },
+            {
+                "chainageM": 36038,
+                "lon": 85.34593,
+                "lat": 28.18771,
+                "elevationM": 1475.5
+            },
+            {
+                "chainageM": 36158,
+                "lon": 85.34595,
+                "lat": 28.18663,
+                "elevationM": 1473.2
+            },
+            {
+                "chainageM": 36316,
+                "lon": 85.34505,
+                "lat": 28.18553,
+                "elevationM": 1467.4
+            },
+            {
+                "chainageM": 36473,
+                "lon": 85.34415,
+                "lat": 28.18444,
+                "elevationM": 1465.5
+            },
+            {
+                "chainageM": 36618,
+                "lon": 85.34355,
+                "lat": 28.18335,
+                "elevationM": 1466.3
+            },
+            {
+                "chainageM": 36763,
+                "lon": 85.34296,
+                "lat": 28.18226,
+                "elevationM": 1467.9
+            },
+            {
+                "chainageM": 36907,
+                "lon": 85.34236,
+                "lat": 28.18117,
+                "elevationM": 1464.2
+            },
+            {
+                "chainageM": 37027,
+                "lon": 85.34238,
+                "lat": 28.18009,
+                "elevationM": 1463.6
+            },
+            {
+                "chainageM": 37160,
+                "lon": 85.3427,
+                "lat": 28.17901,
+                "elevationM": 1474.1
+            },
+            {
+                "chainageM": 37280,
+                "lon": 85.34272,
+                "lat": 28.17793,
+                "elevationM": 1465.8
+            },
+            {
+                "chainageM": 37400,
+                "lon": 85.34274,
+                "lat": 28.17684,
+                "elevationM": 1456.3
+            },
+            {
+                "chainageM": 37532,
+                "lon": 85.34245,
+                "lat": 28.17576,
+                "elevationM": 1445.9
+            },
+            {
+                "chainageM": 37665,
+                "lon": 85.34216,
+                "lat": 28.17467,
+                "elevationM": 1431.7
+            },
+            {
+                "chainageM": 37797,
+                "lon": 85.34248,
+                "lat": 28.17359,
+                "elevationM": 1443.6
+            },
+            {
+                "chainageM": 37942,
+                "lon": 85.34189,
+                "lat": 28.1725,
+                "elevationM": 1446.6
+            },
+            {
+                "chainageM": 38062,
+                "lon": 85.3419,
+                "lat": 28.17142,
+                "elevationM": 1437.8
+            },
+            {
+                "chainageM": 38182,
+                "lon": 85.34192,
+                "lat": 28.17033,
+                "elevationM": 1444.8
+            },
+            {
+                "chainageM": 38327,
+                "lon": 85.34255,
+                "lat": 28.16926,
+                "elevationM": 1450.6
+            },
+            {
+                "chainageM": 38447,
+                "lon": 85.34256,
+                "lat": 28.16818,
+                "elevationM": 1444
+            },
+            {
+                "chainageM": 38604,
+                "lon": 85.34289,
+                "lat": 28.1671,
+                "elevationM": 1442.5
+            },
+            {
+                "chainageM": 38737,
+                "lon": 85.3426,
+                "lat": 28.16601,
+                "elevationM": 1436.6
+            },
+            {
+                "chainageM": 38881,
+                "lon": 85.342,
+                "lat": 28.16492,
+                "elevationM": 1428.4
+            },
+            {
+                "chainageM": 39026,
+                "lon": 85.34079,
+                "lat": 28.16436,
+                "elevationM": 1418.8
+            },
+            {
+                "chainageM": 39171,
+                "lon": 85.33958,
+                "lat": 28.16381,
+                "elevationM": 1417.9
+            },
+            {
+                "chainageM": 39328,
+                "lon": 85.33837,
+                "lat": 28.16298,
+                "elevationM": 1417
+            },
+            {
+                "chainageM": 39486,
+                "lon": 85.33747,
+                "lat": 28.16189,
+                "elevationM": 1418.6
+            },
+            {
+                "chainageM": 39606,
+                "lon": 85.33748,
+                "lat": 28.1608,
+                "elevationM": 1405.8
+            },
+            {
+                "chainageM": 39751,
+                "lon": 85.33658,
+                "lat": 28.15998,
+                "elevationM": 1408.6
+            },
+            {
+                "chainageM": 39908,
+                "lon": 85.33537,
+                "lat": 28.15915,
+                "elevationM": 1402.1
+            },
+            {
+                "chainageM": 40053,
+                "lon": 85.33416,
+                "lat": 28.1586,
+                "elevationM": 1398.3
+            },
+            {
+                "chainageM": 40198,
+                "lon": 85.33295,
+                "lat": 28.15804,
+                "elevationM": 1396.2
+            },
+            {
+                "chainageM": 40342,
+                "lon": 85.33204,
+                "lat": 28.15722,
+                "elevationM": 1389.7
+            },
+            {
+                "chainageM": 40500,
+                "lon": 85.33083,
+                "lat": 28.15639,
+                "elevationM": 1387.9
+            },
+            {
+                "chainageM": 40657,
+                "lon": 85.32962,
+                "lat": 28.15556,
+                "elevationM": 1384.2
+            },
+            {
+                "chainageM": 40814,
+                "lon": 85.32872,
+                "lat": 28.15447,
+                "elevationM": 1385.5
+            },
+            {
+                "chainageM": 40972,
+                "lon": 85.32751,
+                "lat": 28.15364,
+                "elevationM": 1379.1
+            },
+            {
+                "chainageM": 41129,
+                "lon": 85.32662,
+                "lat": 28.15255,
+                "elevationM": 1376.3
+            },
+            {
+                "chainageM": 41286,
+                "lon": 85.32541,
+                "lat": 28.15172,
+                "elevationM": 1368.8
+            },
+            {
+                "chainageM": 41431,
+                "lon": 85.32419,
+                "lat": 28.15117,
+                "elevationM": 1365.4
+            },
+            {
+                "chainageM": 41576,
+                "lon": 85.32298,
+                "lat": 28.15061,
+                "elevationM": 1365.1
+            },
+            {
+                "chainageM": 41721,
+                "lon": 85.32177,
+                "lat": 28.15005,
+                "elevationM": 1364.6
+            },
+            {
+                "chainageM": 41878,
+                "lon": 85.32056,
+                "lat": 28.14923,
+                "elevationM": 1357.3
+            },
+            {
+                "chainageM": 42035,
+                "lon": 85.31935,
+                "lat": 28.1484,
+                "elevationM": 1359.7
+            },
+            {
+                "chainageM": 42168,
+                "lon": 85.31813,
+                "lat": 28.14811,
+                "elevationM": 1354.2
+            },
+            {
+                "chainageM": 42337,
+                "lon": 85.31693,
+                "lat": 28.14702,
+                "elevationM": 1357
+            },
+            {
+                "chainageM": 42482,
+                "lon": 85.31571,
+                "lat": 28.14646,
+                "elevationM": 1357
+            },
+            {
+                "chainageM": 42639,
+                "lon": 85.3145,
+                "lat": 28.14563,
+                "elevationM": 1342.2
+            },
+            {
+                "chainageM": 42809,
+                "lon": 85.3133,
+                "lat": 28.14453,
+                "elevationM": 1344.9
+            },
+            {
+                "chainageM": 42966,
+                "lon": 85.3124,
+                "lat": 28.14344,
+                "elevationM": 1358.7
+            },
+            {
+                "chainageM": 43099,
+                "lon": 85.31211,
+                "lat": 28.14235,
+                "elevationM": 1358.4
+            },
+            {
+                "chainageM": 43244,
+                "lon": 85.31089,
+                "lat": 28.14234,
+                "elevationM": 1336.9
+            },
+            {
+                "chainageM": 43376,
+                "lon": 85.30966,
+                "lat": 28.14259,
+                "elevationM": 1343
+            },
+            {
+                "chainageM": 43546,
+                "lon": 85.30846,
+                "lat": 28.1415,
+                "elevationM": 1331.3
+            },
+            {
+                "chainageM": 43716,
+                "lon": 85.30726,
+                "lat": 28.1404,
+                "elevationM": 1331.4
+            },
+            {
+                "chainageM": 43885,
+                "lon": 85.30605,
+                "lat": 28.1393,
+                "elevationM": 1324.1
+            },
+            {
+                "chainageM": 44055,
+                "lon": 85.30485,
+                "lat": 28.1382,
+                "elevationM": 1341.6
+            },
+            {
+                "chainageM": 44187,
+                "lon": 85.30456,
+                "lat": 28.13712,
+                "elevationM": 1339
+            },
+            {
+                "chainageM": 44332,
+                "lon": 85.30396,
+                "lat": 28.13603,
+                "elevationM": 1326.1
+            },
+            {
+                "chainageM": 44447,
+                "lon": 85.30337,
+                "lat": 28.13521,
+                "elevationM": 1323
+            }
+        ],
+        "elapsed_seconds": 4170,
+        "label": "SCHEMATIC DOWNSTREAM PROGRESSION, NOT MODELED ARRIVAL TIME",
+        "caveat": "2021 historical reference versus 2026 post-event imagery; changes are cumulative and include the July 2025 Rasuwagadhi flood. Schematic downstream progression, not modeled arrival time; not an official hazard model."
+    },
+    "dataset_id": "gods_eye_view_bhote_koshi_geometries",
+    "source_dataset_id": "gods_eye_view_bhote_koshi_flood",
+    "event_id": "bhote-koshi-2026",
+    "source_provenance": {
+        "provider": "God's Eye View / GeoPera / Vantor Open Data",
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "files": [
+            {
+                "role": "flood_path_module",
+                "path": "src/data/bhoteKoshiFloodPath.js",
+                "sha256": "48edc5443233bcbe766d4791b988cd8a9f2b7d850a13911151ee12bb80bbdc02"
+            },
+            {
+                "role": "event_module",
+                "path": "src/data/bhoteKoshiEvent.js",
+                "sha256": "3247e4eed2bb872efebe940ec4d936388ef29b4ab6dab52b54793c196d974eac"
+            },
+            {
+                "role": "embedded_media_module",
+                "path": "src/data/bhoteKoshiEmbeddedMedia.js",
+                "sha256": "f275c458b7dfed26442019e9ee229a271f5ea47a98e927585e5c4c09aeec4f92"
+            },
+            {
+                "role": "event_pack",
+                "path": "public/events/bhote-koshi-2026/event.json",
+                "sha256": "79d93b45365a43bea63b732878fa549c4423fbcaf2bb738973ef4d62eea4d635"
+            }
+        ],
+        "attribution": "Imagery: Vantor Open Data; reconstruction: GeoPera (CC BY-NC 4.0). Linked witness posts and the GeoGeorgeShadrach geolocation map retain their owners' terms.",
+        "path_source_url": "https://github.com/geo-pera/bhotekoshi-2026-reconstruction/blob/main/vectors/river_centerline.geojson",
+        "path_license": "CC BY-NC 4.0",
+        "media_mode": "EXTERNAL_LINK_METADATA_ONLY",
+        "data_mode": "STATIC_HISTORICAL_RECONSTRUCTION",
+        "presentation_metadata": {
+            "playback_seconds": 90,
+            "prologue_end_ratio": 0.22,
+            "corridor_end_ratio": 0.84,
+            "camera_hold_ratio": 0.62,
+            "scene_presentation": "scene-beat"
+        }
+    },
+    "ingested_at_utc": "2026-11-16T11:40:13.288045+00:00"
+}

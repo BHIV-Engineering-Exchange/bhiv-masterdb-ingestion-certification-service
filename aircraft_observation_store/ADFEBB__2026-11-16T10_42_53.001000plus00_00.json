@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "ADFEBB",
+    "source": "adsb.lol",
+    "latitude": 49.996582,
+    "longitude": 7.828626,
+    "observation_time_utc": "2026-11-16T10:42:53.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "DUKE86",
+    "altitude_baro_ft": 9400,
+    "ground_speed_kts": 191.8,
+    "track_degrees": 284.18,
+    "metadata": {
+        "r": "95-00123",
+        "t": "C560",
+        "type": "adsb_icao",
+        "alt_geom": 9225,
+        "seen": 0.3,
+        "seen_pos": 0.293
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:42:54.066154+00:00",
+    "record_id": "ADFEBB__2026-11-16T10_42_53.001000plus00_00"
+}

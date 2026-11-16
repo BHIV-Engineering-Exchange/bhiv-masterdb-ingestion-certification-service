@@ -1,0 +1,33 @@
+{
+    "record_id": "131505885__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 131505885,
+    "osm_id": 131505885,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u041d\u0438\u0436\u043d\u0435\u043a\u0430\u043c\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+        "tags": {
+            "name": "\u041d\u0438\u0436\u043d\u0435\u043a\u0430\u043c\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+            "power": "plant",
+            "name:en": "Nizhnekamsk Dam",
+            "name:ru": "\u041d\u0438\u0436\u043d\u0435\u043a\u0430\u043c\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+            "operator": "\u0422\u0430\u0442\u044d\u043d\u0435\u0440\u0433\u043e",
+            "waterway": "dam",
+            "wikidata": "Q12133686",
+            "wikipedia": "ru:\u041d\u0438\u0436\u043d\u0435\u043a\u0430\u043c\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+            "start_date": "1979",
+            "plant:source": "hydro",
+            "plant:output:electricity": "1205 MW"
+        },
+        "osm_id": 131505885,
+        "output": "1205 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

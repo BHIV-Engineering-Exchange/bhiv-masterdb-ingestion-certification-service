@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "7CFA0F",
+    "source": "adsb.lol",
+    "latitude": -34.898444,
+    "longitude": 150.289536,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "TAIP7",
+    "altitude_baro_ft": 1600,
+    "ground_speed_kts": 38.3,
+    "track_degrees": 195.12,
+    "metadata": {
+        "r": "N52-007",
+        "t": "EC35",
+        "type": "adsb_icao",
+        "alt_geom": 1850,
+        "seen": 0.0,
+        "seen_pos": 0.037
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:41.155062+00:00",
+    "record_id": "7CFA0F__2026-11-16T10_41_39.524000plus00_00"
+}

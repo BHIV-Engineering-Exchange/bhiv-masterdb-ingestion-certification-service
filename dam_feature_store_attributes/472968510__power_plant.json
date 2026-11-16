@@ -1,0 +1,33 @@
+{
+    "record_id": "472968510__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 472968510,
+    "osm_id": 472968510,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u0ec0\u0e82\u0eb7\u0ec8\u0ead\u0e99\u0ec4\u0e9f\u0e9f\u0ec9\u0eb2 \u0e99\u0ec9\u0eb3\u0ead\u0eb9 5",
+        "tags": {
+            "name": "\u0ec0\u0e82\u0eb7\u0ec8\u0ead\u0e99\u0ec4\u0e9f\u0e9f\u0ec9\u0eb2 \u0e99\u0ec9\u0eb3\u0ead\u0eb9 5",
+            "power": "plant",
+            "name:en": "Nam Ou 5 Hydropower Plant",
+            "name:ja": "\u30ca\u30e0\u30fb\u30a6\u30fc5\u6c34\u529b\u767a\u96fb\u6240",
+            "name:lo": "\u0ec0\u0e82\u0eb7\u0ec8\u0ead\u0e99\u0ec4\u0e9f\u0e9f\u0ec9\u0eb2 \u0e99\u0ec9\u0eb3\u0ead\u0eb9 5",
+            "waterway": "dam",
+            "wikidata": "Q61448340",
+            "start_date": "2016",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "plant:output:electricity": "240 MW"
+        },
+        "osm_id": 472968510,
+        "output": "240 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

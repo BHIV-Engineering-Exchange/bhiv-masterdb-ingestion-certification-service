@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "AE49C3",
+    "source": "adsb.lol",
+    "latitude": 35.78785,
+    "longitude": 138.709277,
+    "observation_time_utc": "2026-11-16T07:32:44.503000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RCH3263",
+    "altitude_baro_ft": 20650,
+    "ground_speed_kts": 349.0,
+    "track_degrees": 254.0,
+    "metadata": {
+        "r": "09-9207",
+        "t": "C17",
+        "type": "mlat",
+        "seen": 0.0,
+        "seen_pos": 35.27
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T07:32:45.426483+00:00",
+    "record_id": "AE49C3__2026-11-16T07_32_44.503000plus00_00"
+}

@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wqnosx",
+    "source": "USGS",
+    "place": "106 km W of Tyonek, Alaska",
+    "magnitude": 1.5,
+    "longitude": -153.074,
+    "latitude": 61.249,
+    "depth_km": 5,
+    "event_time_utc": "2026-11-15T15:18:03.510000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wqnosx",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.286613+00:00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "C2B585",
+    "source": "adsb.lol",
+    "latitude": 55.977448,
+    "longitude": -8.078031,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CFC2585",
+    "altitude_baro_ft": 28000,
+    "ground_speed_kts": 251.1,
+    "track_degrees": 292.48,
+    "metadata": {
+        "r": "130610",
+        "t": "C30J",
+        "type": "adsb_icao",
+        "alt_geom": 27450,
+        "seen": 0.1,
+        "seen_pos": 0.14
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.232597+00:00",
+    "record_id": "C2B585__2026-11-16T11_14_29.500000plus00_00"
+}

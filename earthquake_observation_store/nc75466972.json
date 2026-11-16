@@ -1,0 +1,13 @@
+{
+    "event_id": "nc75466972",
+    "source": "USGS",
+    "place": "2 km N of The Geysers, CA",
+    "magnitude": 0.56,
+    "longitude": -122.760498046875,
+    "latitude": 38.7949981689453,
+    "depth_km": 1.62999999523163,
+    "event_time_utc": "2026-11-16T06:57:12.920000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nc75466972",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.992408+00:00"
+}

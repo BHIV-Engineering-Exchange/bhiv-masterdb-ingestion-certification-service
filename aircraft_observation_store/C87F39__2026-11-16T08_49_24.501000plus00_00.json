@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "C87F39",
+    "source": "adsb.lol",
+    "latitude": -40.218201,
+    "longitude": 175.432372,
+    "observation_time_utc": "2026-11-16T08:49:24.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "KNG53",
+    "altitude_baro_ft": 800,
+    "ground_speed_kts": 92.9,
+    "track_degrees": 292.15,
+    "metadata": {
+        "r": "NZ2353",
+        "t": "B350",
+        "type": "adsb_icao",
+        "alt_geom": 750,
+        "seen": 0.0,
+        "seen_pos": 0.044
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:49:25.645805+00:00",
+    "record_id": "C87F39__2026-11-16T08_49_24.501000plus00_00"
+}

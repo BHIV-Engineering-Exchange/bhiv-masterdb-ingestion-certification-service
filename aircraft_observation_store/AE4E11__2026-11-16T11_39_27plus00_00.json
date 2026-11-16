@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "AE4E11",
+    "source": "adsb.lol",
+    "latitude": 45.42626,
+    "longitude": 6.263659,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "HKY737",
+    "altitude_baro_ft": 26000,
+    "ground_speed_kts": 254.0,
+    "track_degrees": 283.54,
+    "metadata": {
+        "r": "11-5738",
+        "t": "C30J",
+        "type": "mlat",
+        "seen": 1.2,
+        "seen_pos": 1.981
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.174775+00:00",
+    "record_id": "AE4E11__2026-11-16T11_39_27plus00_00"
+}

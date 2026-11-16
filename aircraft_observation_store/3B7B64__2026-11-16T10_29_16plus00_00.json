@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3B7B64",
+    "source": "adsb.lol",
+    "latitude": 43.832474,
+    "longitude": 4.400599,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "BENGA9T",
+    "altitude_baro_ft": 7000,
+    "ground_speed_kts": 226.2,
+    "track_degrees": 189.67,
+    "metadata": {
+        "r": "F-ZBMB",
+        "t": "BE20",
+        "type": "adsb_icao",
+        "alt_geom": 7225,
+        "seen": 0.3,
+        "seen_pos": 0.713
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.064085+00:00",
+    "record_id": "3B7B64__2026-11-16T10_29_16plus00_00"
+}

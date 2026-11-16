@@ -1,0 +1,34 @@
+{
+    "record_id": "103465589__osm_power_generator",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 103465589,
+    "osm_id": 103465589,
+    "source_layer": "osm_power_generator",
+    "properties": {
+        "id": 13757,
+        "tags": {
+            "name": "P\u0159ehrada Lu\u010dina",
+            "power": "generator",
+            "height": "26.2",
+            "waterway": "dam",
+            "start_date": "1975",
+            "description": "Uvnit\u0159 sypann\u00e9 kamenit\u00e9 hr\u00e1ze se nach\u00e1z\u00ed elektr\u00e1rna vybaven\u00e1 dv\u011bma turb\u00ednami o hltnostech 0,55 a 0,85 m3/s, kter\u00e9 zde p\u0159i sp\u00e1du 15 m vyrob\u00ed pr\u016fm\u011brn\u011b kolem 571 MWh elektrick\u00e9 energie za rok, co\u017e sta\u010d\u00ed k z\u00e1soben\u00ed asi 200 dom\u00e1cnost\u00ed.",
+            "plant:source": "hydro",
+            "generator:source": "hydro",
+            "plant:output:electricity": "150 kW",
+            "generator:output:electricity": "150 kW"
+        },
+        "type": "",
+        "method": "",
+        "osm_id": 103465589,
+        "output": "150 kW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "osm_power_generator"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

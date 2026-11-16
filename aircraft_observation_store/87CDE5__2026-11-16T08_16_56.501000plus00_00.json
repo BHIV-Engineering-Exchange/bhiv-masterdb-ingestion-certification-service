@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "87CDE5",
+    "source": "adsb.lol",
+    "latitude": 35.870548,
+    "longitude": 139.399849,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "FENIXR2",
+    "altitude_baro_ft": 1825,
+    "ground_speed_kts": 122.8,
+    "track_degrees": 347.77,
+    "metadata": {
+        "r": "58-1219",
+        "t": "KC2",
+        "type": "adsb_icao",
+        "alt_geom": 2100,
+        "seen": 0.2,
+        "seen_pos": 0.218
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.751216+00:00",
+    "record_id": "87CDE5__2026-11-16T08_16_56.501000plus00_00"
+}

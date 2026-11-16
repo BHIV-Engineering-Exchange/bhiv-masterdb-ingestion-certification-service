@@ -1,0 +1,33 @@
+{
+    "record_id": "226607275__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 226607275,
+    "osm_id": 226607275,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Elektrownia wodna Otmuch\u00f3w",
+        "tags": {
+            "name": "Elektrownia wodna Otmuch\u00f3w",
+            "power": "plant",
+            "branch": "Elektrownie Wodne Opole",
+            "website": "https://www.tauron-ekoenergia.pl/elektrownie/energia-wodna/ew-opole/otmuchow",
+            "operator": "Tauron Ekoenergia",
+            "waterway": "dam",
+            "start_date": "1933",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "operator:wikidata": "Q9355892",
+            "plant:output:electricity": "4.8 MW"
+        },
+        "osm_id": 226607275,
+        "output": "4.8 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

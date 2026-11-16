@@ -1,0 +1,29 @@
+{
+    "record_id": "788874983__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 788874983,
+    "osm_id": 788874983,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u8349\u8857\u7535\u7ad9\u5927\u575d",
+        "tags": {
+            "name": "\u8349\u8857\u7535\u7ad9\u5927\u575d",
+            "power": "plant",
+            "name:en": "Caojie Power Station",
+            "waterway": "dam",
+            "wikidata": "Q17761731",
+            "plant:source": "hydro",
+            "plant:output:electricity": "500 MW"
+        },
+        "osm_id": 788874983,
+        "output": "500 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

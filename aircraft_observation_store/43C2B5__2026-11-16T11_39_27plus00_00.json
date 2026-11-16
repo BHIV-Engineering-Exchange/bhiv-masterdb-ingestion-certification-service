@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "43C2B5",
+    "source": "adsb.lol",
+    "latitude": 51.358566,
+    "longitude": -2.594555,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SNAKE49",
+    "altitude_baro_ft": 13000,
+    "ground_speed_kts": 186.3,
+    "track_degrees": 169.17,
+    "metadata": {
+        "r": "ZZ419",
+        "t": "B350",
+        "type": "adsb_icao",
+        "alt_geom": 12775,
+        "seen": 0.1,
+        "seen_pos": 0.324
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.051770+00:00",
+    "record_id": "43C2B5__2026-11-16T11_39_27plus00_00"
+}

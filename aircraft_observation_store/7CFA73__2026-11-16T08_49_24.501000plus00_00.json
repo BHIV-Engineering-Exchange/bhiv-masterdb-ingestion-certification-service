@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "7CFA73",
+    "source": "adsb.lol",
+    "latitude": -33.905159,
+    "longitude": 149.467278,
+    "observation_time_utc": "2026-11-16T08:49:24.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "EVY92",
+    "altitude_baro_ft": 18025,
+    "ground_speed_kts": 392.7,
+    "track_degrees": 73.73,
+    "metadata": {
+        "r": "A56-003",
+        "t": "FA7X",
+        "type": "adsb_icao",
+        "alt_geom": 18450,
+        "seen": 0.0,
+        "seen_pos": 0.166
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:49:25.640796+00:00",
+    "record_id": "7CFA73__2026-11-16T08_49_24.501000plus00_00"
+}

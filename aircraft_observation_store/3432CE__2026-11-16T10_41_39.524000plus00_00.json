@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3432CE",
+    "source": "adsb.lol",
+    "latitude": 36.855927,
+    "longitude": -6.366343,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CUCO502",
+    "altitude_baro_ft": 16350,
+    "ground_speed_kts": 228.0,
+    "track_degrees": 219.48,
+    "metadata": {
+        "r": "T.19B-22",
+        "t": "CN35",
+        "type": "adsb_icao",
+        "alt_geom": 17225,
+        "seen": 0.3,
+        "seen_pos": 2.407
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.809686+00:00",
+    "record_id": "3432CE__2026-11-16T10_41_39.524000plus00_00"
+}

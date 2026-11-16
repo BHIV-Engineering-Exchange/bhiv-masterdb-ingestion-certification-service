@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrlepm",
+    "source": "USGS",
+    "place": "271 km SE of Chiniak, Alaska",
+    "magnitude": 3.6,
+    "longitude": -149.264,
+    "latitude": 55.825,
+    "depth_km": 32.8,
+    "event_time_utc": "2026-11-16T03:06:26.067000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrlepm",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.085710+00:00"
+}

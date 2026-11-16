@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "A0B34F",
+    "source": "adsb.lol",
+    "latitude": 35.347254,
+    "longitude": 139.274792,
+    "observation_time_utc": "2026-11-16T07:32:44.503000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "N144UA",
+    "altitude_baro_ft": 2850,
+    "ground_speed_kts": 81.2,
+    "track_degrees": 22.46,
+    "metadata": {
+        "r": "N144UA",
+        "t": "DA40",
+        "type": "adsb_icao",
+        "alt_geom": 3125,
+        "seen": 0.0,
+        "seen_pos": 0.0
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T07:32:45.432254+00:00",
+    "record_id": "A0B34F__2026-11-16T07_32_44.503000plus00_00"
+}

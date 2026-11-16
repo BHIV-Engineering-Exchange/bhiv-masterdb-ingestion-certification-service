@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "497CDE",
+    "source": "adsb.lol",
+    "latitude": 45.069992,
+    "longitude": -3.083104,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "AFP81",
+    "altitude_baro_ft": 32000,
+    "ground_speed_kts": 436.8,
+    "track_degrees": 42.12,
+    "metadata": {
+        "r": "26903",
+        "t": "E390",
+        "type": "adsb_icao",
+        "alt_geom": 32725,
+        "seen": 0.0,
+        "seen_pos": 0.0
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.833199+00:00",
+    "record_id": "497CDE__2026-11-16T10_41_39.524000plus00_00"
+}

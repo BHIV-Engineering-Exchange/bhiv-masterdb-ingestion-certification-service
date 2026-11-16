@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "506E1D",
+    "source": "adsb.lol",
+    "latitude": 45.908188,
+    "longitude": 15.49807,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "PUMA39",
+    "altitude_baro_ft": 1400,
+    "ground_speed_kts": 75.0,
+    "track_degrees": 179.24,
+    "metadata": {
+        "r": "S5-DGC",
+        "t": "Z42",
+        "type": "adsb_icao",
+        "alt_geom": 1525,
+        "seen": 0.3,
+        "seen_pos": 0.255
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.400547+00:00",
+    "record_id": "506E1D__2026-11-16T08_36_26.001000plus00_00"
+}

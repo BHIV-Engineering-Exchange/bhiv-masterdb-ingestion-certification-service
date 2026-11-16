@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362431",
+    "source": "USGS",
+    "place": "22 km N of Borrego Springs, CA",
+    "magnitude": 1.28,
+    "longitude": -116.4055,
+    "latitude": 33.44917,
+    "depth_km": 9.56,
+    "event_time_utc": "2026-11-15T11:41:52.300000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362431",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.408398+00:00"
+}

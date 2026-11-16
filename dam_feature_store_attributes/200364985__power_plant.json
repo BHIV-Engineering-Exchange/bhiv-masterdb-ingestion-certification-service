@@ -1,0 +1,29 @@
+{
+    "record_id": "200364985__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 200364985,
+    "osm_id": 200364985,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Usina Hidrel\u00e9trica de Ita\u00faba",
+        "tags": {
+            "name": "Usina Hidrel\u00e9trica de Ita\u00faba",
+            "power": "plant",
+            "waterway": "dam",
+            "wikidata": "Q10388365",
+            "wikipedia": "pt:Usina Hidrel\u00e9trica Ita\u00faba",
+            "plant:source": "hydro",
+            "plant:output:electricity": "500 MW"
+        },
+        "osm_id": 200364985,
+        "output": "500 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

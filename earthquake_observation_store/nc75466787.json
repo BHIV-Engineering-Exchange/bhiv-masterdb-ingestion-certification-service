@@ -1,0 +1,13 @@
+{
+    "event_id": "nc75466787",
+    "source": "USGS",
+    "place": "28 km NE of Hollister, CA",
+    "magnitude": 2.44,
+    "longitude": -121.180335998535,
+    "latitude": 37.0273323059082,
+    "depth_km": 3,
+    "event_time_utc": "2026-11-15T19:31:53.330000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nc75466787",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.218820+00:00"
+}

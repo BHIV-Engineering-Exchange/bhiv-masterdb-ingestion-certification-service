@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "0101A9",
+    "source": "adsb.lol",
+    "latitude": 44.749706,
+    "longitude": 11.644869,
+    "observation_time_utc": "2026-11-16T08:49:24.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "EGY2335",
+    "altitude_baro_ft": 18000,
+    "ground_speed_kts": 230.0,
+    "track_degrees": 352.44,
+    "metadata": {
+        "r": "SU-BTF",
+        "t": "C295",
+        "type": "mlat",
+        "seen": 1.0,
+        "seen_pos": 1.016
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:49:25.560423+00:00",
+    "record_id": "0101A9__2026-11-16T08_49_24.501000plus00_00"
+}

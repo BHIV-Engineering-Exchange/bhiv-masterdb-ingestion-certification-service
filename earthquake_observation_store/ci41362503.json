@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362503",
+    "source": "USGS",
+    "place": "10 km SE of Winchester, CA",
+    "magnitude": 0.81,
+    "longitude": -117.01133,
+    "latitude": 33.635,
+    "depth_km": 12.68,
+    "event_time_utc": "2026-11-15T15:58:55.250000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362503",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.263449+00:00"
+}

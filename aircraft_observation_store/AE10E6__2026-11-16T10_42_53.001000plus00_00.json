@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE10E6",
+    "source": "adsb.lol",
+    "latitude": 35.286255,
+    "longitude": 29.278908,
+    "observation_time_utc": "2026-11-16T10:42:53.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SPAR89",
+    "altitude_baro_ft": 26000,
+    "ground_speed_kts": 216.5,
+    "track_degrees": 298.1,
+    "metadata": {
+        "r": "76-3239",
+        "t": "BE20",
+        "type": "adsb_icao",
+        "alt_geom": 27000,
+        "seen": 48.3,
+        "seen_pos": 48.602
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:42:54.144739+00:00",
+    "record_id": "AE10E6__2026-11-16T10_42_53.001000plus00_00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "480807",
+    "source": "adsb.lol",
+    "latitude": 52.070389,
+    "longitude": 5.349731,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "WILDC05",
+    "altitude_baro_ft": 1075,
+    "ground_speed_kts": 118.0,
+    "track_degrees": 178.54,
+    "metadata": {
+        "r": "S-442",
+        "t": "AS3B",
+        "type": "adsb_icao",
+        "alt_geom": 925,
+        "seen": 0.4,
+        "seen_pos": 0.415
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.965851+00:00",
+    "record_id": "480807__2026-11-16T10_41_39.524000plus00_00"
+}

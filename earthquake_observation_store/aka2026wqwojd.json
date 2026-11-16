@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wqwojd",
+    "source": "USGS",
+    "place": "21 km S of Point Possession, Alaska",
+    "magnitude": 2,
+    "longitude": -150.713,
+    "latitude": 60.73,
+    "depth_km": 54.3,
+    "event_time_utc": "2026-11-15T19:51:18.443000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wqwojd",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.204128+00:00"
+}

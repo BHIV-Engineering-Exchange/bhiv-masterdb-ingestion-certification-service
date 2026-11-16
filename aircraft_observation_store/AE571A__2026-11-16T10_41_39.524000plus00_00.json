@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE571A",
+    "source": "adsb.lol",
+    "latitude": 52.961224,
+    "longitude": -2.057347,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CNV4110",
+    "altitude_baro_ft": 39000,
+    "ground_speed_kts": 511.1,
+    "track_degrees": 151.23,
+    "metadata": {
+        "r": "169036",
+        "t": "B737",
+        "type": "adsb_icao",
+        "alt_geom": 38475,
+        "seen": 0.0,
+        "seen_pos": 0.116
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.850151+00:00",
+    "record_id": "AE571A__2026-11-16T10_41_39.524000plus00_00"
+}

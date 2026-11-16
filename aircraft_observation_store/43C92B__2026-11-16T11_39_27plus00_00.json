@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "43C92B",
+    "source": "adsb.lol",
+    "latitude": 53.240863,
+    "longitude": -4.582995,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "WWIND208",
+    "altitude_baro_ft": 325,
+    "ground_speed_kts": 0.7,
+    "track_degrees": 0.0,
+    "metadata": {
+        "r": "ZM497",
+        "t": "EC45",
+        "type": "adsb_icao",
+        "alt_geom": 275,
+        "seen": 0.3,
+        "seen_pos": 1.294
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:27.986852+00:00",
+    "record_id": "43C92B__2026-11-16T11_39_27plus00_00"
+}

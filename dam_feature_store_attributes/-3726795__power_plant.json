@@ -1,0 +1,36 @@
+{
+    "record_id": "-3726795__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -3726795,
+    "osm_id": -3726795,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "HE Vuzenica",
+        "tags": {
+            "name": "HE Vuzenica",
+            "type": "multipolygon",
+            "power": "plant",
+            "operator": "Dravske elektrarne Maribor",
+            "waterway": "dam",
+            "wikidata": "Q12790980",
+            "wikipedia": "sl:Hidroelektrarna Vuzenica",
+            "plant:type": "pier-type",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "operator:short": "DEM",
+            "generator:source": "hydro",
+            "operator:wikidata": "Q20523891",
+            "plant:output:electricity": "55.6 MW"
+        },
+        "osm_id": -3726795,
+        "output": "55.6 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

@@ -1,0 +1,29 @@
+{
+    "record_id": "407977032__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 407977032,
+    "osm_id": 407977032,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u77f3\u864e\u5858\u822a\u7535\u67a2\u7ebd",
+        "tags": {
+            "name": "\u77f3\u864e\u5858\u822a\u7535\u67a2\u7ebd",
+            "power": "plant",
+            "name:en": "Shihutang Power Plant",
+            "waterway": "dam",
+            "wikidata": "Q84764993",
+            "plant:source": "hydro",
+            "plant:output:electricity": "120 MW"
+        },
+        "osm_id": 407977032,
+        "output": "120 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

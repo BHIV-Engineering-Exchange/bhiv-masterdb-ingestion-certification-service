@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE152C",
+    "source": "adsb.lol",
+    "latitude": 27.177103,
+    "longitude": 128.933804,
+    "observation_time_utc": "2026-11-16T06:52:18.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MAXX918",
+    "altitude_baro_ft": 28000,
+    "ground_speed_kts": 503.2,
+    "track_degrees": 47.34,
+    "metadata": {
+        "r": "166378",
+        "t": "GLF5",
+        "type": "adsb_icao",
+        "alt_geom": 29325,
+        "seen": 27.5,
+        "seen_pos": 48.435
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:52:19.303023+00:00",
+    "record_id": "AE152C__2026-11-16T06_52_18.500000plus00_00"
+}

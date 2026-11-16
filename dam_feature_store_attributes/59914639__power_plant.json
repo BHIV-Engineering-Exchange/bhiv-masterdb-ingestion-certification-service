@@ -1,0 +1,40 @@
+{
+    "record_id": "59914639__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 59914639,
+    "osm_id": 59914639,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Barrage de Monteynard",
+        "tags": {
+            "name": "Barrage de Monteynard",
+            "layer": "2",
+            "power": "plant",
+            "height": "135",
+            "website": "https://www.hydrelect.info/articles.php?lng=fr&pg=59",
+            "operator": "EDF",
+            "waterway": "dam",
+            "wikidata": "Q1664867",
+            "wikipedia": "fr:Barrage de Monteynard-Avignonet",
+            "start_date": "1962",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "ref:FR:RTE_nom": "MONTEYNARD",
+            "operator:wikidata": "Q274591",
+            "ref:EU:ENTSOE_EIC": "17W100P100P02861",
+            "old_ref:EU:ENTSOE_EIC": "17W000000012610H",
+            "plant:output:electricity": "366 MW",
+            "building:foundation_height": "135"
+        },
+        "osm_id": 59914639,
+        "output": "366 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

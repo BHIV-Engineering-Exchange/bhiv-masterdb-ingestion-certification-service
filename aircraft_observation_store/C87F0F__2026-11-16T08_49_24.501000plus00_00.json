@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "C87F0F",
+    "source": "adsb.lol",
+    "latitude": -40.193527,
+    "longitude": 175.254578,
+    "observation_time_utc": "2026-11-16T08:49:24.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "WRR03",
+    "altitude_baro_ft": 675,
+    "ground_speed_kts": 107.0,
+    "track_degrees": 268.93,
+    "metadata": {
+        "r": "NZ3303",
+        "t": "NH90",
+        "type": "adsb_icao",
+        "seen": 0.4,
+        "seen_pos": 0.363
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:49:25.644398+00:00",
+    "record_id": "C87F0F__2026-11-16T08_49_24.501000plus00_00"
+}

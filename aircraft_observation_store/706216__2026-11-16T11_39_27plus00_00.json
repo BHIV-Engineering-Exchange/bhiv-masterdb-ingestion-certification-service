@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "706216",
+    "source": "adsb.lol",
+    "latitude": 51.194046,
+    "longitude": -0.134805,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "KAF3209",
+    "altitude_baro_ft": 30000,
+    "ground_speed_kts": 357.4,
+    "track_degrees": 297.86,
+    "metadata": {
+        "r": "KAF343",
+        "t": "C17",
+        "type": "adsb_icao",
+        "alt_geom": 29825,
+        "seen": 0.0,
+        "seen_pos": 0.0
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.108460+00:00",
+    "record_id": "706216__2026-11-16T11_39_27plus00_00"
+}

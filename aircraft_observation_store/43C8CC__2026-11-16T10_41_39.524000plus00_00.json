@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "43C8CC",
+    "source": "adsb.lol",
+    "latitude": 53.246496,
+    "longitude": -4.389765,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "VYT94",
+    "altitude_baro_ft": 1175,
+    "ground_speed_kts": 144.3,
+    "track_degrees": 209.94,
+    "metadata": {
+        "r": "ZM325",
+        "t": "TEX2",
+        "type": "adsb_icao",
+        "alt_geom": 1125,
+        "seen": 0.1,
+        "seen_pos": 0.392
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.817292+00:00",
+    "record_id": "43C8CC__2026-11-16T10_41_39.524000plus00_00"
+}

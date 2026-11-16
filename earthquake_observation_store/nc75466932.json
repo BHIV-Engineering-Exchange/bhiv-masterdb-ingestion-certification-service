@@ -1,0 +1,13 @@
+{
+    "event_id": "nc75466932",
+    "source": "USGS",
+    "place": "18 km SW of Toms Place, CA",
+    "magnitude": 1.83,
+    "longitude": -118.84400177002,
+    "latitude": 37.458667755127,
+    "depth_km": -0.689999997615814,
+    "event_time_utc": "2026-11-16T03:38:37.080000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nc75466932",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.066649+00:00"
+}

@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "738BE8",
+    "source": "adsb.lol",
+    "latitude": 31.758588,
+    "longitude": 34.839899,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "BOOSTER",
+    "altitude_baro_ft": 10750,
+    "ground_speed_kts": 125.9,
+    "track_degrees": 135.64,
+    "metadata": {
+        "t": "HRON",
+        "type": "adsb_icao",
+        "alt_geom": 11225,
+        "seen": 0.2,
+        "seen_pos": 0.304
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:41.125735+00:00",
+    "record_id": "738BE8__2026-11-16T10_41_39.524000plus00_00"
+}

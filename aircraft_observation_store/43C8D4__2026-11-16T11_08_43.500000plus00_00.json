@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "43C8D4",
+    "source": "adsb.lol",
+    "latitude": 53.140264,
+    "longitude": -0.53106,
+    "observation_time_utc": "2026-11-16T11:08:43.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CWL53",
+    "altitude_baro_ft": 1400,
+    "ground_speed_kts": 155.9,
+    "track_degrees": 123.49,
+    "metadata": {
+        "r": "ZM333",
+        "t": "E50P",
+        "type": "adsb_icao",
+        "alt_geom": 1300,
+        "seen": 0.0,
+        "seen_pos": 0.045
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:08:44.815077+00:00",
+    "record_id": "43C8D4__2026-11-16T11_08_43.500000plus00_00"
+}

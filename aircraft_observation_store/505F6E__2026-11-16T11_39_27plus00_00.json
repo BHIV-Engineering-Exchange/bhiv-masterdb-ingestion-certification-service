@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "505F6E",
+    "source": "adsb.lol",
+    "latitude": 51.979433,
+    "longitude": 17.303324,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SQF104",
+    "altitude_baro_ft": 21125,
+    "ground_speed_kts": 178.0,
+    "track_degrees": 146.95,
+    "metadata": {
+        "r": "1962",
+        "t": "C27J",
+        "type": "mlat",
+        "seen": 0.6,
+        "seen_pos": 1.687
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.337434+00:00",
+    "record_id": "505F6E__2026-11-16T11_39_27plus00_00"
+}

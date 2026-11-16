@@ -1,0 +1,37 @@
+{
+    "record_id": "-19754263__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -19754263,
+    "osm_id": -19754263,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u0646\u063a\u0644\u0648 \u0628\u0631\u06d0\u069a\u0646\u0627\u06a9\u0648\u067c",
+        "tags": {
+            "name": "\u0646\u063a\u0644\u0648 \u0628\u0631\u06d0\u069a\u0646\u0627\u06a9\u0648\u067c",
+            "type": "multipolygon",
+            "power": "plant",
+            "name:de": "Naghlu-Staudamm",
+            "name:en": "Naghlu Dam",
+            "name:ja": "\u30ca\u30b0\u30eb\u30fc\u30c0\u30e0",
+            "name:no": "Naghludemningen",
+            "name:ru": "\u0413\u042d\u0421 \u041d\u0430\u0433\u043b\u0443",
+            "name:uk": "\u0413\u0415\u0421 \u041d\u0430\u0433\u043b\u0443",
+            "waterway": "dam",
+            "wikidata": "Q4755783",
+            "wikipedia": "en:Naghlu Dam",
+            "start_date": "1967",
+            "plant:source": "hydro",
+            "plant:output:electricity": "100 MW"
+        },
+        "osm_id": -19754263,
+        "output": "100 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

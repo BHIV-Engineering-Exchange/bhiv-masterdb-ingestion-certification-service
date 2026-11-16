@@ -1,0 +1,19 @@
+{
+    "aircraft_hex_id": "43C95C",
+    "source": "adsb.lol",
+    "latitude": 51.144836,
+    "longitude": -1.571787,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "altitude_baro_ft": 400,
+    "metadata": {
+        "r": "ZM746",
+        "t": "H64",
+        "type": "adsb_icao",
+        "seen": 16.0,
+        "seen_pos": 16.003
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.300237+00:00",
+    "record_id": "43C95C__2026-11-16T11_00_39.002000plus00_00"
+}

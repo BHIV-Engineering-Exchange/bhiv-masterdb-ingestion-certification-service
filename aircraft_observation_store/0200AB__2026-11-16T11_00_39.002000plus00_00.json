@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "0200AB",
+    "source": "adsb.lol",
+    "latitude": 34.756832,
+    "longitude": -2.880306,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MRS1427",
+    "altitude_baro_ft": 29000,
+    "ground_speed_kts": 367.8,
+    "track_degrees": 151.76,
+    "metadata": {
+        "r": "CN-AMK",
+        "t": "C56X",
+        "type": "adsb_icao",
+        "alt_geom": 30275,
+        "seen": 6.6,
+        "seen_pos": 7.559
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.256813+00:00",
+    "record_id": "0200AB__2026-11-16T11_00_39.002000plus00_00"
+}

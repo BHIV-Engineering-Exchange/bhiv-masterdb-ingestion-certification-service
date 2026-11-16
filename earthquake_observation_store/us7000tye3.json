@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tye3",
+    "source": "USGS",
+    "place": "41 km SSW of La Tirana, Chile",
+    "magnitude": 4.1,
+    "longitude": -70.311,
+    "latitude": -20.6143,
+    "depth_km": 27.161,
+    "event_time_utc": "2026-11-15T11:23:56.246000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tye3",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:14:23.748409+00:00"
+}

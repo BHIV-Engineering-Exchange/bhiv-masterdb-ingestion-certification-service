@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362543",
+    "source": "USGS",
+    "place": "11 km NE of Yucaipa, CA",
+    "magnitude": 1.55,
+    "longitude": -116.97283,
+    "latitude": 34.1085,
+    "depth_km": 9.15,
+    "event_time_utc": "2026-11-15T19:02:33.740000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362543",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.223395+00:00"
+}

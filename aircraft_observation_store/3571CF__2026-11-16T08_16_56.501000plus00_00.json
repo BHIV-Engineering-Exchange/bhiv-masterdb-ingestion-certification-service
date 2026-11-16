@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3571CF",
+    "source": "adsb.lol",
+    "latitude": 37.74202,
+    "longitude": -0.835721,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "TRD18",
+    "altitude_baro_ft": 1250,
+    "ground_speed_kts": 217.6,
+    "track_degrees": 129.03,
+    "metadata": {
+        "r": "E.27-15",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 1700,
+        "seen": 1.0,
+        "seen_pos": 1.652
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.572957+00:00",
+    "record_id": "3571CF__2026-11-16T08_16_56.501000plus00_00"
+}

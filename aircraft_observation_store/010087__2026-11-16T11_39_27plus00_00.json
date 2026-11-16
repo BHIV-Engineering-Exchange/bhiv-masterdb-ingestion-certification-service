@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "010087",
+    "source": "adsb.lol",
+    "latitude": 39.300918,
+    "longitude": -76.683163,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "EGY1122",
+    "altitude_baro_ft": 117200,
+    "ground_speed_kts": 178.0,
+    "track_degrees": 31.0,
+    "metadata": {
+        "r": "SU-BEW",
+        "t": "C130",
+        "type": "mlat",
+        "seen": 0.1,
+        "seen_pos": 1.612
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:27.966144+00:00",
+    "record_id": "010087__2026-11-16T11_39_27plus00_00"
+}

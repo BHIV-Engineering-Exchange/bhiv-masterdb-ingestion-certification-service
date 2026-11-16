@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362551",
+    "source": "USGS",
+    "place": "8 km SSW of Idyllwild, CA",
+    "magnitude": 0.53,
+    "longitude": -116.75267,
+    "latitude": 33.6695,
+    "depth_km": 14.63,
+    "event_time_utc": "2026-11-15T19:47:45.870000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362551",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.205708+00:00"
+}

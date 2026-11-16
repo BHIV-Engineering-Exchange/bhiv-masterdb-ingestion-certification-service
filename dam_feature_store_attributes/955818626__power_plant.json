@@ -1,0 +1,30 @@
+{
+    "record_id": "955818626__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 955818626,
+    "osm_id": 955818626,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Qingxi Dam",
+        "tags": {
+            "name": "Qingxi Dam",
+            "owner": "Guangdong Energy Group",
+            "power": "plant",
+            "name:en": "Qingxi Dam",
+            "waterway": "dam",
+            "wikidata": "Q11996696",
+            "plant:source": "hydro",
+            "plant:output:electricity": "144 MW"
+        },
+        "osm_id": 955818626,
+        "output": "144 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

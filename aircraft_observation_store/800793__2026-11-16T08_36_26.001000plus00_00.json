@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "800793",
+    "source": "adsb.lol",
+    "latitude": 28.76152,
+    "longitude": 77.002963,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MAHBALI",
+    "altitude_baro_ft": 12000,
+    "ground_speed_kts": 348.8,
+    "track_degrees": 43.03,
+    "metadata": {
+        "r": "CB-8006",
+        "t": "C17",
+        "type": "adsb_icao",
+        "alt_geom": 12350,
+        "seen": 10.5,
+        "seen_pos": 11.961
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.460953+00:00",
+    "record_id": "800793__2026-11-16T08_36_26.001000plus00_00"
+}

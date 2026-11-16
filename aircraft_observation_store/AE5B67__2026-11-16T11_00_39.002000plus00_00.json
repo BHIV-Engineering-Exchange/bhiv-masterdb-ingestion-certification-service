@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE5B67",
+    "source": "adsb.lol",
+    "latitude": 49.327263,
+    "longitude": 8.702907,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RANGR92",
+    "altitude_baro_ft": 17025,
+    "ground_speed_kts": 298.1,
+    "track_degrees": 88.65,
+    "metadata": {
+        "r": "169225",
+        "t": "C30J",
+        "type": "adsb_icao",
+        "alt_geom": 16775,
+        "seen": 0.0,
+        "seen_pos": 0.143
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.405020+00:00",
+    "record_id": "AE5B67__2026-11-16T11_00_39.002000plus00_00"
+}

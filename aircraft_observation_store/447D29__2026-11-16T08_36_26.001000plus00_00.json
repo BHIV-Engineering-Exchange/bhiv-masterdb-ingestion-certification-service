@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "447D29",
+    "source": "adsb.lol",
+    "latitude": 48.106201,
+    "longitude": 15.236526,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "BLACK79",
+    "altitude_baro_ft": 4100,
+    "ground_speed_kts": 105.1,
+    "track_degrees": 244.65,
+    "metadata": {
+        "r": "6M-BI",
+        "t": "H60",
+        "type": "adsb_icao",
+        "alt_geom": 4125,
+        "seen": 9.9,
+        "seen_pos": 21.011
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.398841+00:00",
+    "record_id": "447D29__2026-11-16T08_36_26.001000plus00_00"
+}

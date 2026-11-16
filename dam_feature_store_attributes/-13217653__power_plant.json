@@ -1,0 +1,35 @@
+{
+    "record_id": "-13217653__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -13217653,
+    "osm_id": -13217653,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u0412\u043e\u043b\u0445\u043e\u0432\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+        "tags": {
+            "name": "\u0412\u043e\u043b\u0445\u043e\u0432\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+            "type": "multipolygon",
+            "power": "plant",
+            "name:uk": "\u0412\u043e\u043b\u0445\u043e\u0432\u0441\u044c\u043a\u0430 \u0413\u0415\u0421",
+            "operator": "\u0422\u0413\u041a-1",
+            "waterway": "dam",
+            "wikidata": "Q800130",
+            "wikipedia": "ru:\u0412\u043e\u043b\u0445\u043e\u0432\u0441\u043a\u0430\u044f \u0413\u042d\u0421",
+            "start_date": "1927",
+            "plant:source": "hydro",
+            "generator:type": "steam_turbine",
+            "generator:method": "run-of-the-river",
+            "plant:output:electricity": "86 MW"
+        },
+        "osm_id": -13217653,
+        "output": "86 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

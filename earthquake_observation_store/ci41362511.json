@@ -1,0 +1,13 @@
+{
+    "event_id": "ci41362511",
+    "source": "USGS",
+    "place": "18 km ESE of Julian, CA",
+    "magnitude": 1.54,
+    "longitude": -116.41717,
+    "latitude": 33.02683,
+    "depth_km": 8.74,
+    "event_time_utc": "2026-11-15T16:08:47.390000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci41362511",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.254292+00:00"
+}

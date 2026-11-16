@@ -1,0 +1,13 @@
+{
+    "event_id": "nn00926999",
+    "source": "USGS",
+    "place": "17 km SE of Silver Springs, Nevada",
+    "magnitude": 1.74,
+    "longitude": -119.0627,
+    "latitude": 39.3204,
+    "depth_km": 6.3797,
+    "event_time_utc": "2026-11-15T10:52:29.867000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nn00926999",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T10:42:47.209495+00:00"
+}

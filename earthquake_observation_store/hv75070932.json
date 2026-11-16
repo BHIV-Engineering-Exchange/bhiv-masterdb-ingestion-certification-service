@@ -1,0 +1,13 @@
+{
+    "event_id": "hv75070932",
+    "source": "USGS",
+    "place": "12 km N of Wai\u2018\u014dhinu, Hawaii",
+    "magnitude": 2.41,
+    "longitude": -155.603332519531,
+    "latitude": 19.1871662139893,
+    "depth_km": 4.44000005722046,
+    "event_time_utc": "2026-11-16T02:30:29.700000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/hv75070932",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.091566+00:00"
+}

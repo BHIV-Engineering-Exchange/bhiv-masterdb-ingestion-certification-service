@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "7CF86C",
+    "source": "adsb.lol",
+    "latitude": 3.340542,
+    "longitude": 126.683397,
+    "observation_time_utc": "2026-11-16T07:32:44.503000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "ASY808",
+    "altitude_baro_ft": 33025,
+    "metadata": {
+        "r": "A41-209",
+        "t": "C17",
+        "type": "adsb_icao",
+        "seen": 55.3,
+        "seen_pos": 55.32
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T07:32:45.407489+00:00",
+    "record_id": "7CF86C__2026-11-16T07_32_44.503000plus00_00"
+}

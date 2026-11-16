@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "4A34E7",
+    "source": "adsb.lol",
+    "latitude": 50.911331,
+    "longitude": 4.485493,
+    "observation_time_utc": "2026-11-16T10:41:39.524000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "ROF441",
+    "ground_speed_kts": 0.0,
+    "metadata": {
+        "r": "1124",
+        "t": "LJ45",
+        "type": "adsb_icao",
+        "seen": 1.6,
+        "seen_pos": 2.068
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:41:40.932177+00:00",
+    "record_id": "4A34E7__2026-11-16T10_41_39.524000plus00_00"
+}

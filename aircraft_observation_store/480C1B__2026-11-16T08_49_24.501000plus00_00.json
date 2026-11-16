@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "480C1B",
+    "source": "adsb.lol",
+    "latitude": 53.093654,
+    "longitude": 17.968866,
+    "observation_time_utc": "2026-11-16T08:49:24.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "NAF15",
+    "ground_speed_kts": 9.2,
+    "metadata": {
+        "r": "V-117",
+        "t": "GLF6",
+        "type": "adsb_icao",
+        "seen": 0.9,
+        "seen_pos": 0.859
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:49:25.590347+00:00",
+    "record_id": "480C1B__2026-11-16T08_49_24.501000plus00_00"
+}

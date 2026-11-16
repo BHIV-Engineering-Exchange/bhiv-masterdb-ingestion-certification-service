@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "AE056B",
+    "source": "adsb.lol",
+    "latitude": 50.644222,
+    "longitude": 9.054666,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RCH2195",
+    "altitude_baro_ft": 35025,
+    "ground_speed_kts": 490.0,
+    "track_degrees": 109.69,
+    "metadata": {
+        "r": "86-0014",
+        "t": "C5M",
+        "type": "mlat",
+        "seen": 0.1,
+        "seen_pos": 3.883
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.373634+00:00",
+    "record_id": "AE056B__2026-11-16T08_36_26.001000plus00_00"
+}

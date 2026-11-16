@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "506F6B",
+    "source": "adsb.lol",
+    "latitude": 45.891801,
+    "longitude": 15.575386,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "LSV202",
+    "altitude_baro_ft": 6100,
+    "ground_speed_kts": 117.0,
+    "track_degrees": 300.29,
+    "metadata": {
+        "r": "L2-02",
+        "t": "C27J",
+        "type": "adsb_icao",
+        "alt_geom": 6150,
+        "seen": 1.9,
+        "seen_pos": 6.827
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.322472+00:00",
+    "record_id": "506F6B__2026-11-16T11_39_27plus00_00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "3F717C",
+    "source": "adsb.lol",
+    "latitude": 51.982044,
+    "longitude": 15.444972,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "GAF111",
+    "altitude_baro_ft": 28975,
+    "ground_speed_kts": 328.2,
+    "track_degrees": 127.32,
+    "metadata": {
+        "r": "54+49",
+        "t": "A400",
+        "type": "adsb_icao",
+        "alt_geom": 28300,
+        "seen": 0.2,
+        "seen_pos": 0.171
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.121211+00:00",
+    "record_id": "3F717C__2026-11-16T10_29_16plus00_00"
+}

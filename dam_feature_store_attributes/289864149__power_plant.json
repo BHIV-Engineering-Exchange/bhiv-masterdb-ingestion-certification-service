@@ -1,0 +1,40 @@
+{
+    "record_id": "289864149__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 289864149,
+    "osm_id": 289864149,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Oued El Makhazine \u0648\u0627\u062f\u064a \u0627\u0644\u0645\u062e\u0627\u0632\u0646",
+        "tags": {
+            "name": "Oued El Makhazine \u0648\u0627\u062f\u064a \u0627\u0644\u0645\u062e\u0627\u0632\u0646",
+            "power": "plant",
+            "height": "67.0",
+            "name:ar": "\u0648\u0627\u062f\u064a \u0627\u0644\u0645\u062e\u0627\u0632\u0646",
+            "name:fr": "Oued El Makhazine",
+            "website": "https://www.masen.ma/ar/%D8%A7%D9%84%D9%85%D8%B4%D8%A7%D8%B1%D9%8A%D8%B9/%D9%88%D8%A7%D8%AF%D9%8A-%D8%A7%D9%84%D9%85%D8%AE%D8%A7%D8%B2%D9%86",
+            "capacity": "807.0",
+            "operator": "\u0645\u0627\u0632\u0646",
+            "waterway": "dam",
+            "start_date": "1979",
+            "operator:ar": "\u0645\u0627\u0632\u0646",
+            "operator:en": "Mazen",
+            "operator:fr": "Mazen",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "operator:website": "http://www.masen.ma/ar",
+            "operator:wikidata": "Q48988857",
+            "plant:output:electricity": "36 MW"
+        },
+        "osm_id": 289864149,
+        "output": "36 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

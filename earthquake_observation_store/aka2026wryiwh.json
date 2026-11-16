@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wryiwh",
+    "source": "USGS",
+    "place": "19 km W of Four Mile Road, Alaska",
+    "magnitude": 1.3,
+    "longitude": -149.536,
+    "latitude": 64.6,
+    "depth_km": 5,
+    "event_time_utc": "2026-11-16T09:40:46.772000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wryiwh",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.932410+00:00"
+}

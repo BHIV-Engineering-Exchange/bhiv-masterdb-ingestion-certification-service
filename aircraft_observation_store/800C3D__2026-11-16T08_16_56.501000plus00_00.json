@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "800C3D",
+    "source": "adsb.lol",
+    "latitude": 14.489273,
+    "longitude": 120.759825,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "INDIA1",
+    "altitude_baro_ft": 4850,
+    "ground_speed_kts": 226.2,
+    "track_degrees": 150.04,
+    "metadata": {
+        "r": "K7067",
+        "t": "B77W",
+        "type": "adsb_icao",
+        "alt_geom": 5250,
+        "seen": 0.1,
+        "seen_pos": 2.054
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.734382+00:00",
+    "record_id": "800C3D__2026-11-16T08_16_56.501000plus00_00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE620D",
+    "source": "adsb.lol",
+    "latitude": 37.451601,
+    "longitude": 127.111279,
+    "observation_time_utc": "2026-11-16T06:50:28.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CARD40",
+    "altitude_baro_ft": -200,
+    "ground_speed_kts": 1.2,
+    "track_degrees": 180.0,
+    "metadata": {
+        "r": "18-21001",
+        "t": "H60",
+        "type": "adsb_icao",
+        "alt_geom": 175,
+        "seen": 1.0,
+        "seen_pos": 1.653
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:50:29.656210+00:00",
+    "record_id": "AE620D__2026-11-16T06_50_28.500000plus00_00"
+}

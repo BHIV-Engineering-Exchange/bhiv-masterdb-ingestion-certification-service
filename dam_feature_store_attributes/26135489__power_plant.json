@@ -1,0 +1,33 @@
+{
+    "record_id": "26135489__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 26135489,
+    "osm_id": 26135489,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\ub300\uccad\ub310",
+        "tags": {
+            "name": "\ub300\uccad\ub310",
+            "power": "plant",
+            "name:en": "Daecheon Dam",
+            "name:ko": "\ub300\uccad\ub310",
+            "name:tr": "Daecheong Baraj\u0131",
+            "operator": "\ud55c\uad6d\uc218\uc790\uc6d0\uacf5\uc0ac",
+            "waterway": "dam",
+            "wikidata": "Q5208149",
+            "wikipedia": "en:Daecheong Dam",
+            "plant:source": "hydro",
+            "plant:output:electricity": "90 MW"
+        },
+        "osm_id": 26135489,
+        "output": "90 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tydr",
+    "source": "USGS",
+    "place": "55 km W of Valpara\u00edso, Chile",
+    "magnitude": 4.1,
+    "longitude": -72.2191,
+    "latitude": -33.0263,
+    "depth_km": 19.435,
+    "event_time_utc": "2026-11-15T10:29:11.748000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tydr",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T10:29:09.753636+00:00"
+}

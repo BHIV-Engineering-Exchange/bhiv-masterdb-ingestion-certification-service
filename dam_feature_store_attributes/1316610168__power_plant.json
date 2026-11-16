@@ -1,0 +1,37 @@
+{
+    "record_id": "1316610168__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 1316610168,
+    "osm_id": 1316610168,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u0110\u1eadp thu\u1ef7 \u0111i\u1ec7n Ho\u00e0 B\u00ecnh",
+        "tags": {
+            "name": "\u0110\u1eadp thu\u1ef7 \u0111i\u1ec7n Ho\u00e0 B\u00ecnh",
+            "power": "plant",
+            "height": "128",
+            "name:en": "Hoa Binh Dam",
+            "building": "dam",
+            "material": "concrete",
+            "name:ace": "\u0413\u042d\u0421 \u0425\u043e\u0430\u0431\u0438\u043d\u044c",
+            "waterway": "dam",
+            "wikidata": "Q1504264",
+            "wikipedia": "vi:Nh\u00e0 m\u00e1y Th\u1ee7y \u0111i\u1ec7n H\u00f2a B\u00ecnh",
+            "start_date": "1979-11-6",
+            "opening_date": "1994-12-20",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "plant:output:electricity": "1920 MW"
+        },
+        "osm_id": 1316610168,
+        "output": "1920 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

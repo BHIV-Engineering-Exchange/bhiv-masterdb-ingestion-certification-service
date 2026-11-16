@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE062E",
+    "source": "adsb.lol",
+    "latitude": 35.66835,
+    "longitude": 136.211014,
+    "observation_time_utc": "2026-11-16T06:52:18.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CATS88",
+    "altitude_baro_ft": 18000,
+    "ground_speed_kts": 220.4,
+    "track_degrees": 273.64,
+    "metadata": {
+        "r": "86-00082",
+        "t": "B190",
+        "type": "adsb_icao",
+        "alt_geom": 18675,
+        "seen": 0.0,
+        "seen_pos": 0.386
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:52:19.306413+00:00",
+    "record_id": "AE062E__2026-11-16T06_52_18.500000plus00_00"
+}

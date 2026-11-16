@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "356342",
+    "source": "adsb.lol",
+    "latitude": 40.396403,
+    "longitude": 9.334009,
+    "observation_time_utc": "2026-11-16T08:49:24.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "AME4528",
+    "altitude_baro_ft": 37025,
+    "ground_speed_kts": 506.0,
+    "track_degrees": 99.56,
+    "metadata": {
+        "r": "T.24-02",
+        "t": "A332",
+        "type": "adsb_icao",
+        "alt_geom": 37500,
+        "seen": 0.2,
+        "seen_pos": 0.249
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:49:25.540989+00:00",
+    "record_id": "356342__2026-11-16T08_49_24.501000plus00_00"
+}

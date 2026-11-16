@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tyie",
+    "source": "USGS",
+    "place": "124 km NE of Quiaca, Peru",
+    "magnitude": 4.3,
+    "longitude": -68.57,
+    "latitude": -13.6058,
+    "depth_km": 626.486,
+    "event_time_utc": "2026-11-16T06:47:34.187000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tyie",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:20.999337+00:00"
+}

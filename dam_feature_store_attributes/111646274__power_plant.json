@@ -1,0 +1,33 @@
+{
+    "record_id": "111646274__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 111646274,
+    "osm_id": 111646274,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Lewiston Pump-Generating Plant",
+        "tags": {
+            "name": "Lewiston Pump-Generating Plant",
+            "power": "plant",
+            "alt_name": "Lewiston Pump-Generating Plant Dam;Lewiston Dam",
+            "operator": "New York Power Authority",
+            "waterway": "dam",
+            "wikidata": "Q11983871",
+            "ref:US:EIA": "2692",
+            "ref:US:NID": "NY00689",
+            "start_date": "1961-10",
+            "plant:source": "hydro",
+            "plant:output:electricity": "240 MW"
+        },
+        "osm_id": 111646274,
+        "output": "240 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

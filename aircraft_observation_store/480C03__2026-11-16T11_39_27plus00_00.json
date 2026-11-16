@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "480C03",
+    "source": "adsb.lol",
+    "latitude": 42.288071,
+    "longitude": 9.564036,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "NAF22",
+    "altitude_baro_ft": 13725,
+    "ground_speed_kts": 204.6,
+    "track_degrees": 12.13,
+    "metadata": {
+        "r": "G-273",
+        "t": "C130",
+        "type": "adsb_icao",
+        "alt_geom": 14075,
+        "seen": 0.4,
+        "seen_pos": 0.371
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.238508+00:00",
+    "record_id": "480C03__2026-11-16T11_39_27plus00_00"
+}

@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wqchoq",
+    "source": "USGS",
+    "place": "29 km SSW of Trapper Creek, Alaska",
+    "magnitude": 1.8,
+    "longitude": -150.516,
+    "latitude": 62.084,
+    "depth_km": 4.7,
+    "event_time_utc": "2026-11-15T09:39:57.110000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wqchoq",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T08:49:19.493854+00:00"
+}

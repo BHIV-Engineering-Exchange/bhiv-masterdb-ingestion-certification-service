@@ -1,0 +1,37 @@
+{
+    "record_id": "485543356__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 485543356,
+    "osm_id": 485543356,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Nh\u00e0 m\u00e1y th\u1ee7y \u0111i\u1ec7n S\u01a1n La",
+        "tags": {
+            "name": "Nh\u00e0 m\u00e1y th\u1ee7y \u0111i\u1ec7n S\u01a1n La",
+            "power": "plant",
+            "name:de": "S\u01a1n-La-Talsperre",
+            "name:en": "S\u01a1n La Dam",
+            "name:fr": "Barrage de S\u01a1n La",
+            "name:no": "Son La-demningen",
+            "name:vi": "Nh\u00e0 m\u00e1y th\u1ee7y \u0111i\u1ec7n S\u01a1n La",
+            "building": "dam",
+            "waterway": "dam",
+            "wikidata": "Q992482",
+            "wikipedia": "vi:Nh\u00e0 m\u00e1y th\u1ee7y \u0111i\u1ec7n S\u01a1n La",
+            "start_date": "2012-12-20",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "plant:output:electricity": "2400 MW"
+        },
+        "osm_id": 485543356,
+        "output": "2400 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

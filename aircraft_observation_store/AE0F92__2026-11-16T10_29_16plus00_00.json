@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE0F92",
+    "source": "adsb.lol",
+    "latitude": 26.864639,
+    "longitude": 128.185626,
+    "observation_time_utc": "2026-11-16T10:29:16+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "MAGIC44",
+    "altitude_baro_ft": 10750,
+    "ground_speed_kts": 202.6,
+    "track_degrees": 219.19,
+    "metadata": {
+        "r": "170111",
+        "t": "BE20",
+        "type": "adsb_icao",
+        "alt_geom": 11325,
+        "seen": 0.1,
+        "seen_pos": 1.232
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T10:29:17.198835+00:00",
+    "record_id": "AE0F92__2026-11-16T10_29_16plus00_00"
+}

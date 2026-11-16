@@ -1,0 +1,43 @@
+{
+    "record_id": "381244727__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 381244727,
+    "osm_id": 381244727,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Saint Marys Falls Power Plant",
+        "tags": {
+            "name": "Saint Marys Falls Power Plant",
+            "power": "plant",
+            "alt_name": "Soo Locks Dam",
+            "building": "yes",
+            "heritage": "2",
+            "historic": "maritime",
+            "nrhp:nhl": "yes",
+            "operator": "U.S. Army Corps of Engineers",
+            "ref:nrhp": "66000394",
+            "waterway": "dam",
+            "ref:US:EIA": "1865",
+            "ref:US:NID": "MI00650",
+            "source_ref": "https://catalog.archives.gov/id/25338738",
+            "start_date": "1932-07",
+            "plant:source": "hydro",
+            "nrhp:criteria": "(A)",
+            "heritage:website": "https://www.nps.gov/subjects/nationalregister/index.htm",
+            "protection_title": "U.S Army Corps of Engineers",
+            "heritage:operator": "nrhp",
+            "nrhp:inscription_date": "1966-11-13",
+            "plant:output:electricity": "23.7 MW"
+        },
+        "osm_id": 381244727,
+        "output": "23.7 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

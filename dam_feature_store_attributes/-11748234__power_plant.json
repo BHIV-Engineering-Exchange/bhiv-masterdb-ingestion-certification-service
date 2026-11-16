@@ -1,0 +1,36 @@
+{
+    "record_id": "-11748234__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -11748234,
+    "osm_id": -11748234,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Usina Hidrel\u00e9trica Governador Jos\u00e9 Richa",
+        "tags": {
+            "name": "Usina Hidrel\u00e9trica Governador Jos\u00e9 Richa",
+            "type": "multipolygon",
+            "power": "plant",
+            "branch": "Copel Gera\u00e7\u00e3o e Transmiss\u00e3o S.A.",
+            "alt_name": "Usina Hidrel\u00e9trica de Salto Caxias",
+            "loc_name": "Salto Caxias",
+            "operator": "Copel",
+            "waterway": "dam",
+            "wikidata": "Q1630139",
+            "short_name": "UHE Gov Jos\u00e9 Richa",
+            "start_date": "1999",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "plant:output:electricity": "1240 MW"
+        },
+        "osm_id": -11748234,
+        "output": "1240 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

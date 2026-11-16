@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "7102F9",
+    "source": "adsb.lol",
+    "latitude": 26.447537,
+    "longitude": 49.641724,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RSF9029",
+    "altitude_baro_ft": 14550,
+    "ground_speed_kts": 385.9,
+    "track_degrees": 252.97,
+    "metadata": {
+        "r": "2401",
+        "t": "A332",
+        "type": "adsb_icao",
+        "seen": 21.0,
+        "seen_pos": 37.608
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.571274+00:00",
+    "record_id": "7102F9__2026-11-16T11_14_29.500000plus00_00"
+}

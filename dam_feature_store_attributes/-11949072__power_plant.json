@@ -1,0 +1,35 @@
+{
+    "record_id": "-11949072__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -11949072,
+    "osm_id": -11949072,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u0412\u0415\u0426 \"\u0418\u0432\u0430\u0439\u043b\u043e\u0432\u0433\u0440\u0430\u0434\"",
+        "tags": {
+            "name": "\u0412\u0415\u0426 \"\u0418\u0432\u0430\u0439\u043b\u043e\u0432\u0433\u0440\u0430\u0434\"",
+            "type": "multipolygon",
+            "power": "plant",
+            "name:en": "Ivailovgrad Hydroelectric Power Station",
+            "building": "yes",
+            "operator": "\u041d\u0415\u041a \u0415\u0410\u0414",
+            "waterway": "dam",
+            "wikidata": "Q12274444",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "operator:wikidata": "Q12287911",
+            "ref:EU:ENTSOE_EIC": "32W0011001000854",
+            "plant:output:electricity": "120 MW"
+        },
+        "osm_id": -11949072,
+        "output": "120 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

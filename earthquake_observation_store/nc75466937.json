@@ -1,0 +1,13 @@
+{
+    "event_id": "nc75466937",
+    "source": "USGS",
+    "place": "8 km ESE of Cloverdale, CA",
+    "magnitude": 2.05,
+    "longitude": -122.929496765137,
+    "latitude": 38.7776679992676,
+    "depth_km": 4.98000001907349,
+    "event_time_utc": "2026-11-16T04:24:02.210000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nc75466937",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.058920+00:00"
+}

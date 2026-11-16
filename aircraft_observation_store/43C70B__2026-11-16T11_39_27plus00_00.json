@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "43C70B",
+    "source": "adsb.lol",
+    "latitude": 53.428101,
+    "longitude": 1.348994,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RAMPAG22",
+    "altitude_baro_ft": 15075,
+    "ground_speed_kts": 426.0,
+    "track_degrees": 55.0,
+    "metadata": {
+        "r": "ZK349",
+        "t": "EUFI",
+        "type": "mlat",
+        "seen": 0.7,
+        "seen_pos": 3.281
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.135426+00:00",
+    "record_id": "43C70B__2026-11-16T11_39_27plus00_00"
+}

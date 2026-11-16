@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "4A34E8",
+    "source": "adsb.lol",
+    "latitude": 46.458755,
+    "longitude": 24.559937,
+    "observation_time_utc": "2026-11-16T11:00:39.002000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "ROF9142",
+    "altitude_baro_ft": 15500,
+    "ground_speed_kts": 234.3,
+    "track_degrees": 87.31,
+    "metadata": {
+        "r": "9142",
+        "t": "C130",
+        "type": "adsb_icao",
+        "alt_geom": 15675,
+        "seen": 0.3,
+        "seen_pos": 0.273
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:00:40.497179+00:00",
+    "record_id": "4A34E8__2026-11-16T11_00_39.002000plus00_00"
+}

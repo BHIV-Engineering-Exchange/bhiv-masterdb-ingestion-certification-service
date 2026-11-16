@@ -1,0 +1,34 @@
+{
+    "record_id": "-3655008__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -3655008,
+    "osm_id": -3655008,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Hidroelektrikarna Fala",
+        "tags": {
+            "name": "Hidroelektrikarna Fala",
+            "type": "multipolygon",
+            "power": "plant",
+            "operator": "Dravske elektrarne Maribor",
+            "waterway": "dam",
+            "wikidata": "Q12790961",
+            "wikipedia": "sl:Hidroelektrarna Fala",
+            "start_date": "1918-01-01",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "generator:source": "hydro",
+            "plant:output:electricity": "58 MW"
+        },
+        "osm_id": -3655008,
+        "output": "58 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

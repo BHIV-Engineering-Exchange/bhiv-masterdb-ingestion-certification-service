@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "43C95D",
+    "source": "adsb.lol",
+    "latitude": 51.105326,
+    "longitude": -1.584396,
+    "observation_time_utc": "2026-11-16T11:08:43.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "SLAYR63",
+    "altitude_baro_ft": 1100,
+    "ground_speed_kts": 94.9,
+    "track_degrees": 228.42,
+    "metadata": {
+        "r": "ZM747",
+        "t": "H64",
+        "type": "adsb_icao",
+        "alt_geom": 1025,
+        "seen": 0.1,
+        "seen_pos": 0.292
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:08:44.799641+00:00",
+    "record_id": "43C95D__2026-11-16T11_08_43.500000plus00_00"
+}

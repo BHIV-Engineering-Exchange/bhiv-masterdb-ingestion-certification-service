@@ -1,0 +1,13 @@
+{
+    "event_id": "aka2026wrfeqf",
+    "source": "USGS",
+    "place": "16 km WSW of Susitna, Alaska",
+    "magnitude": 2.7,
+    "longitude": -150.802,
+    "latitude": 61.494,
+    "depth_km": 62.3,
+    "event_time_utc": "2026-11-16T00:06:35.587000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/aka2026wrfeqf",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.125239+00:00"
+}

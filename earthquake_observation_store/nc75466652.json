@@ -1,0 +1,13 @@
+{
+    "event_id": "nc75466652",
+    "source": "USGS",
+    "place": "13 km N of Lopez Point, CA",
+    "magnitude": 1.97,
+    "longitude": -121.553833007812,
+    "latitude": 36.1324996948242,
+    "depth_km": 5.05999994277954,
+    "event_time_utc": "2026-11-15T07:25:11.870000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/nc75466652",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T06:52:13.241478+00:00"
+}

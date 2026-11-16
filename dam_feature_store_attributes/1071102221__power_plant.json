@@ -1,0 +1,32 @@
+{
+    "record_id": "1071102221__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 1071102221,
+    "osm_id": 1071102221,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u041c\u0425\u0415 \u0426\u0440\u0432\u0435\u043d\u0438 \u0411\u0440\u0435\u0433",
+        "tags": {
+            "name": "\u041c\u0425\u0415 \u0426\u0440\u0432\u0435\u043d\u0438 \u0411\u0440\u0435\u0433",
+            "power": "plant",
+            "height": "13.7 m",
+            "name:sr": "\u041c\u0425\u0415 \u0426\u0440\u0432\u0435\u043d\u0438 \u0411\u0440\u0435\u0433",
+            "int_name": "MHE Crveni Breg",
+            "operator": "MAMS Energija",
+            "waterway": "dam",
+            "name:sr-Latn": "MHE Crveni Breg",
+            "plant:source": "hydro",
+            "plant:output:electricity": "1.52 MW"
+        },
+        "osm_id": 1071102221,
+        "output": "1.52 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

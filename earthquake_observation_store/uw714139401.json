@@ -1,0 +1,13 @@
+{
+    "event_id": "uw714139401",
+    "source": "USGS",
+    "place": "10 km WNW of Belfair, Washington",
+    "magnitude": 1.7,
+    "longitude": -122.955333333333,
+    "latitude": 47.4975,
+    "depth_km": 13.19,
+    "event_time_utc": "2026-11-15T10:22:01.680000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/uw714139401",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T08:49:19.492403+00:00"
+}

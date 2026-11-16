@@ -1,0 +1,61 @@
+{
+    "record_id": "442745579__osm_water_reservoir",
+    "dataset_id": "gods_eye_view_dam_geometries",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 442745579,
+    "osm_id": 442745579,
+    "source_layer": "osm_water_reservoir",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    -39.377279425,
+                    -4.976042505
+                ],
+                [
+                    -39.37727733,
+                    -4.976011157
+                ],
+                [
+                    -39.377274983,
+                    -4.975976456
+                ],
+                [
+                    -39.376928643,
+                    -4.975903533
+                ],
+                [
+                    -39.376411563,
+                    -4.97590588
+                ],
+                [
+                    -39.376051644,
+                    -4.975994728
+                ],
+                [
+                    -39.376048375,
+                    -4.976025825
+                ],
+                [
+                    -39.376044771,
+                    -4.976060778
+                ],
+                [
+                    -39.376320452,
+                    -4.976165551
+                ],
+                [
+                    -39.376924033,
+                    -4.97618374
+                ],
+                [
+                    -39.377279425,
+                    -4.976042505
+                ]
+            ]
+        ]
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

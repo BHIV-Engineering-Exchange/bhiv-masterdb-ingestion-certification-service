@@ -1,0 +1,33 @@
+{
+    "record_id": "335658430__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 335658430,
+    "osm_id": 335658430,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Presa Pangue",
+        "tags": {
+            "name": "Presa Pangue",
+            "power": "plant",
+            "operator": "Enel",
+            "waterway": "dam",
+            "wikidata": "Q8343540",
+            "wikipedia": "es:Central hidroel\u00e9ctrica de Pangue",
+            "start_date": "1996",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "operator:wikidata": "Q651222",
+            "plant:output:electricity": "467 MW"
+        },
+        "osm_id": 335658430,
+        "output": "467 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

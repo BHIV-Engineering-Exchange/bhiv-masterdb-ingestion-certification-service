@@ -1,0 +1,33 @@
+{
+    "record_id": "489803545__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 489803545,
+    "osm_id": 489803545,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u101b\u103d\u103e\u1031\u101c\u102e \u1041 \u1010\u102c\u1010\u1019\u1036",
+        "tags": {
+            "name": "\u101b\u103d\u103e\u1031\u101c\u102e \u1041 \u1010\u102c\u1010\u1019\u1036",
+            "power": "plant",
+            "name:en": "Shweli I Dam",
+            "name:my": "\u101b\u103d\u103e\u1031\u101c\u102e \u1041 \u1010\u102c\u1010\u1019\u1036",
+            "name:no": "Shweli-demningen",
+            "building": "dam",
+            "waterway": "dam",
+            "wikidata": "Q12000263",
+            "wikipedia": "en:Shweli I Dam",
+            "plant:source": "hydro",
+            "plant:output:electricity": "yes"
+        },
+        "osm_id": 489803545,
+        "output": "yes",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

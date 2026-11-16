@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "06A272",
+    "source": "adsb.lol",
+    "latitude": 25.420129,
+    "longitude": 51.074196,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "ZAM25",
+    "altitude_baro_ft": 8725,
+    "ground_speed_kts": 157.3,
+    "track_degrees": 67.18,
+    "metadata": {
+        "r": "QA367",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 9100,
+        "seen": 2.2,
+        "seen_pos": 17.848
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.446611+00:00",
+    "record_id": "06A272__2026-11-16T08_36_26.001000plus00_00"
+}

@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "738BED",
+    "source": "adsb.lol",
+    "latitude": 32.438393,
+    "longitude": 34.364564,
+    "observation_time_utc": "2026-11-16T08:49:24.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "KARHON",
+    "altitude_baro_ft": 23825,
+    "ground_speed_kts": 471.0,
+    "track_degrees": 183.0,
+    "metadata": {
+        "r": "312",
+        "t": "B762",
+        "type": "mlat",
+        "seen": 1.0,
+        "seen_pos": 6.299
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:49:25.606370+00:00",
+    "record_id": "738BED__2026-11-16T08_49_24.501000plus00_00"
+}

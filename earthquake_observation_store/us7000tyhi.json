@@ -1,0 +1,13 @@
+{
+    "event_id": "us7000tyhi",
+    "source": "USGS",
+    "place": "12 km E of Pearsall, Texas",
+    "magnitude": 2.6,
+    "longitude": -98.9647,
+    "latitude": 28.8905,
+    "depth_km": 5,
+    "event_time_utc": "2026-11-16T03:08:16.143000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000tyhi",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.083627+00:00"
+}

@@ -1,0 +1,17 @@
+{
+    "record_id": "9571152801__osm_power_generator",
+    "dataset_id": "gods_eye_view_dam_geometries",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 9571152801,
+    "osm_id": 9571152801,
+    "source_layer": "osm_power_generator",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            10.620584244,
+            52.529132924
+        ]
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

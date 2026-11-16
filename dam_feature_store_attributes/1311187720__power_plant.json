@@ -1,0 +1,31 @@
+{
+    "record_id": "1311187720__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 1311187720,
+    "osm_id": 1311187720,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Centrale Hydro\u00e9lectrique B2 - Colmar",
+        "tags": {
+            "name": "Centrale Hydro\u00e9lectrique B2 - Colmar",
+            "power": "plant",
+            "operator": "EDF",
+            "waterway": "dam",
+            "start_date": "2022-06-02",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "not:operator:wikidata": "Q274591",
+            "plant:output:electricity": "190 kW"
+        },
+        "osm_id": 1311187720,
+        "output": "190 kW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

@@ -1,0 +1,32 @@
+{
+    "record_id": "110561134__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 110561134,
+    "osm_id": 110561134,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Wasserkraftanlage Talsperre Eibenstock",
+        "tags": {
+            "name": "Wasserkraftanlage Talsperre Eibenstock",
+            "image": "https://photos.app.goo.gl/EfvC77QyLi8vsfQE9",
+            "power": "plant",
+            "operator": "Landestalsperrenverwaltung Sachsen",
+            "waterway": "dam",
+            "wikidata": "Q607636",
+            "start_date": "1982",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "plant:output:electricity": "1.7 MW"
+        },
+        "osm_id": 110561134,
+        "output": "1.7 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

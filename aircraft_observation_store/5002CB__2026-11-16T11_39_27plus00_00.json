@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "5002CB",
+    "source": "adsb.lol",
+    "latitude": 13.059858,
+    "longitude": 102.271102,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "DRC001",
+    "altitude_baro_ft": 30000,
+    "ground_speed_kts": 469.6,
+    "track_degrees": 297.11,
+    "metadata": {
+        "r": "T7-RDC",
+        "t": "B739",
+        "type": "adsb_icao",
+        "alt_geom": 32000,
+        "seen": 0.0,
+        "seen_pos": 0.765
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.422236+00:00",
+    "record_id": "5002CB__2026-11-16T11_39_27plus00_00"
+}

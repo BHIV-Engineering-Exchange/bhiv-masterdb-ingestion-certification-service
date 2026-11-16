@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "AE146A",
+    "source": "adsb.lol",
+    "latitude": 40.998649,
+    "longitude": -71.25027,
+    "observation_time_utc": "2026-11-16T06:52:18.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RCH140",
+    "altitude_baro_ft": 30000,
+    "ground_speed_kts": 441.1,
+    "track_degrees": 238.72,
+    "metadata": {
+        "r": "07-7172",
+        "t": "C17",
+        "type": "adsb_icao",
+        "alt_geom": 29575,
+        "seen": 0.0,
+        "seen_pos": 0.322
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T06:52:19.157393+00:00",
+    "record_id": "AE146A__2026-11-16T06_52_18.500000plus00_00"
+}

@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "43C5E5",
+    "source": "adsb.lol",
+    "latitude": 51.7332,
+    "longitude": -1.660791,
+    "observation_time_utc": "2026-11-16T11:14:29.500000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "RR4179",
+    "altitude_baro_ft": 1225,
+    "ground_speed_kts": 141.0,
+    "track_degrees": 66.16,
+    "metadata": {
+        "r": "ZM411",
+        "t": "A400",
+        "type": "adsb_icao",
+        "alt_geom": 1200,
+        "seen": 0.0,
+        "seen_pos": 1.276
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:14:30.388797+00:00",
+    "record_id": "43C5E5__2026-11-16T11_14_29.500000plus00_00"
+}

@@ -1,0 +1,30 @@
+{
+    "record_id": "854116561__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 854116561,
+    "osm_id": 854116561,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u0ec0\u0e82\u0eb7\u0ec8\u0ead\u0e99\u0ec4\u0e9f\u0e9f\u0ec9\u0eb2\u0e99\u0ec9\u0eb3\u0ea5\u0eb5\u0e81 1",
+        "tags": {
+            "name": "\u0ec0\u0e82\u0eb7\u0ec8\u0ead\u0e99\u0ec4\u0e9f\u0e9f\u0ec9\u0eb2\u0e99\u0ec9\u0eb3\u0ea5\u0eb5\u0e81 1",
+            "power": "plant",
+            "name:en": "Nam Lik 1 hydro power station",
+            "waterway": "dam",
+            "wikidata": "Q61448331",
+            "start_date": "2018",
+            "plant:source": "hydro",
+            "plant:output:electricity": "64 MW"
+        },
+        "osm_id": 854116561,
+        "output": "64 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

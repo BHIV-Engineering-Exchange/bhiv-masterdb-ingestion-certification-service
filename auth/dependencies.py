@@ -1,12 +1,11 @@
-"""FastAPI dependency wiring for auth. Kept separate from auth/service.py
-so the service class has no FastAPI import and stays unit-testable on its
-own."""
+"""FastAPI dependency wiring for auth. Kept separate from auth/service.py so the service class has no FastAPI import and stays unit-testable on its own."""
 import logging
 from typing import Optional
+
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from auth.models import AuthIdentity
+from auth.models import AuthIdentity, ADMIN_ROLES, OPERATOR_ROLES
 from auth.service import AuthService, AuthTokenError, log_security_decision
 
 logger = logging.getLogger("masterdb.security")
@@ -40,10 +39,8 @@ def build_identity_dependency(auth_service: AuthService):
                 actor_reference="anonymous",
                 correlation_id=cid,
             )
-            raise HTTPException(
-                status_code=401,
-                detail="DENY:MISSING_IDENTITY",
-            )
+            raise HTTPException(status_code=401, detail="DENY:MISSING_IDENTITY")
+
         try:
             import main
             active_auth = getattr(main, "auth_service", auth_service)
@@ -70,6 +67,13 @@ def build_identity_dependency(auth_service: AuthService):
 
     return get_identity
 
-
+# Initialize default authentication service and dependency
 _default_auth_service = AuthService()
 get_identity = build_identity_dependency(_default_auth_service)
+
+# Dependency to enforce admin/operator roles
+def require_admin_operator(identity: AuthIdentity = Depends(get_identity)):
+    """Ensures the caller has an admin or operator role."""
+    if not (set(identity.roles) & (ADMIN_ROLES | OPERATOR_ROLES)):
+        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
+    return None

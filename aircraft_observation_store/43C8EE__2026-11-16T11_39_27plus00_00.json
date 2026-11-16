@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "43C8EE",
+    "source": "adsb.lol",
+    "latitude": 52.764355,
+    "longitude": -2.935311,
+    "observation_time_utc": "2026-11-16T11:39:27+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "altitude_baro_ft": 800,
+    "ground_speed_kts": 47.4,
+    "track_degrees": 315.86,
+    "metadata": {
+        "r": "ZM520",
+        "t": "EC35",
+        "type": "adsb_icao",
+        "alt_geom": 775,
+        "seen": 52.9,
+        "seen_pos": 53.196
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T11:39:28.018227+00:00",
+    "record_id": "43C8EE__2026-11-16T11_39_27plus00_00"
+}

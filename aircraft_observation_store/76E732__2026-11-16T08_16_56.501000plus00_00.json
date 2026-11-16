@@ -1,0 +1,23 @@
+{
+    "aircraft_hex_id": "76E732",
+    "source": "adsb.lol",
+    "latitude": -30.791419,
+    "longitude": 115.980139,
+    "observation_time_utc": "2026-11-16T08:16:56.501000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "EGLE848",
+    "altitude_baro_ft": 9200,
+    "ground_speed_kts": 208.9,
+    "track_degrees": 348.96,
+    "metadata": {
+        "r": "9118",
+        "t": "PC21",
+        "type": "adsb_icao",
+        "alt_geom": 9300,
+        "seen": 0.3,
+        "seen_pos": 0.534
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:16:57.729248+00:00",
+    "record_id": "76E732__2026-11-16T08_16_56.501000plus00_00"
+}

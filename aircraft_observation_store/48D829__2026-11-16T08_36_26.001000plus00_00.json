@@ -1,0 +1,22 @@
+{
+    "aircraft_hex_id": "48D829",
+    "source": "adsb.lol",
+    "latitude": 53.842622,
+    "longitude": 19.401479,
+    "observation_time_utc": "2026-11-16T08:36:26.001000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "PLF112",
+    "altitude_baro_ft": 7275,
+    "ground_speed_kts": 172.0,
+    "track_degrees": 30.23,
+    "metadata": {
+        "r": "0220",
+        "t": "M28",
+        "type": "mlat",
+        "seen": 0.2,
+        "seen_pos": 38.161
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T08:36:27.416577+00:00",
+    "record_id": "48D829__2026-11-16T08_36_26.001000plus00_00"
+}

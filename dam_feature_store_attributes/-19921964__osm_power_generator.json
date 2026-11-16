@@ -1,0 +1,32 @@
+{
+    "record_id": "-19921964__osm_power_generator",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": -19921964,
+    "osm_id": -19921964,
+    "source_layer": "osm_power_generator",
+    "properties": {
+        "id": 8158,
+        "tags": {
+            "name": "\u041f\u043b\u043e\u0442\u0438\u043d\u0430 \u0423\u0441\u0442\u044c-\u0425\u0430\u043d\u0442\u0430\u0439\u0441\u043a\u043e\u0439 \u0413\u042d\u0421",
+            "type": "multipolygon",
+            "power": "generator",
+            "waterway": "dam",
+            "start_date": "1970..1972",
+            "generator:type": "kaplan_turbine",
+            "generator:source": "hydro",
+            "generator:output:electricity": "yes"
+        },
+        "type": "kaplan_turbine",
+        "method": "",
+        "osm_id": -19921964,
+        "output": "yes",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "osm_power_generator"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

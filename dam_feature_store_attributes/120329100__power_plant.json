@@ -1,0 +1,36 @@
+{
+    "record_id": "120329100__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 120329100,
+    "osm_id": 120329100,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Oliver Dam",
+        "tags": {
+            "name": "Oliver Dam",
+            "layer": "1",
+            "power": "plant",
+            "operator": "Georgia Power",
+            "waterway": "dam",
+            "wikidata": "Q65208526",
+            "ref:US:EIA": "720",
+            "ref:US:NID": "GA00837",
+            "start_date": "1959-07",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "gnis:feature_id": "124283",
+            "operator:wikidata": "Q5547666",
+            "plant:output:electricity": "60 MW"
+        },
+        "osm_id": 120329100,
+        "output": "60 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

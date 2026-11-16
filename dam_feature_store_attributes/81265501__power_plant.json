@@ -1,0 +1,30 @@
+{
+    "record_id": "81265501__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 81265501,
+    "osm_id": 81265501,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "Barrage du Saillant",
+        "tags": {
+            "name": "Barrage du Saillant",
+            "layer": "1",
+            "power": "plant",
+            "waterway": "dam",
+            "plant:method": "run-of-the-river",
+            "plant:source": "hydro",
+            "ref:EU:ENTSOE_EIC": "17W000000044353K",
+            "plant:output:electricity": "0.42 MW"
+        },
+        "osm_id": 81265501,
+        "output": "0.42 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

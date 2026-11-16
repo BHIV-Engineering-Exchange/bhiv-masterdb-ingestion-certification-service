@@ -1,0 +1,13 @@
+{
+    "event_id": "hv75070747",
+    "source": "USGS",
+    "place": "23 km W of Volcano, Hawaii",
+    "magnitude": 1.94,
+    "longitude": -155.45849609375,
+    "latitude": 19.4766674041748,
+    "depth_km": -2.74000000953674,
+    "event_time_utc": "2026-11-15T18:37:45.700000+00:00",
+    "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/hv75070747",
+    "dataset_id": "ds-gev-seismic-events",
+    "ingested_at_utc": "2026-11-16T11:39:21.234065+00:00"
+}

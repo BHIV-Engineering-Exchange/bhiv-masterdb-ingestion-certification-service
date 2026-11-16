@@ -1,0 +1,37 @@
+{
+    "record_id": "993362237__osm_power_generator",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 993362237,
+    "osm_id": 993362237,
+    "source_layer": "osm_power_generator",
+    "properties": {
+        "id": 615471,
+        "tags": {
+            "area": "yes",
+            "name": "Kleber Dam",
+            "power": "generator",
+            "height": "12.2",
+            "material": "soil",
+            "operator": "Tower Kleber Limited Partnership",
+            "waterway": "dam",
+            "wikidata": "Q33130945",
+            "ref:US:NID": "MI00546",
+            "gnis:feature_id": "629782",
+            "generator:method": "water-storage",
+            "generator:source": "hydro",
+            "generator:output:electricity": "1200 kW"
+        },
+        "type": "",
+        "method": "water-storage",
+        "osm_id": 993362237,
+        "output": "1200 kW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "osm_power_generator"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

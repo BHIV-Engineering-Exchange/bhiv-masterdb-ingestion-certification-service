@@ -1,0 +1,39 @@
+{
+    "record_id": "1232514946__power_plant",
+    "dataset_id": "gods_eye_view_dam_attributes",
+    "source_dataset_id": "gods_eye_view_dams",
+    "source_id": 1232514946,
+    "osm_id": 1232514946,
+    "source_layer": "power_plant",
+    "properties": {
+        "name": "\u10d1\u10dd\u10d3\u10dd\u10e0\u10dc\u10d0 \u10f0\u10d4\u10e1\u10d8",
+        "tags": {
+            "name": "\u10d1\u10dd\u10d3\u10dd\u10e0\u10dc\u10d0 \u10f0\u10d4\u10e1\u10d8",
+            "power": "plant",
+            "name:en": "Bodorna HPP",
+            "name:ka": "\u10d1\u10dd\u10d3\u10dd\u10e0\u10dc\u10d0 \u10f0\u10d4\u10e1\u10d8",
+            "operator": "\u10e8\u10de\u10e1 \"\u10ef\u10dd\u10e0\u10ef\u10d8\u10d0\u10dc \u10e3\u10dd\u10d7\u10d4\u10e0 \u10d4\u10dc\u10d3 \u10e4\u10d0\u10e3\u10d4\u10e0\u10d8\"",
+            "waterway": "dam",
+            "start_date": "2018-10-02",
+            "operator:en": "Georgian Water and Power LTD.",
+            "operator:ru": "\u041e\u041e\u041e \"\u0414\u0436\u043e\u0440\u0434\u0436\u0438\u0430\u043d \u0423\u043e\u0442\u0435\u0440 \u044d\u043d\u0434 \u041f\u0430\u0443\u044d\u0440\"",
+            "plant:method": "water-storage",
+            "plant:source": "hydro",
+            "operator:type": "private",
+            "operator:twitter": "https://x.com/GeorgianWater",
+            "operator:website": "https://www.gwp.ge",
+            "operator:youtube": "https://www.youtube.com/channel/UCqEjIwurRPKAXFp33EuM0ww",
+            "operator:wikidata": "Q131340190",
+            "plant:output:electricity": "2.5 MW"
+        },
+        "osm_id": 1232514946,
+        "output": "2.5 MW",
+        "source": "hydro",
+        "construction": "",
+        "source_layer": "power_plant"
+    },
+    "source_url": "https://github.com/bilawalsidhu/gods-eye-view/blob/main/src/data/local_data/dams/dams.geojsonl",
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors; Open Infrastructure Map",
+    "ingested_at_utc": "2026-11-16T11:39:51.938200+00:00"
+}

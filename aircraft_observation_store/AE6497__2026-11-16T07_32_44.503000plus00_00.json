@@ -1,0 +1,20 @@
+{
+    "aircraft_hex_id": "AE6497",
+    "source": "adsb.lol",
+    "latitude": 37.452195,
+    "longitude": 127.109682,
+    "observation_time_utc": "2026-11-16T07:32:44.503000+00:00",
+    "source_url": "https://api.adsb.lol/v2/mil",
+    "callsign": "CARD61",
+    "ground_speed_kts": 0.0,
+    "metadata": {
+        "r": "19-21069",
+        "t": "H60",
+        "type": "adsb_icao",
+        "seen": 15.2,
+        "seen_pos": 19.914
+    },
+    "dataset_id": "adsb_military_aircraft_observations",
+    "ingested_at_utc": "2026-11-16T07:32:45.411181+00:00",
+    "record_id": "AE6497__2026-11-16T07_32_44.503000plus00_00"
+}
