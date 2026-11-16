@@ -76,4 +76,4 @@ def require_admin_operator(identity: AuthIdentity = Depends(get_identity)):
     """Ensures the caller has an admin or operator role."""
     if not (set(identity.roles) & (ADMIN_ROLES | OPERATOR_ROLES)):
         raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
-    return None
+    return identity
