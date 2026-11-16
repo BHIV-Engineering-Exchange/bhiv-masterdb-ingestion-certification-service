@@ -71,8 +71,7 @@ class ArtifactStore:
             try:
                 with path.open("r", encoding="utf-8") as handle:
                     records.append(json.load(handle))
-            except (FileNotFoundError, json.JSONDecodeError, PermissionError):
-                continue
+            except (FileNotFoundError, json.JSONDecodeError):
                 continue
         return records
 

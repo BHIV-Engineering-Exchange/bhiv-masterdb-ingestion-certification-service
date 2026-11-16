@@ -243,15 +243,9 @@ from canonical_repository.store import PermissionDeniedError as CanonicalPermiss
 app = FastAPI(
     title="MASTERDB Core Knowledge Platform",
     version="1.3.0",
-    dependencies=[Depends(get_identity)],
 )
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
-
-# Helper to check admin/operator roles
-def _has_admin_or_operator(identity: AuthIdentity) -> bool:
-    return bool(set(identity.roles) & (ADMIN_ROLES | OPERATOR_ROLES))
-
 # Allows the BHIV application ecosystem (and dev tooling) to call this API from
 # browser/JS environments.  Set CORS_ALLOWED_ORIGINS env var to a comma-separated
 # list of allowed origins in production (e.g. the deployed Vercel frontend's
@@ -1109,8 +1103,6 @@ def initiate_upload(request: UploadInitiationRequest, identity: AuthIdentity = D
 
 @app.post("/upload/{upload_id}/content")
 async def upload_content(upload_id: str, request: Request, identity: AuthIdentity = Depends(get_identity)) -> dict:
-    if not _has_admin_or_operator(identity):
-        raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     """Upload file content (raw bytes)."""
     try:
         job = upload_service.get_upload(upload_id)
