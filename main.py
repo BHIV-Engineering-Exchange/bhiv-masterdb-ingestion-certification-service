@@ -226,7 +226,7 @@ from services import startup_config
 from auth.constants import ADMIN_ROLE
 
 from auth.models import AuthIdentity, TokenRequest, TokenResponse, ADMIN_ROLES, OPERATOR_ROLES
-from auth.dependencies import get_identity
+from auth.dependencies import get_identity, require_admin_operator
     
 from auth.service import AuthService, AuthTokenError, log_security_decision
 
@@ -2854,7 +2854,7 @@ def get_source(
 def geospatial_connector_ingest(
     payload: Dict[str, Any],
     identity: AuthIdentity = Depends(get_identity),
-    _: None = Depends(get_identity),
+    _: None = Depends(require_admin_operator),
 ) -> Dict[str, Any]:
     """
     Source-Independent Geospatial Connector Pipeline:
