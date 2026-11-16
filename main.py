@@ -223,7 +223,7 @@ from operational_sync.service import NiyantranSyncService, ParikshakSyncService,
 from services.sql_artifact_store import SqlArtifactStore
 from services import backup_service
 from services import startup_config
-from auth.constants import ADMIN_ROLE, ADMIN_ROLES, OPERATOR_ROLES
+from auth.constants import ADMIN_ROLE
 
 from auth.models import AuthIdentity, TokenRequest, TokenResponse, ADMIN_ROLES, OPERATOR_ROLES
 from auth.dependencies import get_identity
