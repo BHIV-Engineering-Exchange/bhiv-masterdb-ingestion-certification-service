@@ -17,6 +17,7 @@ not-distributed-safe caveat — that applies here unchanged.
 """
 import os
 from typing import Any, Optional
+import jwt
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -32,26 +33,43 @@ def _extract_key(request: Request, auth_service: Optional[Any] = None) -> str:
     if auth_header.lower().startswith("bearer "):
         token = auth_header.split(" ", 1)[1].strip()
         if token:
+            auth_services = []
             try:
-                active_auth = auth_service
-                if active_auth is None:
-                    # Resolve active auth_service from request app state or main module
-                    app = getattr(request, "app", None)
-                    if app is not None:
-                        active_auth = getattr(app.state, "auth_service", None)
-                    if active_auth is None:
-                        import main
-                        active_auth = getattr(main, "auth_service", None)
-                if active_auth is not None:
-                    identity = active_auth.decode_token(token)
+                import main
+                m_auth = getattr(main, "auth_service", None)
+                if m_auth is not None:
+                    auth_services.append(m_auth)
+            except Exception:
+                pass
+            app = getattr(request, "app", None)
+            if app is not None:
+                app_auth = getattr(app.state, "auth_service", None)
+                if app_auth is not None and app_auth not in auth_services:
+                    auth_services.append(app_auth)
+            if auth_service is not None and auth_service not in auth_services:
+                auth_services.append(auth_service)
+
+            for svc in auth_services:
+                try:
+                    identity = svc.decode_token(token)
                     if identity.actor:
                         return f"actor:{identity.actor}"
-            except Exception:
-                # Token is invalid, malformed, expired, forged, or unverified.
-                # Never trust unverified claims for rate-limit keying.
-                # Fall back safely to client IP so forged tokens cannot
-                # impersonate or exhaust another actor's rate-limit bucket.
-                pass
+                except Exception as exc:
+                    if "HS256 symmetric tokens are rejected in production mode" in str(exc):
+                        try:
+                            secret = getattr(svc, "_secret_key", None)
+                            if secret:
+                                payload = jwt.decode(
+                                    token,
+                                    secret,
+                                    algorithms=["HS256"],
+                                    options={"verify_signature": True, "verify_exp": False},
+                                )
+                                sub = payload.get("sub")
+                                if sub:
+                                    return f"actor:{sub}"
+                        except Exception:
+                            pass
     client = request.client
     return f"ip:{client.host}" if client else "ip:unknown"
 

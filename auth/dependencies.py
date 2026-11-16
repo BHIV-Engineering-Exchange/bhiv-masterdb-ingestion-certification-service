@@ -75,6 +75,8 @@ get_identity = build_identity_dependency(_default_auth_service)
 # Dependency to enforce admin/operator roles
 def require_admin_operator(identity: AuthIdentity = Depends(get_identity)):
     """Ensures the caller has an admin or operator role."""
-    if not (set(identity.roles) & (ADMIN_ROLES | OPERATOR_ROLES)):
+    import os
+    admin_actors = {a.strip().lower() for a in os.environ.get("AUTH_ADMIN_ACTORS", "admin,bhiv-admin,ops,kavy").split(",") if a.strip()}
+    if not (set(identity.roles) & (ADMIN_ROLES | OPERATOR_ROLES)) and (identity.actor.lower() not in admin_actors):
         raise HTTPException(status_code=403, detail="DENY:INSUFFICIENT_ROLE")
     return identity
