@@ -223,10 +223,10 @@ from operational_sync.service import NiyantranSyncService, ParikshakSyncService,
 from services.sql_artifact_store import SqlArtifactStore
 from services import backup_service
 from services import startup_config
-from auth.constants import ADMIN_ROLE
+from auth.constants import ADMIN_ROLE, ADMIN_ROLES, OPERATOR_ROLES
 
 from auth.models import AuthIdentity, TokenRequest, TokenResponse, ADMIN_ROLES, OPERATOR_ROLES
-from auth.dependencies import get_identity, require_admin_operator
+from auth.dependencies import get_identity
     
 from auth.service import AuthService, AuthTokenError, log_security_decision
 
@@ -246,6 +246,11 @@ app = FastAPI(
 )
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
+
+# Helper to check admin/operator roles
+def _has_admin_or_operator(identity: AuthIdentity) -> bool:
+    return bool(set(identity.roles) & (ADMIN_ROLES | OPERATOR_ROLES))
+
 # Allows the BHIV application ecosystem (and dev tooling) to call this API from
 # browser/JS environments.  Set CORS_ALLOWED_ORIGINS env var to a comma-separated
 # list of allowed origins in production (e.g. the deployed Vercel frontend's
@@ -2854,7 +2859,7 @@ def get_source(
 def geospatial_connector_ingest(
     payload: Dict[str, Any],
     identity: AuthIdentity = Depends(get_identity),
-    _: None = Depends(require_admin_operator),
+    _: None = Depends(get_identity),
 ) -> Dict[str, Any]:
     """
     Source-Independent Geospatial Connector Pipeline:
