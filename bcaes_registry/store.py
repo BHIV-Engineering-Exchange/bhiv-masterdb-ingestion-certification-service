@@ -76,7 +76,8 @@ class CanonicalRegistryStore:
             return
         self._objects = {rt: {} for rt in RegistryType}
         for record in self._artifact_store.list_all():
-            obj = RegistryObject(**record)
+            normalized = self._normalize_record(record)
+            obj = RegistryObject(**normalized)
             self._objects[obj.registry_type][obj.id] = obj
 
     def _persist(self, obj: RegistryObject) -> None:
