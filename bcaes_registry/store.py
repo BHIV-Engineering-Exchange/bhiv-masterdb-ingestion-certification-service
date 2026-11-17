@@ -18,8 +18,18 @@ via the same `ArtifactStore` pattern used elsewhere in this repo
 default filesystem being ephemeral without an attached persistent Disk.
 """
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+import json
+import logging
+import os
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+from bcaes_registry.migration import (
+    MalformedRecordError,
+    backup_store_directory,
+    is_legacy_record,
+    migrate_legacy_record,
+)
 from bcaes_registry.models import (
     DependencyRef,
     RegisterObjectRequest,
@@ -29,6 +39,8 @@ from bcaes_registry.models import (
     new_object_id,
 )
 from services.artifact_store import ArtifactStore
+
+logger = logging.getLogger("masterdb.bcaes_registry.store")
 
 
 class ObjectNotFoundError(Exception):
@@ -52,6 +64,7 @@ class CanonicalRegistryStore:
         self._objects: Dict[RegistryType, Dict[str, RegistryObject]] = {
             rt: {} for rt in RegistryType
         }
+        self._persist_dir: Optional[str] = persist_dir
         # `artifact_store`, if given, is used as-is (e.g. a SqlArtifactStore
         # pointed at a real database) — this takes priority over persist_dir.
         # Falling back to persist_dir keeps every existing caller (including
@@ -65,20 +78,139 @@ class CanonicalRegistryStore:
         else:
             self._artifact_store = None
 
+    def _backup_persistence(self) -> Optional[str]:
+        """Creates a timestamped backup of the underlying persistence before migration."""
+        backup_path = None
+        if hasattr(self._artifact_store, "reports_dir"):
+            reports_dir = Path(getattr(self._artifact_store, "reports_dir"))
+            bp = backup_store_directory(reports_dir)
+            if bp:
+                backup_path = str(bp)
+        elif self._persist_dir is not None:
+            bp = backup_store_directory(Path(self._persist_dir))
+            if bp:
+                backup_path = str(bp)
+        elif hasattr(self._artifact_store, "database_url") and hasattr(self._artifact_store, "_engine"):
+            try:
+                from sqlalchemy import select
+                from sqlalchemy.orm import Session
+                from services.sql_artifact_store import ArtifactRecord
+
+                timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+                backup_name = f"{self._artifact_store.store_name}_backup_{timestamp}"
+                with Session(self._artifact_store._engine) as session:
+                    stmt = select(ArtifactRecord).where(
+                        ArtifactRecord.store_name == self._artifact_store.store_name
+                    )
+                    rows = session.execute(stmt).scalars().all()
+                    for row in rows:
+                        session.add(
+                            ArtifactRecord(
+                                store_name=backup_name,
+                                key=row.key,
+                                value_json=row.value_json,
+                                updated_at=row.updated_at,
+                            )
+                        )
+                    session.commit()
+                backup_path = backup_name
+                logger.info("Created SQL table backup in store %s", backup_name)
+            except Exception as exc:
+                logger.warning("Could not create SQL backup table: %s", exc)
+        return backup_path
+
+    def _persist_migrated_atomic(self, migrated_records: List[Dict[str, Any]]) -> None:
+        """Atomically persist migrated records so no partial writes occur."""
+        if self._artifact_store is None or not migrated_records:
+            return
+
+        if hasattr(self._artifact_store, "reports_dir") and hasattr(self._artifact_store, "report_path"):
+            reports_dir = Path(getattr(self._artifact_store, "reports_dir"))
+            reports_dir.mkdir(parents=True, exist_ok=True)
+            for record in migrated_records:
+                target_path = self._artifact_store.report_path(record["id"])
+                tmp_path = target_path.with_suffix(".json.tmp")
+                with tmp_path.open("w", encoding="utf-8") as handle:
+                    json.dump(record, handle, indent=4)
+                os.replace(tmp_path, target_path)
+        elif hasattr(self._artifact_store, "_engine") and hasattr(self._artifact_store, "store_name"):
+            from sqlalchemy.orm import Session
+            from services.sql_artifact_store import ArtifactRecord
+
+            now = datetime.now(timezone.utc)
+            with Session(self._artifact_store._engine) as session:
+                for record in migrated_records:
+                    key = record["id"]
+                    existing = session.get(ArtifactRecord, (self._artifact_store.store_name, key))
+                    payload = json.dumps(record)
+                    if existing is not None:
+                        existing.value_json = payload
+                        existing.updated_at = now
+                    else:
+                        session.add(
+                            ArtifactRecord(
+                                store_name=self._artifact_store.store_name,
+                                key=key,
+                                value_json=payload,
+                                updated_at=now,
+                            )
+                        )
+                session.commit()
+        else:
+            for record in migrated_records:
+                self._artifact_store.save(record["id"], record)
+
+    def _migrate_and_persist_if_needed(self, raw_records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Detects if any records are legacy, backs up storage, validates all, and atomically persists."""
+        if not any(is_legacy_record(r) for r in raw_records):
+            return raw_records
+
+        logger.info("Legacy BCAES records detected. Starting safe backward-compatible migration.")
+        # Step 1: Pre-migration backup
+        self._backup_persistence()
+
+        # Step 2: In-memory migration and strict validation of EVERY record
+        migrated_records = []
+        for raw in raw_records:
+            migrated = migrate_legacy_record(raw)
+            # Strict validation against current RegistryObject schema
+            RegistryObject(**migrated)
+            migrated_records.append(migrated)
+
+        # Step 3: Atomic write of validated records to persistence
+        self._persist_migrated_atomic(migrated_records)
+        logger.info("Successfully migrated and persisted %d BCAES registry records.", len(migrated_records))
+        return migrated_records
+
     def reload_from_persistent_store(self) -> None:
         """Re-syncs the in-memory cache from the underlying persistent
         store (if any) — clears and fully repopulates, so this is also
         correct after an external write (e.g. POST /admin/restore) that
         wrote directly to the artifact_store without going through this
-        object's register()/update()/delete() methods. A no-op if running
-        pure in-memory (no artifact_store configured)."""
+        object's register()/update()/delete() methods.
+
+        Includes safe, idempotent migration of legacy records with pre-backup
+        and atomic persistence.
+        """
         if self._artifact_store is None:
             return
         self._objects = {rt: {} for rt in RegistryType}
-        for record in self._artifact_store.list_all():
-            normalized = self._normalize_record(record)
-            obj = RegistryObject(**normalized)
+        raw_records = self._artifact_store.list_all()
+        if not raw_records:
+            return
+
+        migrated_records = self._migrate_and_persist_if_needed(raw_records)
+        for record in migrated_records:
+            obj = RegistryObject(**record)
             self._objects[obj.registry_type][obj.id] = obj
+
+    def _migrate_legacy_record(self, record: dict) -> dict:
+        """Backward-compatible helper delegating to dedicated migration module."""
+        return migrate_legacy_record(record)
+
+    def _normalize_record(self, record: dict) -> dict:
+        """Backward-compatible helper delegating to dedicated migration module."""
+        return migrate_legacy_record(record)
 
     def _persist(self, obj: RegistryObject) -> None:
         if self._artifact_store is not None:
