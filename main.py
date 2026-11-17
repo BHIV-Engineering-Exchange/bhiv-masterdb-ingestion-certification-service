@@ -3,6 +3,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 from dotenv import load_dotenv
 
 
@@ -303,6 +304,16 @@ app.state.replay_table = production_replay_table
 app.state.audit_emitter = production_audit_emitter
 app.include_router(production_router)
 
+
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    request_id = uuid4().hex
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+
 pravah_ledger = PravahReplayLedger()
 pravah_state_machine = PravahStateMachine()
 event_pipeline = EventPipeline(
@@ -361,10 +372,17 @@ def _error_body(request: Request, error_type: str, message: str) -> Dict[str, An
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
-    logger.warning("HTTPException %s at %s: %s", exc.status_code, request.url.path, exc.detail)
+    logger.warning(
+        "HTTPException request_id=%s %s at %s: %s",
+        getattr(request.state, "request_id", "unavailable"),
+        exc.status_code,
+        request.url.path,
+        exc.detail,
+    )
     return JSONResponse(
         status_code=exc.status_code,
         content=_error_body(request, "http_error", exc.detail),
+        headers={"X-Request-ID": getattr(request.state, "request_id", "unavailable")},
     )
 
 

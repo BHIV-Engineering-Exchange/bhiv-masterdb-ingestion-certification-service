@@ -3,6 +3,7 @@ from tests.test_identity_fixtures import get_test_token
 Tests for MASTERDB Capability Access Authorization & Policy Evaluation.
 """
 import uuid
+import pytest
 
 from fastapi.testclient import TestClient
 import main
@@ -363,6 +364,40 @@ def test_d4_admin_role_cannot_bypass_application_entitlement():
     assert res.status_code == 403
     error_msg = res.json().get("detail") or res.json().get("error", {}).get("message", "")
     assert "not entitled to represent application" in error_msg.lower()
+
+
+@pytest.mark.parametrize(
+    ("actor", "entitlement_env"),
+    [
+        ("tantra-core", "AUTH_ENTITLED_APPS_TANTRA_CORE"),
+        ("tantra-execution", "AUTH_ENTITLED_APPS_TANTRA_EXECUTION"),
+    ],
+)
+def test_tantra_actor_can_discover_and_request_earthquake_capability(
+    monkeypatch, actor, entitlement_env
+):
+    monkeypatch.setenv(entitlement_env, "TANTRA")
+    token = _get_token(actor=actor, roles=["ecosystem-reader"])
+    headers = {"Authorization": f"Bearer {token}"}
+    discovery = client.get(
+        "/capabilities/cap-gev-earthquake-monitoring",
+        headers=headers,
+    )
+    assert discovery.status_code == 200
+
+    response = client.post(
+        "/access/request",
+        json={
+            "application_id": "TANTRA",
+            "capability_id": "cap-gev-earthquake-monitoring",
+            "purpose": "seismic_hazard_monitoring",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["authorized"] is True
+    assert response.json()["application_id"] == "TANTRA"
 
 
 def test_d4_missing_or_empty_actor_fails_closed(tmp_path):

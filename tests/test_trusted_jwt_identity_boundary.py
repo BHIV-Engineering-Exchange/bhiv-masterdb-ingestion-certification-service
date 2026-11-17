@@ -281,6 +281,73 @@ def test_production_rs256_invalid_audience_rejected(rsa_key_pair):
         auth_svc.decode_token(token)
 
 
+def test_configured_issuer_replaces_builtin_issuers(rsa_key_pair, monkeypatch):
+    priv_pem, pub_pem = rsa_key_pair
+    monkeypatch.setenv("AUTH_ISSUER", "tantra-sarathi")
+    auth_svc = AuthService(public_key_pem=pub_pem)
+    token = jwt.encode(
+        {
+            "sub": "tantra-execution",
+            "iss": "masterdb",
+            "aud": "masterdb",
+            "roles": ["ecosystem-reader"],
+            "exp": int(time.time()) + 3600,
+        },
+        priv_pem,
+        algorithm="RS256",
+    )
+
+    with pytest.raises(AuthTokenError, match="Untrusted or missing token issuer"):
+        auth_svc.decode_token(token)
+
+
+@pytest.mark.parametrize("audience_env", ["AUTH_JWT_AUDIENCE", "AUTH_AUDIENCE"])
+def test_configured_audience_replaces_builtin_audiences(rsa_key_pair, monkeypatch, audience_env):
+    priv_pem, pub_pem = rsa_key_pair
+    monkeypatch.delenv("AUTH_JWT_AUDIENCE", raising=False)
+    monkeypatch.delenv("AUTH_AUDIENCE", raising=False)
+    monkeypatch.setenv(audience_env, "tantra-only")
+    auth_svc = AuthService(public_key_pem=pub_pem)
+    token = jwt.encode(
+        {
+            "sub": "tantra-execution",
+            "iss": "tantra-sarathi",
+            "aud": "masterdb",
+            "roles": ["ecosystem-reader"],
+            "exp": int(time.time()) + 3600,
+        },
+        priv_pem,
+        algorithm="RS256",
+    )
+
+    with pytest.raises(AuthTokenError, match="Untrusted or invalid token audience"):
+        auth_svc.decode_token(token)
+
+
+@pytest.mark.parametrize(
+    ("claim", "value", "message"),
+    [
+        ("aud", 7, "audience claim must be a string"),
+        ("aud", ["masterdb", {"unexpected": "object"}], "audience claim must be a string"),
+    ],
+)
+def test_malformed_issuer_or_audience_claim_is_rejected(rsa_key_pair, claim, value, message):
+    priv_pem, pub_pem = rsa_key_pair
+    auth_svc = AuthService(public_key_pem=pub_pem)
+    payload = {
+        "sub": "tantra-execution",
+        "iss": "tantra-sarathi",
+        "aud": "masterdb",
+        "roles": ["ecosystem-reader"],
+        "exp": int(time.time()) + 3600,
+    }
+    payload[claim] = value
+    token = jwt.encode(payload, priv_pem, algorithm="RS256")
+
+    with pytest.raises(AuthTokenError, match=message):
+        auth_svc.decode_token(token)
+
+
 def test_production_rs256_missing_required_claims_rejected(rsa_key_pair):
     """Tokens missing required claims (sub, iss, aud, roles) are rejected."""
     priv_pem, pub_pem = rsa_key_pair
@@ -305,6 +372,15 @@ def test_production_rs256_missing_required_claims_rejected(rsa_key_pair):
     t_no_roles = jwt.encode({"sub": "a", "iss": "tantra-sarathi", "aud": "masterdb", "exp": int(time.time()) + 3600}, priv_pem, "RS256")
     with pytest.raises(AuthTokenError, match="missing required roles claim"):
         auth_svc.decode_token(t_no_roles)
+
+
+def test_unauthorized_response_has_request_id(client, caplog):
+    response = client.get("/capabilities")
+
+    assert response.status_code == 401
+    request_id = response.headers.get("X-Request-ID")
+    assert request_id
+    assert any(request_id in record.getMessage() for record in caplog.records)
 
 
 def test_production_rs256_expired_token_rejected(rsa_key_pair):

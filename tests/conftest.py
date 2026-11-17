@@ -62,8 +62,20 @@ def _ensure_test_auth_env(monkeypatch):
     )
     monkeypatch.setenv("AUTH_JWT_PUBLIC_KEY", TEST_RSA_PUBLIC_KEY_PEM)
     current_issuers = os.environ.get("AUTH_ISSUER", "")
-    if TEST_TOKEN_ISSUER not in current_issuers:
-        monkeypatch.setenv("AUTH_ISSUER", f"{TEST_TOKEN_ISSUER},{current_issuers}".strip(","))
+    test_issuers = {
+        "tantra-sarathi", "masterdb", "masterdb-production", "masterdb-local",
+        TEST_TOKEN_ISSUER,
+    }
+    test_issuers.update(x.strip() for x in current_issuers.split(",") if x.strip())
+    monkeypatch.setenv("AUTH_ISSUER", ",".join(sorted(test_issuers)))
+    current_audiences = (
+        os.environ.get("AUTH_JWT_AUDIENCE")
+        or os.environ.get("AUTH_AUDIENCE")
+        or ""
+    )
+    test_audiences = {"masterdb", "tantra-bridge", "masterdb-production"}
+    test_audiences.update(x.strip() for x in current_audiences.split(",") if x.strip())
+    monkeypatch.setenv("AUTH_JWT_AUDIENCE", ",".join(sorted(test_audiences)))
     if hasattr(main, "auth_service"):
         main.auth_service._public_key_pem = None
 

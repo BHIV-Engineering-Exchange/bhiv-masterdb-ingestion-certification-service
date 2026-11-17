@@ -359,19 +359,19 @@ class AuthService:
 
             # iss validation
             iss = payload.get("iss")
-            if not iss:
+            if not isinstance(iss, str) or not iss.strip():
                 raise AuthTokenError("Untrusted or missing token issuer: missing")
             if self.is_production and iss == "masterdb-test-fixture":
                 raise AuthTokenError("Test token issuer 'masterdb-test-fixture' is prohibited in production mode.")
 
-            allowed_issuers = {"tantra-sarathi", "masterdb", "masterdb-production"}
-            if not self.is_production:
-                allowed_issuers.add("masterdb-test-fixture")
-                allowed_issuers.add("masterdb-local")
             env_issuers = [x.strip() for x in (os.environ.get("AUTH_ISSUER") or "").split(",") if x.strip()]
-            for ei in env_issuers:
-                if not (self.is_production and ei == "masterdb-test-fixture"):
-                    allowed_issuers.add(ei)
+            allowed_issuers = set(env_issuers) if env_issuers else {
+                "tantra-sarathi", "masterdb", "masterdb-production"
+            }
+            if not env_issuers and not self.is_production:
+                allowed_issuers.update({"masterdb-test-fixture", "masterdb-local"})
+            if self.is_production:
+                allowed_issuers.discard("masterdb-test-fixture")
 
             if iss not in allowed_issuers:
                 raise AuthTokenError(f"Untrusted or missing token issuer: {iss}")
@@ -380,10 +380,17 @@ class AuthService:
             aud = payload.get("aud")
             if not aud:
                 raise AuthTokenError("Token is missing required audience claim.")
-            aud_list = [aud] if isinstance(aud, str) else list(aud)
-            allowed_audiences = {"masterdb", "tantra-bridge", "masterdb-production"}
-            env_aud = [x.strip() for x in (os.environ.get("AUTH_JWT_AUDIENCE") or "").split(",") if x.strip()]
-            allowed_audiences.update(env_aud)
+            if isinstance(aud, str):
+                aud_list = [aud]
+            elif isinstance(aud, list) and all(isinstance(item, str) for item in aud):
+                aud_list = aud
+            else:
+                raise AuthTokenError("Token audience claim must be a string or a list of strings.")
+            env_aud_value = os.environ.get("AUTH_JWT_AUDIENCE") or os.environ.get("AUTH_AUDIENCE") or ""
+            env_aud = [x.strip() for x in env_aud_value.split(",") if x.strip()]
+            allowed_audiences = set(env_aud) if env_aud else {
+                "masterdb", "tantra-bridge", "masterdb-production"
+            }
             if not any(a in allowed_audiences for a in aud_list):
                 raise AuthTokenError(f"Untrusted or invalid token audience: {aud}")
 

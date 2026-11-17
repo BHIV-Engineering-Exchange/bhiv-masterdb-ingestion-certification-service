@@ -319,6 +319,10 @@ same way, so any consumer (TANTRA included) can parse errors generically:
 transition, upstream MDU failure surfaced as 502) or `internal_error` (an
 unhandled 500; logged server-side with a stack trace, never leaked to the
 caller).
+
+Every response includes an `X-Request-ID` header. The same ID is included in
+server logs for HTTP errors, so it can be supplied when investigating a
+rejected request.
 
 Unknown package:
 
